@@ -1,0 +1,11 @@
+# Dedicated editor/engine caches and generated build outputs.
+/.godot/
+
+# Mono/.NET crash dumps
+/mono_crashes.d.*
+
+# Spike build outputs (uploaded as CI artifacts, never committed)
+/build/
+
+# CI log captures
+/logs/

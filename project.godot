@@ -1,0 +1,17 @@
+; Engine configuration file.
+; Spike project: minimal Godot 4.7.2 .NET (C#) build-spike for Android.
+; No gameplay implementation - this only proves the build pipeline works.
+
+config_version=5
+
+[application]
+
+config/name="Layer Sort — Build Spike"
+config/version="0.1.0"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#")
+config/icon="res://icon.svg"
+
+[dotnet]
+
+project/assembly_name="LayerSort"

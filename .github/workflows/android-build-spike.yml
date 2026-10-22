@@ -1,0 +1,257 @@
+name: android-build-spike
+
+# Spike: build a minimal Godot 4.7.2 .NET (C#) Android debug APK fully in
+# GitHub Actions, with no Android Studio. Tool versions are pinned except
+# Android SDK platform-tools, which deliberately tracks Google's current
+# stable package (required by Godot's export checks; see the report).
+
+"on":
+  push:
+    branches: ["spike/godot-csharp-android"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: android-build-spike-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-android-spike:
+    name: Godot 4.7.2 .NET — Android debug APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned .NET SDK (C# Android export requires TFM net9.0)
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: "9.0.319"
+
+      - name: Install pinned JDK 17.0.21+9 (Temurin)
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17.0.21+9"
+
+      - name: Record base toolchain versions
+        run: |
+          set -o pipefail
+          mkdir -p logs
+          { dotnet --version; java -version; } 2>&1 | tee logs/toolchain.txt
+
+      - name: Install Godot .NET editor (Linux x86_64, full distribution)
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          cd "$RUNNER_TEMP"
+          curl -sSLo SHA512-SUMS.txt "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/SHA512-SUMS.txt"
+          curl -sSLo godot-editor.zip "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_linux_x86_64.zip"
+          sha512sum -c <(grep "  Godot_v4.7.2-stable_mono_linux_x86_64.zip$" SHA512-SUMS.txt)
+          unzip -q godot-editor.zip -d godot-editor
+          GODOT_BIN="$(find godot-editor -type f -name 'Godot_v4.7.2-stable_mono_linux.x86_64' -print -quit)"
+          if [ -z "$GODOT_BIN" ]; then echo "::error::Godot editor binary not found in zip"; exit 1; fi
+          GODOT_ROOT="$(dirname "$GODOT_BIN")"
+          # The .NET build needs the GodotSharp directory next to the binary.
+          # Keep the complete distribution together; do not move the binary
+          # on its own.
+          if [ ! -d "$GODOT_ROOT/GodotSharp" ]; then
+            echo "::error::GodotSharp directory missing next to the Godot binary; refusing to install an incomplete .NET distribution."
+            exit 1
+          fi
+          chmod +x "$GODOT_BIN"
+          INSTALL_DIR=/opt/godot-4.7.2-mono
+          sudo mkdir -p "$(dirname "$INSTALL_DIR")"
+          if [ -e "$INSTALL_DIR" ]; then
+            echo "::error::$INSTALL_DIR already exists; refusing to overwrite."
+            exit 1
+          fi
+          sudo mv "$GODOT_ROOT" "$INSTALL_DIR"
+          test -d "$INSTALL_DIR/GodotSharp" || {
+            echo "::error::GodotSharp directory missing after installation."; exit 1; }
+          sudo ln -sfn "$INSTALL_DIR/$(basename "$GODOT_BIN")" /usr/local/bin/godot-mono
+          test -x /usr/local/bin/godot-mono || {
+            echo "::error::/usr/local/bin/godot-mono is not an executable symlink."; exit 1; }
+          echo "Godot .NET distribution: $INSTALL_DIR (binary + GodotSharp)" | tee -a "$GITHUB_WORKSPACE/logs/toolchain.txt"
+          GODOT_VERSION_OUTPUT="$(godot-mono --version 2>&1)"
+          echo "godot-mono --version: $GODOT_VERSION_OUTPUT" | tee -a "$GITHUB_WORKSPACE/logs/toolchain.txt"
+          case "$GODOT_VERSION_OUTPUT" in
+            4.7.2.stable.mono*) ;;
+            *) echo "::error::unexpected Godot version (expected 4.7.2.stable.mono*): $GODOT_VERSION_OUTPUT"; exit 1 ;;
+          esac
+
+      - name: Install matching .NET export templates
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          cd "$RUNNER_TEMP"
+          curl -sSLo export-templates.tpz "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_export_templates.tpz"
+          sha512sum -c <(grep "  Godot_v4.7.2-stable_mono_export_templates.tpz$" SHA512-SUMS.txt)
+          mkdir -p "$HOME/.local/share/godot/export_templates"
+          unzip -q export-templates.tpz -d export-templates-unpack
+          rm -rf "$HOME/.local/share/godot/export_templates/4.7.2.stable.mono"
+          mv export-templates-unpack/templates "$HOME/.local/share/godot/export_templates/4.7.2.stable.mono"
+          # Uncertainty gate: template-export mode needs the prebuilt Android
+          # app template inside the .NET templates. If missing, switch the
+          # preset to gradle_build/use_gradle_build=true (see report docs).
+          test -f "$HOME/.local/share/godot/export_templates/4.7.2.stable.mono/android_debug.apk" || {
+            echo "::error::mono export templates lack android_debug.apk — template export mode unsupported; enable gradle_build/use_gradle_build=true as documented."; exit 1; }
+          echo "Export template files:" | tee -a "$GITHUB_WORKSPACE/logs/toolchain.txt"
+          ls "$HOME/.local/share/godot/export_templates/4.7.2.stable.mono" | tee -a "$GITHUB_WORKSPACE/logs/toolchain.txt"
+
+      - name: Install Android SDK (pinned versions; platform-tools floating)
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /opt/android-sdk/cmdline-tools
+          sudo chown -R "$USER" /opt/android-sdk
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          cd "$RUNNER_TEMP"
+          curl -sSLo cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip"
+          echo "4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583  cmdline-tools.zip" | sha256sum -c -
+          unzip -q cmdline-tools.zip -d /opt/android-sdk/cmdline-tools
+          if [ ! -d /opt/android-sdk/cmdline-tools/cmdline-tools ]; then echo "::error::unexpected cmdline-tools zip layout"; exit 1; fi
+          mv /opt/android-sdk/cmdline-tools/cmdline-tools /opt/android-sdk/cmdline-tools/latest
+          export ANDROID_SDK_ROOT=/opt/android-sdk
+          SDKM=/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager
+          # 'yes' is killed by SIGPIPE (exit 141) as soon as sdkmanager closes
+          # its stdin. With pipefail that would fail the pipeline even when
+          # license acceptance succeeded. Run ONLY this pipeline with
+          # pipefail disabled (its status is then sdkmanager's own exit
+          # code), capture that status via '|| rc=$?', restore pipefail, and
+          # fail the workflow explicitly on a non-zero status.
+          set +o pipefail
+          rc=0
+          yes | "$SDKM" --sdk_root="$ANDROID_SDK_ROOT" --licenses > "$GITHUB_WORKSPACE/logs/sdk-licenses.log" 2>&1 || rc=$?
+          set -o pipefail
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::Android SDK license acceptance failed (sdkmanager exit '$rc'). Log: logs/sdk-licenses.log"
+            tail -n 20 "$GITHUB_WORKSPACE/logs/sdk-licenses.log"
+            exit 1
+          fi
+          # platform-tools is intentionally unversioned: Godot's desktop
+          # Android export validation requires platform-tools/adb even for
+          # template exports, and sdkmanager resolves only the current stable
+          # package. It does not affect APK packaging/signing; see the report.
+          # Other versions come from Godot 4.7.2
+          # platform/android/java/app/config.gradle (docs lag behind).
+          "$SDKM" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-36" "build-tools;36.1.0" "cmake;3.10.2.4988404" "ndk;29.0.14206865" 2>&1 | tail -n 20 | tee "$GITHUB_WORKSPACE/logs/android-sdk.txt"
+
+      - name: Import project headlessly
+        run: |
+          set -o pipefail
+          mkdir -p logs
+          godot-mono --headless --path . --import 2>&1 | tee logs/import.log
+
+      - name: Configure Godot editor settings (Android + Java paths)
+        run: |
+          set -euo pipefail
+          if [ -z "${JAVA_HOME:-}" ]; then echo "::error::JAVA_HOME is not set"; exit 1; fi
+          # Preferred approach: the `--import` step above starts and quits
+          # the pinned editor, which generates `~/.config/godot/
+          # editor_settings-4*.tres` on a fresh runner. This script only
+          # patches that generated file deterministically (upsert of exactly
+          # two keys + post-write assertion); if the editor did not generate
+          # a settings file, a minimal documented fallback is created instead
+          # and reported. Any genuine failure is explicit.
+          python3 - <<'PY'
+          import os, re, sys
+          from pathlib import Path
+
+          key_values = {
+              "export/android/android_sdk_path": "/opt/android-sdk",
+              "export/android/java_sdk_path": os.environ["JAVA_HOME"].rstrip("/"),
+          }
+
+          cfg_dir = Path(os.environ["HOME"]) / ".config" / "godot"
+          cfg_dir.mkdir(parents=True, exist_ok=True)
+          candidates = sorted(g for g in cfg_dir.glob("editor_settings-4*.tres"))
+          target = candidates[-1] if candidates else cfg_dir / "editor_settings-4.7.tres"
+
+          if target.exists():
+              text = target.read_text(encoding="utf-8")
+              if 'type="EditorSettings"' not in text:
+                  print("::error::%s exists but is not an EditorSettings resource" % target)
+                  sys.exit(1)
+              action = "patched editor-generated settings"
+          else:
+              text = '[gd_resource type="EditorSettings" format=3]\n\n[resource]\n'
+              action = "created fallback EditorSettings (editor had not generated one)"
+
+          def upsert(text, key, value):
+              pat = re.compile(r"^" + re.escape(key) + r"\s*=.*$", re.MULTILINE)
+              line = "%s = \"%s\"" % (key, value)
+              if pat.search(text):
+                  return pat.sub(lambda _: line, text, count=1)
+              if not re.search(r"^\[resource\]\s*$", text, re.MULTILINE):
+                  print("::error::settings file has no [resource] section")
+                  sys.exit(1)
+              return re.sub(r"^\[resource\]\s*$",
+                            "[resource]\n\n" + line,
+                            text, count=1, flags=re.MULTILINE)
+
+          for key, value in key_values.items():
+              text = upsert(text, key, value)
+
+          target.write_text(text, encoding="utf-8")
+
+          missing = [k for k in key_values if k not in target.read_text(encoding="utf-8")]
+          if missing:
+              print("::error::failed to set editor settings keys: %s" % missing)
+              sys.exit(1)
+
+          print("OK: %s -> %s" % (action, target))
+          print("OK: %s" % ", ".join(sorted(key_values)))
+          PY
+
+      - name: Compile C# project
+        run: |
+          set -o pipefail
+          godot-mono --headless --path . --build-solutions 2>&1 | tee logs/build-solutions.log
+          # Explicit ExportDebug configuration: the engine runs the project
+          # (smoke test) from the ExportDebug binaries.
+          dotnet build LayerSort.csproj --configuration ExportDebug 2>&1 | tee logs/build-dotnet-exportdebug.log
+
+      - name: Headless smoke test (run main scene)
+        run: |
+          set -o pipefail
+          godot-mono --headless --path . --quit-after 10 2>&1 | tee logs/smoke.log
+          grep -q "LAYER_SORT_SPIKE_OK" logs/smoke.log || {
+            echo "::error::Smoke test marker missing — C# code did not execute."; exit 1; }
+          if grep -q "SCRIPT ERROR" logs/smoke.log; then
+            echo "::error::Script error during headless smoke test."; exit 1
+          fi
+
+      - name: Export Android debug APK
+        run: |
+          set -o pipefail
+          mkdir -p logs build
+          godot-mono --headless --path . --export-debug "Android Debug" build/layer-sort-spike-debug.apk 2>&1 | tee logs/export.log
+          test -s build/layer-sort-spike-debug.apk || { echo "::error::APK was not produced."; exit 1; }
+          unzip -t build/layer-sort-spike-debug.apk || { echo "::error::APK is not a valid zip."; exit 1; }
+          unzip -l build/layer-sort-spike-debug.apk | tee logs/apk_contents.log
+          grep -qi "androidmanifest.xml" logs/apk_contents.log || {
+            echo "::error::AndroidManifest.xml missing from APK."; exit 1; }
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: layer-sort-spike-debug-apk
+          path: build/layer-sort-spike-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload build logs artifact (also on failed runs)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: layer-sort-spike-build-logs
+          path: |
+            logs/*.txt
+            logs/*.log
+          if-no-files-found: warn
+          retention-days: 14

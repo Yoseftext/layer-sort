@@ -2,7 +2,9 @@
 
 ## Project
 Layer Sort: an Android game written in C#.
-Game engine: NOT decided yet. Do not pick one or add engine files without asking.
+Game engine: Godot 4.7.2 .NET (C#), recorded from the build spike on branch
+"spike/godot-csharp-android" (toolchain and build setup: docs/BUILD_SPIKE_REPORT.md).
+Engine files stay off "main" until the spike run is accepted.
 
 ## Environment
 - Code is edited locally on a phone (Termux, Debian proot).
