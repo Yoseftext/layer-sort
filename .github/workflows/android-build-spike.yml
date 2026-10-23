@@ -253,6 +253,35 @@ jobs:
           grep -qi "androidmanifest.xml" logs/apk_contents.log || {
             echo "::error::AndroidManifest.xml missing from APK."; exit 1; }
 
+      - name: Verify exported APK contains the .NET payload
+        run: |
+          set -euo pipefail
+          test -s logs/export.log || { echo "::error::logs/export.log missing or empty."; exit 1; }
+          test -s logs/apk_contents.log || { echo "::error::logs/apk_contents.log missing or empty."; exit 1; }
+          # Godot 4.7.2 can log .NET export errors and still exit 0, producing a
+          # structurally valid APK with no C# assemblies. Never trust exit code alone.
+          if grep -Eq 'ERROR: Export \.NET Project|no solution file|is a C# file but no solution file exists' logs/export.log; then
+            echo "::error::Godot reported .NET export errors; the APK may not contain the C# payload."
+            grep -nE 'ERROR: Export \.NET Project|no solution file|is a C# file but no solution file exists' logs/export.log || true
+            exit 1
+          fi
+          # The managed project assembly and publish manifest prove that dotnet
+          # publish output was bundled, not just the native Android template.
+          grep -q 'assets/\.godot/mono/publish/arm64/LayerSort\.dll$' logs/apk_contents.log || {
+            echo "::error::LayerSort.dll missing from APK (C# payload was not exported)."
+            exit 1
+          }
+          grep -q 'assets/\.godot/mono/publish/arm64/\.dotnet-publish-manifest$' logs/apk_contents.log || {
+            echo "::error::.dotnet-publish-manifest missing from APK (C# publish output was not bundled)."
+            exit 1
+          }
+          # The Mono runtime library must be packaged for the exported ABI.
+          grep -q 'lib/arm64-v8a/libmonosgen-2\.0\.so$' logs/apk_contents.log || {
+            echo "::error::lib/arm64-v8a/libmonosgen-2.0.so missing from APK (Mono runtime not packaged)."
+            exit 1
+          }
+          echo "OK: APK contains LayerSort.dll, .dotnet-publish-manifest, and the Mono runtime."
+
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
