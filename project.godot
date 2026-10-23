@@ -15,3 +15,12 @@ config/icon="res://icon.svg"
 [dotnet]
 
 project/assembly_name="LayerSort"
+
+[rendering]
+
+; Required for Android export validation (Godot 4.7.2-stable
+; export_plugin.cpp / has_valid_project_configuration): texture compression
+; support for ETC2/ASTC must be enabled or the export configuration check
+; fails with "ETC2/ASTC texture compression is required for Android export."
+; Observed in run 39944193566.
+textures/vram_compression/import_etc2_astc=true

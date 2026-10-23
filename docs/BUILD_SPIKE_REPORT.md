@@ -1,22 +1,22 @@
 # Layer Sort — Godot C# Android Build Spike Report
 
-Status: **CI hang diagnosed; a one-flag fix (`--quit`) applied, awaiting a
-rerun.** Run `39845933995` (commit `a011392`) failed at editor install due to
-a checksum-filename mismatch. Commit `55900c9`'s run `39916105960` (two
-attempts, 2026-10-23) proved those fixes work — every step up to and
-including "Configure Godot editor settings" succeeded in both attempts —
-but both were then **cancelled** inside "Compile C# project" at the job's
-90-minute ceiling although the C# build itself had finished
-(`logs/build-solutions.log`: `[ DONE ] dotnet_build_project` at 09:00:52;
-nothing further until the 10:29:20 cancel; post-cancel cleanup killed
-orphan `godot-mono` and `tee`). Root cause: `--build-solutions` runs the
-editor's build callback but does not end the headless editor when the
-build succeeds (4.7.2-stable `main.cpp:1619–1623`, `main.cpp:5181–5193`).
-This revision appends `--quit` to that one command. No compile/smoke/export
-success is claimed for this revision until the next Actions run.
-Everything else below is pinned from official sources, except Android SDK
-`platform-tools`, which deliberately tracks the current stable package
-(required by Godot's export validation; see §10).
+Status: **CI fixed step-by-step; only the ETC2/ASTC project-sso setting remains
+unverified in CI.** Run `39845933995` (commit `a011392`) failed at editor
+install due to a checksum-filename mismatch. Commit `55900c9`'s run
+`39916105960` (two attempts, 2026-10-23) proved download/SDK fixes work but
+hung in "Compile C# project" at the job's 90-minute ceiling although the C#
+build itself had finished seconds earlier; root cause was `--build-solutions`
+not ending the headless editor on success (4.7.2-stable `main.cpp:1619–1623`,
+`main.cpp:5181–5193`). Commit `1c41808`'s run `39944193566` (2026-10-23)
+confirmed the `--quit` fix: "Compile C# project" and "Headless smoke test"
+both passed, then "Export Android debug APK" failed validation solely on the
+project-side ETC2/ASTC requirement (4.7.2-stable `export_plugin.cpp` /
+`has_valid_project_configuration`, lines 3148–3153). This revision enables
+`rendering/textures/vram_compression/import_etc2_astc=true` in
+`project.godot`. The export step itself has never run successfully yet; no
+export success is claimed until the next Actions run. Everything below is
+pinned from official sources, except Android SDK `platform-tools`, which
+deliberately tracks the current stable package (see §10).
 
 ## 1. Goal
 
@@ -168,41 +168,25 @@ execution remains unverified.
 - Forbidden sources (Water Sort reference repository, `SPEC.md`) were not
   read, copied, or referenced.
 
-**CI-verified so far (run `39916105960`, commit `55900c9`, two attempts on
-2026-10-23; attempt 1 ≈07:10–08:41 UTC, attempt 2 ≈08:58–10:29 UTC):**
+**CI-verified so far (run `39944193566`, commit `1c41808`, 2026-10-23):
 
-- The checksum-filename fix works: the Godot editor and the export-template
-  downloads installed under their exact official filenames with matching
-  SHA512 checks (the `39845933995` editor-install failure did not recur).
-- The .NET SDK pin is enforced and honored: "Record base toolchain versions
-  and verify .NET SDK pin" passed in both attempts with dotnet 9.0.319.
-- Android SDK install (pinned build-tools 36.1.0 / platform android-36 /
-  NDK 29.0.14206865 / cmdline-tools; unversioned platform-tools; licenses)
-  completed in both attempts.
-- `--import` completed under the pinned editor, and the deterministic
-  editor-settings patch step (sdk/java paths) upserted and asserted the
-  two keys without error in both attempts on a fresh runner.
-- "Compile C# project" is where both attempts were **cancelled** at the
-  90-minute job ceiling: Godot's own C# build finished within seconds
-  (`[ DONE ] dotnet_build_project` at 09:00:52), then the editor loop kept
-  running indefinitely. The runner's post-cancel cleanup killed orphan
-  `godot-mono` (pid 2961), `tee` (2962), and `adb` (3034) processes —
-  direct evidence the Godot process was still alive, not that the build
-  had failed.
-- Root cause located in the pinned engine source (4.7.2-stable
-  `main.cpp`): `--build-solutions` sets `editor = true; cmdline_tool =
-  true; auto_build_solutions = true` (lines 1619–1623) and the main loop
-  calls `EditorNode::get_singleton()->call_build()`, setting an exit code
-  **only when the build fails** (lines 5181–5193). With no other exit
-  trigger the headless editor keeps iterating forever — exactly the
-  observed hold.
-- Fix in this revision: `--quit` ("Quit after the first iteration.",
-  `main.cpp:572`) is appended to that single command; the explicit
-  `dotnet build LayerSort.csproj --configuration ExportDebug` in the same
-  step remains unchanged and still produces the ExportDebug binaries.
-- Run evidence preserved locally for auditing: `/tmp/opencode/run-39916105960/`
-  (`failed.log`, `full.log`, `logs-artifact/` with every step log) and
-  `/tmp/opencode/run-39845933995/`.
+- `--quit` after `--build-solutions` works as predicted from source: the
+  compile step finished in seconds ("Compile C# project" success), and
+  "Headless smoke test (run main scene)" also passed, meaning the
+  ExportDebug binaries were built and executed by the Godot runtime and
+  the `LAYER_SORT_SPIKE_OK` marker of the C# code was emitted.
+- Run 39944193566's failure then isolated itself to the PROJECT
+  configuration, not the workflow: the export preset validation reports
+  "ETC2/ASTC texture compression is required" because this spike's
+  `project.godot` did not enable `rendering/textures/vram_compression/
+  import_etc2_astc` (see 4.7.2-stable `export_plugin.cpp`
+  `has_valid_project_configuration`, lines 3148–3153: `valid = false` — a
+  hard failure). The line about "Exporting to Android when using C#/.NET
+  is experimental." in the same log is informational (set at
+  `export_plugin.cpp:2942`) and does not by itself abort approval.
+- This revision patches `project.godot` accordingly.
+- The .NET SDK pin enforcement and Android SDK install steps remain proven
+  (every run).
 
 **Not yet verified (requires the next Actions run):**
 
