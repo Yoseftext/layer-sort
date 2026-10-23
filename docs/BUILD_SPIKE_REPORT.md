@@ -1,12 +1,17 @@
 # Layer Sort — Godot C# Android Build Spike Report
 
-Status: **prepared, not yet run.** Everything below is pinned from official
-sources, except Android SDK `platform-tools`, which deliberately tracks the
-current stable package (required by Godot's export validation; see §10). The
-GitHub Actions run has **not** been executed yet (pushing awaits approval), so
-CI results are unknown and are **not** claimed here. See "Verification
-evidence" for what was checked locally vs. what requires the first Actions
-run.
+Status: **fixes prepared; no successful CI run yet.** The first GitHub Actions
+run (`39845933995`, commit `a011392`) failed in the Godot editor install step:
+the workflow saved the archive under a local filename, while its `sha512sum -c`
+check looked for the official release filename. This revision downloads the
+editor and export templates under their exact official filenames, and adds a
+repo-root `global.json` pin plus a `dotnet --version` assertion so SDK 9.0.319
+is actually selected. These fixes have **not** been run in CI yet, so no
+import/compile/smoke/export success is claimed. Everything else below is
+pinned from official sources, except Android SDK `platform-tools`, which
+deliberately tracks the current stable package (required by Godot's export
+validation; see §10). See "Verification evidence" for what was checked
+locally vs. what requires the next Actions run.
 
 ## 1. Goal
 
@@ -23,7 +28,7 @@ not the game.
 | Godot .NET export templates | `Godot_v4.7.2-stable_mono_export_templates.tpz` → `~/.local/share/godot/export_templates/4.7.2.stable.mono` | same official release | SHA512-verified at runtime |
 | C# project SDK package | `Godot.NET.Sdk` **4.7.2** (MSBuildSdk, MIT) | `https://api.nuget.org/v3-flatcontainer/godot.net.sdk/4.7.2/godot.net.sdk.nuspec` | exact version in `LayerSort.csproj` |
 | .NET target framework | **`net9.0`** | Godot source `platform/android/export/export_plugin.cpp` @ tag `4.7.2-stable`: non-gradle Android export calls `_validate_dotnet_tfm("net9.0")` and fails otherwise | exact TFM in `LayerSort.csproj` |
-| .NET SDK | **9.0.319** (latest 9.0.x patch, 2026-10-13) | `https://builds.dotnet.microsoft.com/dotnet/release-metadata/9.0/releases.json` | `setup-dotnet` input |
+| .NET SDK | **9.0.319** (latest 9.0.x patch, 2026-10-13) | `https://builds.dotnet.microsoft.com/dotnet/release-metadata/9.0/releases.json` | `setup-dotnet` input + repo-root `global.json` (`rollForward: disable`, `allowPrerelease: false`); workflow asserts `dotnet --version` |
 | Java JDK | **Eclipse Temurin 17.0.21+9** (OpenJDK 17) | Adoptium API asset metadata: `https://api.adoptium.net/v3/assets/latest/17/hotspot?architecture=x64&image_type=jdk&os=linux&vendor=eclipse` (newest JDK 17 GA); Godot docs recommend JDK 17 and `validateJavaVersion` accepts ≥17 | exact `java-version: "17.0.21+9"` in `setup-java` |
 | Android command-line tools | `commandlinetools-linux-15859902_latest.zip`, SHA-256 `4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583` | `https://developer.android.com/studio` | URL + checksum in workflow |
 | Android SDK build-tools | **36.1.0** | Godot 4.7.2 `platform/android/java/app/config.gradle` (`ext.versions.buildTools`) | `sdkmanager` pin |
@@ -34,7 +39,7 @@ not the game.
 | Gradle / AGP / Kotlin (only used by fallback gradle mode) | 8.11.1 / 8.6.1 / 2.1.21 | template `gradle-wrapper.properties` + `config.gradle` at tag 4.7.2-stable | bundled by the template, not installed manually |
 | Debug signing | Godot's **built-in auto-generated editor debug keystore** (created via JDK `keytool` on first Android export) | `export_plugin.cpp` `_create_editor_debug_keystore_if_needed()` | none needed; **no real keystore exists in this spike** |
 | GitHub Actions | `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1` (v7.0.1), `actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68` (v6.0.0), `actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad` (v6.1.0), `actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9` (v7.0.2) | GitHub API tag refs | full commit SHAs in workflow |
-| Runner | `ubuntu-24.04` (Linux x86_64) | GitHub-hosted images | pinned runner label |
+| Runner | `ubuntu-24.04` (Linux x86_64) | GitHub-hosted runner labels | runner OS label pinned (`ubuntu-24.04`); this is **not** an immutable hosted-runner image |
 
 ## 3. Godot C# Android export mode decision
 
@@ -66,6 +71,7 @@ project.godot                               (new) engine 4.7, C#, main scene, as
 LayerSort.csproj                            (new) Godot.NET.Sdk 4.7.2, TargetFramework net9.0
 Main.tscn                                   (new) Node root + Label ("Layer Sort — Build Spike OK")
 SpikeBoot.cs                                (new) sets label text, prints CI marker
+global.json                                 (new) pins .NET SDK 9.0.319 selection
 AGENTS.md                                   (modified) engine line only
 docs/BUILD_SPIKE_REPORT.md                  (new) this report
 ```
@@ -117,6 +123,13 @@ execution remains unverified.
   `godotengine/godot-builds` release, with official SHA512 sums recorded here.
 - `Godot.NET.Sdk` 4.7.2 exists on NuGet.
 - .NET 9.0.319 is the current 9.0 SDK per Microsoft's release metadata.
+- Official `SHA512-SUMS.txt` was re-checked locally against both download
+  commands: the editor and template archives are saved under names that exactly
+  match the manifest entries checked by `sha512sum -c`.
+- `global.json` parses as JSON and pins 9.0.319 with `rollForward: disable` and
+  `allowPrerelease: false`. The workflow's toolchain step runs after
+  `setup-dotnet` and before any import/build step, and fails with a GitHub
+  Actions error unless `dotnet --version` is exactly 9.0.319.
 - Android command-line tools URL + SHA-256 taken from developer.android.com.
 - Android build-tools/platform/NDK versions read from Godot 4.7.2-stable
   `platform/android/java/app/config.gradle`; gradle wrapper 8.11.1.
@@ -136,8 +149,10 @@ execution remains unverified.
 - Editor settings filename for 4.7 is `editor_settings-4.7.tres` (source:
   `editor_settings.cpp`), and the Android editor settings keys
   `export/android/android_sdk_path` / `export/android/java_sdk_path` exist.
-- Workflow YAML parses cleanly (PyYAML `safe_load`), triggers/pins/permissions match design
-  (14 steps; all `uses:` pinned to full commit SHAs; only `actions/*`; `permissions: contents: read`).
+- Workflow YAML parses cleanly after these edits (YAML 1.2 parser; an earlier
+  revision also passed PyYAML `safe_load`), and all 9 `run:` blocks pass
+  `bash -n`. Triggers/pins/permissions match design (14 steps; all `uses:`
+  pinned to full commit SHAs; only `actions/*`; `permissions: contents: read`).
 - XML parses cleanly: `LayerSort.csproj`, `icon.svg`.
 - Cross-reference checks: `project.godot` main scene ↔ `Main.tscn` script ↔
   `SpikeBoot.cs`; `export_presets.cfg` contains `com.yoseftext.layersort` and
@@ -148,8 +163,10 @@ execution remains unverified.
 - Forbidden sources (Water Sort reference repository, `SPEC.md`) were not
   read, copied, or referenced.
 
-**Not yet verified (requires the first Actions run):**
+**Not yet verified (requires the next Actions run):**
 
+- A successful Actions run of this revision; the checksum-filename and SDK-pin
+  fixes have not been exercised by CI yet.
 - The actual import/compile/smoke/export run, and the APK artifact itself.
 - Execution of that APK on an Android device or emulator: out of scope for
   this spike; the workflow validates export only and never installs or
@@ -209,22 +226,27 @@ execution remains unverified.
   report was written), so this single package is not byte-for-byte
   reproducible. It only provides `adb`; APK packaging and signing use the
   pinned `build-tools` and JDK.
-- The Linux .NET editor resolves the system .NET runtime via hostfxr; with a
-  pinned SDK 9.0.319 installed first, both the editor and the `net9.0`
-  project resolve.
+- The Linux .NET editor resolves the system .NET runtime via hostfxr. Repo-root
+  `global.json` selects SDK 9.0.319 for `dotnet` commands run in the
+  repository, and the workflow asserts the selected version before builds.
+  This selection has not yet been exercised by CI.
 
 ## 11. Unresolved blockers
 
-None identified before the first run. The single conditional blocker is the
-mono-templates `android_debug.apk` question above, which has a documented,
-one-flag fallback path and a fail-fast CI gate.
+No functional blocker has been identified in the project. The first run's
+blocker was a workflow filename mismatch in the Godot download/checksum step;
+this revision fixes it and adds SDK-selection enforcement, but the fixes have
+not been run. The remaining conditional blocker is the mono-templates
+`android_debug.apk` question above, which has a documented, one-flag fallback
+path and a fail-fast CI gate.
 
 ## 12. Next required action
 
-1. Approve committing the spike to `spike/godot-csharp-android` and pushing it
-   (no commit/push was performed without approval, per task constraints).
-2. Run: `gh run list --repo Yoseftext/layer-sort` and open the first
-   `android-build-spike` run; download `layer-sort-spike-debug-apk`.
-3. If the run fails: the logs artifact (`layer-sort-spike-build-logs`) is
-   designed to contain the exact failing stage output; attach it and switch to
-   the documented fallback if the failure is the template-availability gate.
+1. The checksum fixes and `global.json` SDK pin were prepared without staging,
+   committing, or pushing. Review and approve them before a new CI run.
+2. After approval, create a new commit on `spike/godot-csharp-android` (do not
+   amend `a011392`), push, and inspect the new run with
+   `gh run list --repo Yoseftext/layer-sort --branch spike/godot-csharp-android`.
+3. On success, download the `layer-sort-spike-debug-apk` artifact.
+4. If the run fails: download `layer-sort-spike-build-logs`; if the failure is
+   the template-availability gate, switch to the documented gradle fallback.
