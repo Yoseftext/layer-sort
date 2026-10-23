@@ -238,6 +238,8 @@ jobs:
           godot-mono --headless --path . --quit-after 10 2>&1 | tee logs/smoke.log
           grep -q "LAYER_SORT_SPIKE_OK" logs/smoke.log || {
             echo "::error::Smoke test marker missing — C# code did not execute."; exit 1; }
+          grep -q "LAYER_SORT_ANDROID_TICK 0" logs/smoke.log || {
+            echo "::error::Runtime tick missing — C# _Process did not execute."; exit 1; }
           if grep -q "SCRIPT ERROR" logs/smoke.log; then
             echo "::error::Script error during headless smoke test."; exit 1
           fi

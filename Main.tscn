@@ -6,4 +6,4 @@
 script = ExtResource("1_spike")
 
 [node name="Label" type="Label" parent="."]
-text = "Layer Sort — Build Spike OK"
+text = "Waiting for C# runtime…"
