@@ -1,17 +1,22 @@
 # Layer Sort — Godot C# Android Build Spike Report
 
-Status: **fixes prepared; no successful CI run yet.** The first GitHub Actions
-run (`39845933995`, commit `a011392`) failed in the Godot editor install step:
-the workflow saved the archive under a local filename, while its `sha512sum -c`
-check looked for the official release filename. This revision downloads the
-editor and export templates under their exact official filenames, and adds a
-repo-root `global.json` pin plus a `dotnet --version` assertion so SDK 9.0.319
-is actually selected. These fixes have **not** been run in CI yet, so no
-import/compile/smoke/export success is claimed. Everything else below is
-pinned from official sources, except Android SDK `platform-tools`, which
-deliberately tracks the current stable package (required by Godot's export
-validation; see §10). See "Verification evidence" for what was checked
-locally vs. what requires the next Actions run.
+Status: **CI hang diagnosed; a one-flag fix (`--quit`) applied, awaiting a
+rerun.** Run `39845933995` (commit `a011392`) failed at editor install due to
+a checksum-filename mismatch. Commit `55900c9`'s run `39916105960` (two
+attempts, 2026-10-23) proved those fixes work — every step up to and
+including "Configure Godot editor settings" succeeded in both attempts —
+but both were then **cancelled** inside "Compile C# project" at the job's
+90-minute ceiling although the C# build itself had finished
+(`logs/build-solutions.log`: `[ DONE ] dotnet_build_project` at 09:00:52;
+nothing further until the 10:29:20 cancel; post-cancel cleanup killed
+orphan `godot-mono` and `tee`). Root cause: `--build-solutions` runs the
+editor's build callback but does not end the headless editor when the
+build succeeds (4.7.2-stable `main.cpp:1619–1623`, `main.cpp:5181–5193`).
+This revision appends `--quit` to that one command. No compile/smoke/export
+success is claimed for this revision until the next Actions run.
+Everything else below is pinned from official sources, except Android SDK
+`platform-tools`, which deliberately tracks the current stable package
+(required by Godot's export validation; see §10).
 
 ## 1. Goal
 
@@ -83,7 +88,7 @@ Documented Android application identifier:
 
 ```
 godot-mono --headless --path . --import                   # import/validate project
-godot-mono --headless --path . --build-solutions          # compile C#
+godot-mono --headless --path . --build-solutions --quit   # compile C#, then quit the headless editor (no --quit = hang, see §8)
 godot-mono --headless --path . --quit-after 10            # smoke run of main scene
 godot-mono --headless --path . --export-debug "Android Debug" build/layer-sort-spike-debug.apk
 ```
@@ -163,23 +168,57 @@ execution remains unverified.
 - Forbidden sources (Water Sort reference repository, `SPEC.md`) were not
   read, copied, or referenced.
 
+**CI-verified so far (run `39916105960`, commit `55900c9`, two attempts on
+2026-10-23; attempt 1 ≈07:10–08:41 UTC, attempt 2 ≈08:58–10:29 UTC):**
+
+- The checksum-filename fix works: the Godot editor and the export-template
+  downloads installed under their exact official filenames with matching
+  SHA512 checks (the `39845933995` editor-install failure did not recur).
+- The .NET SDK pin is enforced and honored: "Record base toolchain versions
+  and verify .NET SDK pin" passed in both attempts with dotnet 9.0.319.
+- Android SDK install (pinned build-tools 36.1.0 / platform android-36 /
+  NDK 29.0.14206865 / cmdline-tools; unversioned platform-tools; licenses)
+  completed in both attempts.
+- `--import` completed under the pinned editor, and the deterministic
+  editor-settings patch step (sdk/java paths) upserted and asserted the
+  two keys without error in both attempts on a fresh runner.
+- "Compile C# project" is where both attempts were **cancelled** at the
+  90-minute job ceiling: Godot's own C# build finished within seconds
+  (`[ DONE ] dotnet_build_project` at 09:00:52), then the editor loop kept
+  running indefinitely. The runner's post-cancel cleanup killed orphan
+  `godot-mono` (pid 2961), `tee` (2962), and `adb` (3034) processes —
+  direct evidence the Godot process was still alive, not that the build
+  had failed.
+- Root cause located in the pinned engine source (4.7.2-stable
+  `main.cpp`): `--build-solutions` sets `editor = true; cmdline_tool =
+  true; auto_build_solutions = true` (lines 1619–1623) and the main loop
+  calls `EditorNode::get_singleton()->call_build()`, setting an exit code
+  **only when the build fails** (lines 5181–5193). With no other exit
+  trigger the headless editor keeps iterating forever — exactly the
+  observed hold.
+- Fix in this revision: `--quit` ("Quit after the first iteration.",
+  `main.cpp:572`) is appended to that single command; the explicit
+  `dotnet build LayerSort.csproj --configuration ExportDebug` in the same
+  step remains unchanged and still produces the ExportDebug binaries.
+- Run evidence preserved locally for auditing: `/tmp/opencode/run-39916105960/`
+  (`failed.log`, `full.log`, `logs-artifact/` with every step log) and
+  `/tmp/opencode/run-39845933995/`.
+
 **Not yet verified (requires the next Actions run):**
 
-- A successful Actions run of this revision; the checksum-filename and SDK-pin
-  fixes have not been exercised by CI yet.
-- The actual import/compile/smoke/export run, and the APK artifact itself.
+- A successful Actions run of THIS revision (`--quit` added): run
+  `39916105960` proved everything up to the compile step, and the
+  `--build-solutions` hold has been diagnosed from its logs, but the
+  `--quit` fix itself has not run yet. No compile/smoke/export success
+  is claimed.
+- The export step has never been reached by any run, so its runtime
+  behavior (including whether `--export-debug` terminates on its own) is
+  still unverified, and the APK artifact itself is still unverified.
 - Execution of that APK on an Android device or emulator: out of scope for
   this spike; the workflow validates export only and never installs or
   launches the APK.
 - Whether the mono templates `.tpz` contains `android_debug.apk` (there is a
   dedicated fail-fast gate in the workflow; see "Known limitations").
-- That the editor-settings flow works on a fresh runner: the workflow now
-  lets the pinned editor generate its settings file during the `--import`
-  step, then a deterministic patch script upserts exactly the two Android
-  path keys and asserts them after writing. A minimal hand-authored
-  `EditorSettings` file is kept only as an explicitly reported fallback for
-  the case where the editor generated no file; remaining risk (tres format
-  details) applies only to that fallback branch.
 
 ## 9. Known limitations of Godot .NET Android support
 
@@ -229,24 +268,32 @@ execution remains unverified.
 - The Linux .NET editor resolves the system .NET runtime via hostfxr. Repo-root
   `global.json` selects SDK 9.0.319 for `dotnet` commands run in the
   repository, and the workflow asserts the selected version before builds.
-  This selection has not yet been exercised by CI.
+  Exercised successfully by run `39916105960` (both attempts): the
+  verification step passed with dotnet exactly 9.0.319.
 
 ## 11. Unresolved blockers
 
-No functional blocker has been identified in the project. The first run's
-blocker was a workflow filename mismatch in the Godot download/checksum step;
-this revision fixes it and adds SDK-selection enforcement, but the fixes have
-not been run. The remaining conditional blocker is the mono-templates
-`android_debug.apk` question above, which has a documented, one-flag fallback
-path and a fail-fast CI gate.
+No functional blocker has been identified in the project code. The first
+run's blocker (Godot archive/checksum filename mismatch) was fixed in commit
+`55900c9` and confirmed working by run `39916105960`; that run then exposed
+the one remaining blocker: `--build-solutions` leaves the headless Godot
+editor running after a successful C# build, cancelling the job at its
+90-minute ceiling. This revision appends `--quit` to that single command,
+awaiting a rerun. The conditional blocker (mono-templates `android_debug.apk`
+availability) is unchanged: guarded by a fail-fast CI gate with a
+documented one-flag gradle fallback.
 
 ## 12. Next required action
 
-1. The checksum fixes and `global.json` SDK pin were prepared without staging,
-   committing, or pushing. Review and approve them before a new CI run.
-2. After approval, create a new commit on `spike/godot-csharp-android` (do not
-   amend `a011392`), push, and inspect the new run with
+1. Verify the changed files (`git diff`) and push this revision (`--quit` on
+   the build-solutions command) as a new commit on
+   `spike/godot-csharp-android` (do not amend `a011392` or `55900c9`); the
+   workflow's `push` trigger then automatically starts a new run.
+2. Inspect the run with
    `gh run list --repo Yoseftext/layer-sort --branch spike/godot-csharp-android`.
 3. On success, download the `layer-sort-spike-debug-apk` artifact.
-4. If the run fails: download `layer-sort-spike-build-logs`; if the failure is
-   the template-availability gate, switch to the documented gradle fallback.
+4. If the run fails: download `layer-sort-spike-build-logs`. If the compile
+   step is still cancelled at the job ceiling, the `--quit` fix was
+   insufficient — re-diagnose the editor's remaining main-loop drivers
+   (e.g. try `--quit-after 2` instead). If the failure is the
+   template-availability gate, switch to the documented gradle fallback.

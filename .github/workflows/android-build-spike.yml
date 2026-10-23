@@ -217,7 +217,17 @@ jobs:
       - name: Compile C# project
         run: |
           set -o pipefail
-          godot-mono --headless --path . --build-solutions 2>&1 | tee logs/build-solutions.log
+          # --build-solutions makes the headless editor run its build callback
+          # but does NOT terminate the editor when the build SUCCEEDS
+          # (4.7.2-stable main.cpp:1619-1623 sets editor/cmdline_tool/
+          # auto_build_solutions, and main.cpp:5181-5193 sets an exit code
+          # only when the build FAILS). Run 39916105960 observed exactly that
+          # hold: "DONE dotnet_build_project" at 09:00:52, then no output and
+          # no exit until the 90-minute job ceiling cancelled the step at
+          # 10:29:20 with godot-mono/tee left running. --quit ("Quit after
+          # the first iteration.", main.cpp:572) ends the editor right after
+          # that same first iteration, in which the build callback completed.
+          godot-mono --headless --path . --build-solutions --quit 2>&1 | tee logs/build-solutions.log
           # Explicit ExportDebug configuration: the engine runs the project
           # (smoke test) from the ExportDebug binaries.
           dotnet build LayerSort.csproj --configuration ExportDebug 2>&1 | tee logs/build-dotnet-exportdebug.log
