@@ -1,0 +1,360 @@
+name: android-build-g1
+
+# G1: build a minimal Godot 4 Standard (GDScript) portrait APK in GitHub
+# Actions, then verify it independently of the export exit code. The engine,
+# templates, SDK and ABI are pinned in ENGINE_VERSION.lock.
+
+"on":
+  push:
+    branches: ["feat/gdscript-foundation"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: android-build-g1-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-android-g1:
+    name: Godot 4.7.2 Standard — G1 portrait APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned JDK 17.0.21+9 (Temurin)
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17.0.21+9"
+
+      - name: Read pinned versions and assert Standard GDScript scope
+        run: |
+          set -euo pipefail
+          mkdir -p logs
+          grep -q '^godot_edition=standard$' ENGINE_VERSION.lock
+          grep -q '^renderer=gl_compatibility$' ENGINE_VERSION.lock
+          grep -q '^orientation=portrait$' ENGINE_VERSION.lock
+          grep -q 'config/features=PackedStringArray("4.7", "GL Compatibility")' project.godot
+          grep -q 'window/handheld/orientation=1' project.godot
+          grep -q 'renderer/rendering_method="gl_compatibility"' project.godot
+          if grep -q 'config/features=.*C#' project.godot; then
+            echo "::error::project.godot still advertises a C# feature set."
+            exit 1
+          fi
+          declare -A map=(
+            [godot_version]=GODOT_VERSION
+            [godot_channel]=GODOT_CHANNEL
+            [godot_edition]=GODOT_EDITION
+            [godot_version_string]=GODOT_VERSION_STRING
+            [godot_linux_zip]=GODOT_LINUX_ZIP
+            [godot_linux_zip_sha512]=GODOT_LINUX_ZIP_SHA512
+            [godot_export_templates]=GODOT_EXPORT_TEMPLATES
+            [godot_export_templates_sha512]=GODOT_EXPORT_TEMPLATES_SHA512
+            [android_template_dir]=ANDROID_TEMPLATE_DIR
+            [renderer]=RENDERER
+            [orientation]=ORIENTATION
+            [reference_viewport]=REFERENCE_VIEWPORT
+            [abi]=ABI
+            [min_sdk]=MIN_SDK
+            [target_sdk]=TARGET_SDK
+            [build_tools]=BUILD_TOOLS
+            [compile_sdk]=COMPILE_SDK
+          )
+          while IFS='=' read -r key value; do
+            [[ -z "$key" || "$key" == \#* ]] && continue
+            name="${map[$key]:-}"
+            [[ -n "$name" ]] || continue
+            printf '%s=%s\n' "$name" "$value" >> "$GITHUB_ENV"
+          done < ENGINE_VERSION.lock
+          cat ENGINE_VERSION.lock | tee logs/engine-lock.txt
+          java -version 2>&1 | tee logs/toolchain.txt
+          echo "godot edition: standard (non-.NET)" | tee -a logs/toolchain.txt
+
+      - name: Install pinned Godot Standard editor
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl -sSLo SHA512-SUMS.txt \
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/SHA512-SUMS.txt"
+          curl -sSLo "${GODOT_LINUX_ZIP}" \
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/${GODOT_LINUX_ZIP}"
+          echo "${GODOT_LINUX_ZIP_SHA512}  ${GODOT_LINUX_ZIP}" | sha512sum -c -
+          sha512sum -c <(grep "  ${GODOT_LINUX_ZIP}$" SHA512-SUMS.txt)
+          unzip -q "${GODOT_LINUX_ZIP}" -d godot-standard
+          GODOT_BIN="$(find godot-standard -type f -name "Godot_v${GODOT_VERSION}_linux.x86_64" -print -quit)"
+          if [ -z "$GODOT_BIN" ]; then
+            echo "::error::Godot Standard editor binary not found in zip."
+            exit 1
+          fi
+          if [ -d "$(dirname "$GODOT_BIN")/GodotSharp" ]; then
+            echo "::error::This is a .NET distribution; G1 requires Godot Standard."
+            exit 1
+          fi
+          chmod +x "$GODOT_BIN"
+          INSTALL_DIR=/opt/godot-4.7.2-standard
+          sudo mkdir -p "$(dirname "$INSTALL_DIR")"
+          if [ -e "$INSTALL_DIR" ]; then
+            echo "::error::$INSTALL_DIR already exists; refusing to overwrite."
+            exit 1
+          fi
+          sudo mv "$(dirname "$GODOT_BIN")" "$INSTALL_DIR"
+          sudo ln -sfn "$INSTALL_DIR/$(basename "$GODOT_BIN")" /usr/local/bin/godot
+          test -x /usr/local/bin/godot
+          test ! -d "$INSTALL_DIR/GodotSharp"
+          GODOT_VERSION_OUTPUT="$(godot --version 2>&1)"
+          echo "godot --version: $GODOT_VERSION_OUTPUT" | tee -a "$GITHUB_WORKSPACE/logs/toolchain.txt"
+          case "$GODOT_VERSION_OUTPUT" in
+            "${GODOT_VERSION_STRING}"*) ;;
+            *) echo "::error::unexpected Godot version: $GODOT_VERSION_OUTPUT"; exit 1 ;;
+          esac
+          if [[ "$GODOT_VERSION_OUTPUT" == *mono* ]]; then
+            echo "::error::Mono runtime detected; G1 requires Standard."
+            exit 1
+          fi
+
+      - name: Install matching Standard export templates
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl -sSLo "${GODOT_EXPORT_TEMPLATES}" \
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/${GODOT_EXPORT_TEMPLATES}"
+          echo "${GODOT_EXPORT_TEMPLATES_SHA512}  ${GODOT_EXPORT_TEMPLATES}" | sha512sum -c -
+          sha512sum -c <(grep "  ${GODOT_EXPORT_TEMPLATES}$" SHA512-SUMS.txt)
+          unzip -q "${GODOT_EXPORT_TEMPLATES}" -d export-templates-unpack
+          test -s export-templates-unpack/templates/android_debug.apk || {
+            echo "::error::Standard export templates lack android_debug.apk."; exit 1; }
+          DEST="$HOME/.local/share/godot/export_templates/${ANDROID_TEMPLATE_DIR}"
+          if [ -e "$DEST" ]; then
+            echo "::error::$DEST already exists; refusing to overwrite."
+            exit 1
+          fi
+          mkdir -p "$(dirname "$DEST")"
+          mv export-templates-unpack/templates "$DEST"
+          test -s "$DEST/android_debug.apk"
+          test "$(cat "$DEST/version.txt")" = "${GODOT_VERSION_STRING%.official}" || {
+            echo "::error::Export template version mismatch: $(cat "$DEST/version.txt")"
+            exit 1
+          }
+          {
+            echo "Export template directory: $DEST"
+            echo "Template version: $(cat "$DEST/version.txt")"
+            ls "$DEST" | head -40
+          } | tee -a "$GITHUB_WORKSPACE/logs/toolchain.txt"
+
+      - name: Install Android SDK (pinned build-tools; platform-tools floating)
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /opt/android-sdk/cmdline-tools
+          sudo chown -R "$USER" /opt/android-sdk
+          cd "$RUNNER_TEMP"
+          curl -sSLo cmdline-tools.zip \
+            "https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip"
+          echo "4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583  cmdline-tools.zip" | sha256sum -c -
+          unzip -q cmdline-tools.zip -d /opt/android-sdk/cmdline-tools
+          if [ ! -d /opt/android-sdk/cmdline-tools/cmdline-tools ]; then
+            echo "::error::unexpected cmdline-tools zip layout"
+            exit 1
+          fi
+          mv /opt/android-sdk/cmdline-tools/cmdline-tools /opt/android-sdk/cmdline-tools/latest
+          export ANDROID_SDK_ROOT=/opt/android-sdk
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}" >> "$GITHUB_PATH"
+          SDKM=/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager
+          # 'yes' is killed by SIGPIPE (exit 141) when sdkmanager closes stdin.
+          set +o pipefail
+          rc=0
+          yes | "$SDKM" --sdk_root="$ANDROID_SDK_ROOT" --licenses > "$GITHUB_WORKSPACE/logs/sdk-licenses.log" 2>&1 || rc=$?
+          set -o pipefail
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::Android SDK license acceptance failed (sdkmanager exit '$rc')."
+            tail -n 20 "$GITHUB_WORKSPACE/logs/sdk-licenses.log"
+            exit 1
+          fi
+          "$SDKM" --sdk_root="$ANDROID_SDK_ROOT" \
+            "platform-tools" \
+            "platforms;android-${COMPILE_SDK}" \
+            "build-tools;${BUILD_TOOLS}" \
+            2>&1 | tail -n 20 | tee "$GITHUB_WORKSPACE/logs/android-sdk.txt"
+          test -x "$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}/apksigner"
+          test -x "$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}/aapt2"
+
+      - name: Restore the stable Android debug keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_DEBUG_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Missing debug signing secrets. Set ANDROID_DEBUG_KEYSTORE_B64, ANDROID_DEBUG_KEYSTORE_PASSWORD and ANDROID_DEBUG_KEY_ALIAS."
+            exit 1
+          fi
+          KEYSTORE_PATH="$RUNNER_TEMP/android-debug.keystore"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+          ACTUAL_CERT="$(keytool -list -v -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" 2>/dev/null | awk '/SHA256:/{print $2; exit}' | tr -d ':' | tr 'A-F' 'a-f')"
+          EXPECTED_CERT="$(tr -d '[:space:]' < tools/device-tests/expected-debug-cert.sha256 | tr 'A-F' 'a-f')"
+          if [ "$ACTUAL_CERT" != "$EXPECTED_CERT" ]; then
+            echo "::error::Debug keystore certificate does not match tools/device-tests/expected-debug-cert.sha256."
+            exit 1
+          fi
+          echo "ANDROID_DEBUG_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          echo "Debug keystore restored; certificate fingerprint matches the committed expected value." | tee logs/keystore.txt
+
+      - name: Import project headlessly
+        run: |
+          set -o pipefail
+          godot --headless --path . --import 2>&1 | tee logs/import.log
+          if grep -q 'SCRIPT ERROR' logs/import.log; then
+            echo "::error::Script error during import."
+            exit 1
+          fi
+
+      - name: Configure Godot editor settings (Android, Java, debug keystore)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_DEBUG_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${JAVA_HOME:-}" ]; then echo "::error::JAVA_HOME is not set"; exit 1; fi
+          python3 - <<'PY'
+          import os, re, sys
+          from pathlib import Path
+
+          key_values = {
+              "export/android/android_sdk_path": "/opt/android-sdk",
+              "export/android/java_sdk_path": os.environ["JAVA_HOME"].rstrip("/"),
+              "export/android/debug_keystore": os.environ["ANDROID_DEBUG_KEYSTORE_PATH"],
+              "export/android/debug_keystore_user": os.environ["KEY_ALIAS"],
+              "export/android/debug_keystore_pass": os.environ["KEYSTORE_PASSWORD"],
+          }
+
+          cfg_dir = Path(os.environ["HOME"]) / ".config" / "godot"
+          cfg_dir.mkdir(parents=True, exist_ok=True)
+          candidates = sorted(g for g in cfg_dir.glob("editor_settings-4*.tres"))
+          target = candidates[-1] if candidates else cfg_dir / "editor_settings-4.7.tres"
+
+          if target.exists():
+              text = target.read_text(encoding="utf-8")
+              if 'type="EditorSettings"' not in text:
+                  print("::error::%s exists but is not an EditorSettings resource" % target)
+                  sys.exit(1)
+              action = "patched editor-generated settings"
+          else:
+              text = '[gd_resource type="EditorSettings" format=3]\n\n[resource]\n'
+              action = "created fallback EditorSettings (editor had not generated one)"
+
+          def upsert(text, key, value):
+              pat = re.compile(r"^" + re.escape(key) + r"\s*=.*$", re.MULTILINE)
+              line = '%s = "%s"' % (key, value)
+              if pat.search(text):
+                  return pat.sub(lambda _: line, text, count=1)
+              if not re.search(r"^\[resource\]\s*$", text, re.MULTILINE):
+                  print("::error::settings file has no [resource] section")
+                  sys.exit(1)
+              return re.sub(r"^\[resource\]\s*$",
+                            "[resource]\n\n" + line,
+                            text, count=1, flags=re.MULTILINE)
+
+          for key, value in key_values.items():
+              text = upsert(text, key, value)
+
+          target.write_text(text, encoding="utf-8")
+          missing = [k for k in key_values if k not in target.read_text(encoding="utf-8")]
+          if missing:
+              print("::error::failed to set editor settings keys: %s" % missing)
+              sys.exit(1)
+          print("OK: %s -> %s" % (action, target))
+          print("OK: %s" % ", ".join(sorted(key_values)))
+          PY
+
+      - name: Headless GDScript smoke test
+        run: |
+          set -o pipefail
+          godot --headless --path . --quit-after 10 2>&1 | tee logs/smoke.log
+          grep -q "Godot Engine v${GODOT_VERSION_STRING}" logs/smoke.log || {
+            echo "::error::Pinned Godot startup line missing from headless smoke test."; exit 1; }
+          grep -q "LAYER_SORT_G1_READY" logs/smoke.log || {
+            echo "::error::GDScript ready marker missing from headless smoke test."; exit 1; }
+          if grep -q "SCRIPT ERROR" logs/smoke.log; then
+            echo "::error::Script error during headless smoke test."
+            exit 1
+          fi
+
+      - name: Export Android G1 debug APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_DEBUG_KEY_ALIAS }}
+          KEYSTORE_PASSWORD_FOR_KEY: ${{ secrets.ANDROID_DEBUG_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          trap 'git checkout -- export_presets.cfg' EXIT
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+
+          path = Path("export_presets.cfg")
+          text = path.read_text(encoding="utf-8")
+          values = {
+              "keystore/debug": os.environ["ANDROID_DEBUG_KEYSTORE_PATH"],
+              "keystore/debug_user": os.environ["KEY_ALIAS"],
+              "keystore/debug_password": os.environ["KEYSTORE_PASSWORD"],
+          }
+          for key, value in values.items():
+              line = '%s="%s"' % (key, value)
+              pattern = re.compile(r"^" + re.escape(key) + r"=.*$", re.MULTILINE)
+              if pattern.search(text):
+                  text = pattern.sub(line, text, count=1)
+              else:
+                  text += line + "\n"
+          path.write_text(text, encoding="utf-8")
+          print("Injected debug keystore path and credentials into export preset.")
+          PY
+          godot --headless --path . --export-debug "Android G1 Debug" build/layer-sort-g1-debug.apk 2>&1 | tee logs/export.log
+          test -s build/layer-sort-g1-debug.apk || {
+            echo "::error::APK was not produced."; exit 1; }
+          unzip -t build/layer-sort-g1-debug.apk > logs/apk-zip-test.log || {
+            echo "::error::APK is not a valid zip."; exit 1; }
+          unzip -l build/layer-sort-g1-debug.apk > logs/apk-contents.log
+          sha256sum build/layer-sort-g1-debug.apk > logs/apk-sha256.txt
+          aapt2 dump badging build/layer-sort-g1-debug.apk > logs/apk-badging.txt
+          aapt2 dump xmltree --file AndroidManifest.xml build/layer-sort-g1-debug.apk > logs/android-manifest.txt
+          apksigner verify --verbose --print-certs build/layer-sort-g1-debug.apk > logs/apk-signing.txt
+          tools/verify-apk.sh build/layer-sort-g1-debug.apk tools/device-tests/expected-debug-cert.sha256 | tee logs/apk-verification.txt
+
+      - name: Publish APK summary
+        run: |
+          {
+            echo "### Layer Sort G1 APK"
+            echo '```'
+            cat logs/apk-verification.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: layer-sort-g1-debug-apk
+          path: build/layer-sort-g1-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload build and verification logs (also on failed runs)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: layer-sort-g1-build-logs
+          path: |
+            logs/*.txt
+            logs/*.log
+          if-no-files-found: warn
+          retention-days: 14
