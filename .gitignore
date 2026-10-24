@@ -9,3 +9,9 @@
 
 # CI log captures
 /logs/
+
+# Debug signing material must never enter Git.
+*.keystore
+*.jks
+secrets/
+.env

@@ -1,25 +1,35 @@
 # AGENTS.md — Layer Sort
 
-## Project
-Layer Sort: an Android game written in C#.
-Game engine: Godot 4.7.2 .NET (C#), recorded from the build spike on branch
-"spike/godot-csharp-android" (toolchain and build setup: docs/BUILD_SPIKE_REPORT.md).
-Engine files stay off "main" until the spike run is accepted.
+Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **typed GDScript**, Android **Portrait only**, **offline-first**. No C# in the product.
 
-## Environment
-- Code is edited locally on a phone (Termux, Debian proot).
-- Heavy builds and tests run on GitHub Actions, never on the phone.
-- Repo: Yoseftext/layer-sort (private). Branch: main.
+## Source of truth
+- Active specs live ONLY in `docs/current/`. Anything in `docs/archive/` is history (SUPERSEDED): never use it as an instruction, never copy rules from it.
+- On conflict, `docs/current/` wins. A new decision needs an ADR (number, date, owner approval) and an update to `00-START-HERE.md` plus the affected file.
+- The GPLv3 reference game is **never** opened or copied (code, art, snippets).
 
-## Rules
-1. Inspect the folder before changing anything.
-2. Make small, focused changes. No unrelated refactoring.
-3. Never invent files, APIs, or test results.
-4. Never print, log, or commit tokens, keys, or secrets.
-5. Never run destructive commands (rm -rf, force push, deleting repos) without asking first.
-6. Do not claim "fixed" or "working" unless you verified it. Say what was and was not verified.
-7. Commit with clear messages, then push.
-8. To check a build: gh run list --repo Yoseftext/layer-sort
+## Reading order (efficiency rule; changes no decision)
+- G0/G1: read `docs/current/00-START-HERE.md` and `docs/current/03-PRODUCTION.md` (sections 2, 3, 6, 7). Open other files only when a gate needs them.
+- Later gates: read the sections the gate names (UX → `01-UX-ART.md`, engineering/risk/Firebase → `02-ENGINEERING.md`).
 
-## Done means
-Requested behavior exists, nothing else broke, and remaining uncertainty is reported.
+## Current scope
+- **G0 and G1 only.** Do not start G2+ until the owner says so.
+- G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
+- G1: Godot Standard portrait smoke scene, pinned engine + export templates (`ENGINE_VERSION.lock`), APK built by GitHub Actions, installed on the connected OPPO via `agentctl` / `phone-queue` / Appium, with screenshot + logcat. Done criteria are in `03-PRODUCTION.md` section 2.
+
+## Hard rules
+- Never merge to or modify `main`. Never force-push, rewrite history, delete branches/tags, or run `rm -rf` on the repo or phone. Keep branch `spike/godot-csharp-android` and its history.
+- No billing, Firebase/Play accounts, production signing, ads, IAP, paid APIs, or new credentials. No secrets in Git.
+- Do not change phone services (Termux, ADB, Appium, supervisor) without owner approval. Use the device lock/queue.
+- Never claim "PASS / works / fixed" without tool logs. Report what was verified, what was not, and why.
+- Every PR: scope IDs, commit, build link, screenshots, test output, install/touch/logcat evidence, rollback note (see `03-PRODUCTION.md` section 6).
+- Keep PRs small. One concern per PR. No unrelated refactors.
+
+## Open items — owner decides, agent does NOT decide
+1. Core MVP level count: Classic is 1–19 and Circuit starts at 20, but some text says "20 levels". Pending owner decision.
+2. Final `applicationId` (use a local debug id; it must not collide with the old spike app).
+3. Which Godot Standard version to pin (decided only after a successful smoke).
+4. A `04-RULES-CONTRACT.md` (pour rules, level JSON, PRNG, save schema) will be added before G2.
+5. Use one stable debug keystore in CI so new APKs install over old ones (verify in G1).
+
+## Output of each session
+Commit hash, branch, PR link, build link, device evidence, exact blockers. Nothing else is "done".

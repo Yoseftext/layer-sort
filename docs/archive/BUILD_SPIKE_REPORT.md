@@ -1,3 +1,8 @@
+> **SUPERSEDED — historical only.** This report documents the retired Godot
+> 4.7.2 .NET/C# build spike on `spike/godot-csharp-android`. It is not an
+> instruction for the product, which is Godot 4 Standard + typed GDScript.
+> Active decisions live in `docs/current/`.
+
 # Layer Sort — Godot C# Android Build Spike Report
 
 Status: **CI fixed step-by-step; only the ETC2/ASTC project-sso setting remains

@@ -1,0 +1,22 @@
+# Layer Sort — pinned G1 toolchain
+# Parsed by .github/workflows/android-build-g1.yml. Do not edit casually;
+# engine/template upgrades require an ADR and a new device smoke.
+
+godot_version=4.7.2-stable
+godot_channel=stable
+godot_edition=standard
+godot_version_string=4.7.2.stable.official
+godot_linux_zip=Godot_v4.7.2-stable_linux.x86_64.zip
+godot_linux_zip_sha512=9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65
+godot_export_templates=Godot_v4.7.2-stable_export_templates.tpz
+godot_export_templates_sha512=ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079
+android_template_dir=4.7.2.stable
+
+renderer=gl_compatibility
+orientation=portrait
+reference_viewport=720x1600
+abi=arm64-v8a
+min_sdk=24
+target_sdk=36
+build_tools=36.1.0
+compile_sdk=36
