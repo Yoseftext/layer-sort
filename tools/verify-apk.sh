@@ -43,14 +43,23 @@ grep -q "versionCode='$EXPECTED_VERSION_CODE'" <<< "$BADGING" ||
     fail "versionCode is not $EXPECTED_VERSION_CODE"
 grep -q "versionName='$EXPECTED_VERSION_NAME'" <<< "$BADGING" ||
     fail "versionName is not $EXPECTED_VERSION_NAME"
-grep -q "^launchable-activity: name='com.godot.game.GodotAppLauncher'" <<< "$BADGING" ||
-    fail "Godot launcher activity missing"
 grep -q "sdkVersion:'24'" <<< "$BADGING" || fail "minSdk is not 24"
 grep -q "targetSdkVersion:'36'" <<< "$BADGING" || fail "targetSdk is not 36"
 grep -q "native-code: 'arm64-v8a'" <<< "$BADGING" || fail "ABI is not arm64-v8a"
 
 MANIFEST="$("$AAPT2" dump xmltree --file AndroidManifest.xml "$APK")"
-if ! grep -Eq 'screenOrientation.*(0x1|"portrait"|portrait)' <<< "$MANIFEST"; then
+# `aapt2 dump badging` does not report activity-alias entries, and Godot's
+# launcher is exactly that: an exported alias named GodotAppLauncher that
+# targets GodotApp with the MAIN/LAUNCHER filter. Verify the manifest itself.
+grep -q 'name(0x01010003)="com.godot.game.GodotAppLauncher"' <<< "$MANIFEST" ||
+    fail "Godot launcher alias missing from AndroidManifest"
+grep -q 'name(0x01010003)="com.godot.game.GodotApp"' <<< "$MANIFEST" ||
+    fail "GodotApp target activity missing from AndroidManifest"
+grep -q 'targetActivity(0x01010202)="com.godot.game.GodotApp"' <<< "$MANIFEST" ||
+    fail "Launcher alias does not target GodotApp"
+grep -q 'name(0x01010003)="android.intent.category.LAUNCHER"' <<< "$MANIFEST" ||
+    fail "LAUNCHER intent category missing from AndroidManifest"
+if ! grep -Eq 'screenOrientation.*=1$' <<< "$MANIFEST"; then
     grep -n 'screenOrientation' <<< "$MANIFEST" >&2 || true
     fail "AndroidManifest is not locked to portrait"
 fi
@@ -69,9 +78,9 @@ EXPECTED_CERT="$(tr -d '[:space:]' < "$EXPECTED_CERT_FILE" | tr 'A-F' 'a-f')"
 APK_SHA256="$(sha256sum "$APK" | awk '{print $1}')"
 APK_SIZE="$(stat -c%s "$APK")"
 PACKAGE_LINE="$(grep "^package:" <<< "$BADGING" | head -1)"
-ACTIVITY_LINE="$(grep "^launchable-activity:" <<< "$BADGING" | head -1)"
 NATIVE_LINE="$(grep "^native-code:" <<< "$BADGING" | head -1)"
 ORIENTATION_LINE="$(grep 'screenOrientation' <<< "$MANIFEST" | head -1)"
+LAUNCHER_LINE="$(grep 'targetActivity(0x01010202)="com.godot.game.GodotApp"' <<< "$MANIFEST" | head -1)"
 
 cat <<EOF
 APK_VERIFY_PASS
@@ -82,7 +91,8 @@ package=$EXPECTED_PKG
 version_name=$EXPECTED_VERSION_NAME
 version_code=$EXPECTED_VERSION_CODE
 $PACKAGE_LINE
-$ACTIVITY_LINE
+launcher_alias=com.godot.game.GodotAppLauncher
+$LAUNCHER_LINE
 $NATIVE_LINE
 orientation=$ORIENTATION_LINE
 signing_cert_sha256=$ACTUAL_CERT
