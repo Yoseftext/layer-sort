@@ -8,6 +8,7 @@ READY_MARKER="${LAYER_SORT_READY_MARKER:-LAYER_SORT_G1_READY}"
 TICK_MARKER="${LAYER_SORT_TICK_MARKER:-LAYER_SORT_G1_TICK}"
 TAP_MARKER="${LAYER_SORT_TAP_MARKER:-LAYER_SORT_G1_TAP}"
 GODOT_VERSION="${LAYER_SORT_GODOT_VERSION:-4.7.2.stable.official}"
+LAUNCH_COMPONENT="${LAYER_SORT_LAUNCH_COMPONENT:-com.godot.game.GodotAppLauncher}"
 DURATION="${1:-30}"
 BASE="${LAYER_SORT_DEVICE_TEST_BASE:-/root/device-tests}"
 PY="${LAYER_SORT_TEST_PYTHON:-/root/device-tests/.venv/bin/python}"
@@ -50,6 +51,27 @@ RENDERER=""
 VERSION_NAME=""
 VERSION_CODE=""
 FATALS=""
+FG_START=""
+FG_END=""
+FG_BEFORE=""
+WAKE_END=""
+
+# Foreground package from WindowManager. Godot runs in one activity, and a
+# notification/launcher/app switch pauses it, which stops the heartbeat ticks.
+foreground_package() {
+    local line win comp
+    line="$(adb shell dumpsys window 2>/dev/null | grep -m1 'mCurrentFocus=' || true)"
+    [[ "$line" == *Window{* ]] || return 0
+    win="${line#*Window\{}"
+    win="${win%%\}*}"
+    comp="${win##* }"
+    printf '%s\n' "${comp%%/*}"
+}
+
+wakefulness() {
+    adb shell dumpsys power 2>/dev/null |
+        sed -n 's/.*mWakefulness=\([A-Za-z]*\).*/\1/p' | head -1
+}
 
 finish() {
     RC="$1"
@@ -63,6 +85,9 @@ finish() {
         adb logcat -d -v threadtime > "$OUT/logcat.txt" 2>/dev/null
     fi
     adb logcat -b crash -d -v threadtime > "$OUT/crash.txt" 2>/dev/null
+    if [[ ! -s "$OUT/final.png" ]]; then
+        adb exec-out screencap -p > "$OUT/final.png" 2>/dev/null || true
+    fi
 
     if [[ -f "$OUT/logcat.txt" ]]; then
         TICKS="$(grep -c "$TICK_MARKER" "$OUT/logcat.txt" || true)"
@@ -102,6 +127,10 @@ finish() {
       --arg renderer "$RENDERER" \
       --arg version_name "$VERSION_NAME" \
       --arg version_code "$VERSION_CODE" \
+      --arg foreground_start "$FG_START" \
+      --arg foreground_end "$FG_END" \
+      --arg foreground_before "$FG_BEFORE" \
+      --arg wakefulness_end "$WAKE_END" \
       --argjson requested_seconds "$DURATION" \
       --argjson elapsed_seconds "$ELAPSED" \
       --argjson ready_count "$READY_COUNT" \
@@ -130,6 +159,10 @@ finish() {
         renderer: $renderer,
         version_name: $version_name,
         version_code: $version_code,
+        foreground_start: $foreground_start,
+        foreground_end: $foreground_end,
+        foreground_before: $foreground_before,
+        wakefulness_end: $wakefulness_end,
         screenshot: {
           width: $screen_width,
           height: $screen_height,
@@ -180,11 +213,29 @@ phone-connect | tee "$OUT/connect.txt"
     adb shell wm density
 } > "$OUT/device.txt" 2>&1
 
+echo "===== WAKING DEVICE ====="
+adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+sleep 1
+adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+WAKE_START="$(wakefulness)"
+if [[ "$WAKE_START" != "Awake" ]]; then
+    REASON="Device is not awake (${WAKE_START:-unknown}); wake and unlock the phone"
+    exit 1
+fi
+FG_BEFORE="$(foreground_package)"
+echo "Foreground before launch: ${FG_BEFORE:-unknown}" > "$OUT/foreground-before.txt"
+
 echo "===== LAUNCHING GDScript APP ====="
 adb shell am force-stop "$PKG"
 adb logcat -c
-adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 \
-    > "$OUT/launch.txt" 2>&1
+# Explicit component: the package's launcher is an exported alias that targets
+# GodotApp, and monkey can be intercepted by the OEM app-switch manager.
+adb shell am start -W -a android.intent.action.MAIN \
+    -c android.intent.category.LAUNCHER \
+    -n "$PKG/$LAUNCH_COMPONENT" > "$OUT/launch.txt" 2>&1 || {
+        REASON="Explicit activity launch failed"
+        exit 1
+    }
 
 for _ in $(seq 1 20); do
     PID_START="$(adb shell pidof "$PKG" | tr -d '\r' || true)"
@@ -212,6 +263,13 @@ if ! grep -q "$READY_MARKER" <<< "$READY_LOG"; then
     exit 1
 fi
 
+FG_START="$(foreground_package)"
+printf '%s %s\n' "$(date -Is)" "$FG_START" > "$OUT/foreground.txt"
+if [[ "$FG_START" != "$PKG" ]]; then
+    REASON="Game is not foreground after READY (${FG_START:-unknown})"
+    exit 1
+fi
+
 adb exec-out screencap -p > "$OUT/start.png"
 
 echo "Game PID: $PID_START"
@@ -224,7 +282,30 @@ while (( $(date +%s) - START_EPOCH < DURATION )); do
         REASON="Game stopped or restarted during test (start=$PID_START end=$PID_END)"
         exit 1
     fi
+    FG_END="$(foreground_package)"
+    WAKE_END="$(wakefulness)"
+    printf '%s %s %s\n' "$(date -Is)" "${FG_END:-unknown}" "${WAKE_END:-unknown}" \
+        >> "$OUT/foreground.txt"
+    if [[ "$FG_END" != "$PKG" ]]; then
+        REASON="Foreground left the game during runtime (now ${FG_END:-unknown})"
+        exit 1
+    fi
+    if [[ "$WAKE_END" != "Awake" ]]; then
+        REASON="Device went to sleep during runtime (${WAKE_END:-unknown})"
+        exit 1
+    fi
 done
+
+FG_END="$(foreground_package)"
+WAKE_END="$(wakefulness)"
+if [[ "$FG_END" != "$PKG" ]]; then
+    REASON="Game is not foreground at end of runtime (${FG_END:-unknown})"
+    exit 1
+fi
+if [[ "$WAKE_END" != "Awake" ]]; then
+    REASON="Device is not awake at end of runtime (${WAKE_END:-unknown})"
+    exit 1
+fi
 
 adb exec-out screencap -p > "$OUT/final.png"
 adb logcat -d -v threadtime > "$OUT/logcat.txt"
@@ -314,6 +395,17 @@ fi
 PID_END="$(adb shell pidof "$PKG" | tr -d '\r' || true)"
 if [[ "$PID_END" != "$PID_START" ]]; then
     REASON="Game process changed at final check (start=$PID_START end=$PID_END)"
+    exit 1
+fi
+
+FG_END="$(foreground_package)"
+WAKE_END="$(wakefulness)"
+if [[ "$FG_END" != "$PKG" ]]; then
+    REASON="Foreground left the game before the final check (${FG_END:-unknown})"
+    exit 1
+fi
+if [[ "$WAKE_END" != "Awake" ]]; then
+    REASON="Device is not awake at the final check (${WAKE_END:-unknown})"
     exit 1
 fi
 
