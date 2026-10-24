@@ -43,11 +43,13 @@ grep -q "versionCode='$EXPECTED_VERSION_CODE'" <<< "$BADGING" ||
     fail "versionCode is not $EXPECTED_VERSION_CODE"
 grep -q "versionName='$EXPECTED_VERSION_NAME'" <<< "$BADGING" ||
     fail "versionName is not $EXPECTED_VERSION_NAME"
-grep -q "minSdkVersion:'24'" <<< "$BADGING" || fail "minSdk is not 24"
-grep -q "targetSdkVersion:'36'" <<< "$BADGING" || fail "targetSdk is not 36"
 grep -q "native-code: 'arm64-v8a'" <<< "$BADGING" || fail "ABI is not arm64-v8a"
 
 MANIFEST="$("$AAPT2" dump xmltree --file AndroidManifest.xml "$APK")"
+# Different aapt2 releases label the minimum SDK line differently in badging
+# ("sdkVersion" vs "minSdkVersion"), so read both SDK levels from the manifest.
+grep -Eq 'minSdkVersion\([^)]*\)=24$' <<< "$MANIFEST" || fail "minSdk is not 24"
+grep -Eq 'targetSdkVersion\([^)]*\)=36$' <<< "$MANIFEST" || fail "targetSdk is not 36"
 # `aapt2 dump badging` does not report activity-alias entries, and Godot's
 # launcher is exactly that: an exported alias named GodotAppLauncher that
 # targets GodotApp with the MAIN/LAUNCHER filter. Verify the manifest itself.
@@ -79,8 +81,8 @@ APK_SHA256="$(sha256sum "$APK" | awk '{print $1}')"
 APK_SIZE="$(stat -c%s "$APK")"
 PACKAGE_LINE="$(grep "^package:" <<< "$BADGING" | head -1)"
 NATIVE_LINE="$(grep "^native-code:" <<< "$BADGING" | head -1)"
-ORIENTATION_LINE="$(grep 'screenOrientation' <<< "$MANIFEST" | head -1)"
-LAUNCHER_LINE="$(grep 'targetActivity(0x01010202)="com.godot.game.GodotApp"' <<< "$MANIFEST" | head -1)"
+ORIENTATION_LINE="$(grep 'screenOrientation' <<< "$MANIFEST" | head -1 | sed 's/^[[:space:]]*//')"
+LAUNCHER_LINE="$(grep 'targetActivity(0x01010202)="com.godot.game.GodotApp"' <<< "$MANIFEST" | head -1 | sed 's/^[[:space:]]*//')"
 
 cat <<EOF
 APK_VERIFY_PASS
