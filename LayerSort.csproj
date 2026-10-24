@@ -1,9 +1,0 @@
-<Project Sdk="Godot.NET.Sdk/4.7.2">
-
-  <PropertyGroup>
-    <!-- Godot 4.7.2 Android export templates only support .NET 9 projects. -->
-    <TargetFramework>net9.0</TargetFramework>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
-  </PropertyGroup>
-
-</Project>
