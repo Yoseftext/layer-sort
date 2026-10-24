@@ -43,7 +43,7 @@ grep -q "versionCode='$EXPECTED_VERSION_CODE'" <<< "$BADGING" ||
     fail "versionCode is not $EXPECTED_VERSION_CODE"
 grep -q "versionName='$EXPECTED_VERSION_NAME'" <<< "$BADGING" ||
     fail "versionName is not $EXPECTED_VERSION_NAME"
-grep -q "sdkVersion:'24'" <<< "$BADGING" || fail "minSdk is not 24"
+grep -q "minSdkVersion:'24'" <<< "$BADGING" || fail "minSdk is not 24"
 grep -q "targetSdkVersion:'36'" <<< "$BADGING" || fail "targetSdk is not 36"
 grep -q "native-code: 'arm64-v8a'" <<< "$BADGING" || fail "ABI is not arm64-v8a"
 
