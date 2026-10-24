@@ -3,7 +3,7 @@
 > **الملف:** `docs/current/03-PRODUCTION.md` | **المصدر:** LS-MASTER-1.3 — مقتطع حرفيًا من الحزمة المعتمدة دون تغيير في القرارات.
 > **المحتوى:** بوابات التنفيذ G0–G9 ونقل المشروع القديم وخط إنتاج الأصول وقائمة البدء ورسالة الوكيل.
 > **بادئة المعرّفات عند الإشارة من ملف آخر:** `PLAN-` (مثال: بوابة G0 تُكتب `PLAN-G0`) لتجنب تكرار المعرّفات بين الملفات.
-> **ملفات `docs/current/`:** `00-START-HERE.md` (قرارات مركزية) · `01-UX-ART.md` (واجهة وفن وصوت) · `02-ENGINEERING.md` (هندسة وFirebase ومخاطر) · `03-PRODUCTION.md` (بوابات وخطة وتسليم)
+> **ملفات `docs/current/`:** `00-START-HERE.md` (قرارات مركزية) · `01-UX-ART.md` (واجهة وفن وصوت) · `02-ENGINEERING.md` (هندسة وFirebase ومخاطر) · `03-PRODUCTION.md` (بوابات وخطة وتسليم) · `04-AGENT-OPERATIONS.md` (وكلاء وQA) · `05-QA-TEST-CATALOG.md` (كتالوج اختبارات) · `06-SHIZUKU-TERMUX.md` (Shizuku اختياري)
 
 **المعرف:** LS-PLAN-1.3 | **النطاق:** Android Portrait / Godot 4 GDScript / Firebase Spark ONLY
 
@@ -23,6 +23,7 @@
 |---|---|---|
 | G0 — Git Safe Reset | فرع GDScript جديد وتوثيق ملفات C# التي ستزال، عدم لمس main | Git status واضح، baseline محفوظ، diff مراجَع، لا secrets |
 | G1 — Native Android Smoke | Godot Standard 4 + GDScript شاشة Portrait بسيط، Compatibility renderer مبدئيًا، APK عبر GitHub Actions | APK يثبت ويفتح على OPPO؛ Appium screenshot/tap؛ no crash/black screen؛ no C# runtime dependency |
+| G1.5 — Agent Orchestration & QA Tooling | وكلاء OpenCode للمشروع، سكربتات QA وكتالوج اختبارات، جرد اعتماديات، فحص Shizuku اختياري | roster وصلاحيات موثقة، workflowان عاملان على الأقل، اختبارات سالبة متعمدة، لقطة شاشة محللة، حالة Shizuku، بلا G2 وبلا تغيير main/خدمات الهاتف |
 | G2 — Core Rules | tube model، select/destination، pour batch، invalid action، win، atomic undo/restart، test scene | Unit/property cases تشمل full/empty/invalid/partial/undo، headless PASS، واجهة بسيطة قابلة للعب |
 | G3 — UX & Persistence | Splash/Home/Level Map/Game/Pause/Win/Settings/Error، Arabic/English، Save/Resume، 5 دروس، 20 مستوى | مخرجات UX Goldens معتمدة، Force Stop recovery، 20 مستويات حل قابل للتحقق، no stuck state |
 | G4 — Vertical Slice Art | Glass 2.5D وLiquid shaders، Pour/Win VFX، Audio cues، Color Assist، low/high tiers | صور ومقاطع مقارنة، OPPO Low tier p95 ضمن الهدف، لا ضرر للتنقل/اللمس |
@@ -93,6 +94,7 @@ Approved Art Brief / Visual Bible
 - [x] UX Art/Audio target specs وRisk Register وطرق الرصد موثقة.
 - [ ] أول محرك Godot Standard وExport Templates مثبتان برقم إصدار فعلي بعد smoke.
 - [ ] فرع GDScript جديد وCI Android يعملان.
+- [ ] G1.5 — وكلاء/QA/أدوات مقبولة من المالك قبل G2 (وفق `04-AGENT-OPERATIONS.md`).
 - [ ] UI/Glass/Sound assets موجودة فعلًا ومراجعة من المالك.
 - [ ] Firebase project Spark وخدماته موصولة ومختبرة لاحقًا، بعد الموافقة.
 - [ ] اختبارات محتوى/حلّال/حفظ/Android/RTL حقيقية ومصحوبة بأدلة.
