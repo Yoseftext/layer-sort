@@ -1,8 +1,8 @@
 # Layer Sort — G2 rules contract (DRAFT FOR OWNER APPROVAL)
 
-**Status:** PROPOSED, NOT APPROVED as a rules contract; planning only, no gameplay implementation authorized. Level progression and 20-level MVP allocation **are approved separately** by owner ADR-0002.
+**Status:** Detailed contract remains PROPOSED, NOT APPROVED as a permanent algorithm/save specification. The owner **separately authorized G2 implementation of the approved Classic core baseline** (ADR-0003), without approving every proposal here. Level progression and 20-level MVP allocation are approved by ADR-0002.
 
-**Owner decision required:** accept/amend this contract via a dated ADR, update `00-START-HERE.md` and affected active files, then separately authorize G2.
+**Owner decision required later:** accept/amend permanent serialization, PRNG, save and selection-edge details via a dated ADR and affected active-spec updates. These do not block the bounded Classic prototype authorized in ADR-0003.
 **Sources:** `00-START-HERE.md` B02/B03/B06/B09/B10, Q05 and §3; `02-ENGINEERING.md` S01–S04; `03-PRODUCTION.md` PLAN-G2/G3/G5/G6; `05-QA-TEST-CATALOG.md` RULE-01..15; `docs/adr/ADR-0002-level-progression.md`. Existing decisions are labelled **EXISTING**; exact serialization/algorithms/limits below are **PROPOSALS** until accepted. No GPLv3 reference is used.
 
 ## 1. Scope and terms
@@ -95,8 +95,8 @@ Each test starts from a named canonical fixture, records command, expected/rejec
 | RULE-14 | Interrupt during animation/save restores either fully committed snapshot or last-known-good snapshot; never a partial layer move; corrupted slot is rejected. |
 | RULE-15 | Invalid level content/version/unsupported mechanic fails validation; any later solver `TIMEOUT/UNKNOWN` cannot be treated as solved/publishable. |
 
-## 9. Decisions requiring the owner before lock or G2 implementation
+## 9. Decisions requiring the owner before locking the permanent contract
 
 1. **Progression RESOLVED by ADR-0002:** 20 total MVP levels: 1–5 interactive Classic tutorials, 6–10 easy Classic without mandatory guidance, 11–14 harder Classic, 15 first automatic Circuit, 16–20 Circuit development interspersed with ordinary Classic. G3 prepares 1–14 and G5 completes 15–20 before MVP acceptance. Circuit continues alternating with Classic through 29, Frozen first 30, Shift first 45, Connected first 60. Exact per-level boards, order of Circuit/Classic after 15, and later combination schedule remain content-design decisions; do not treat 1–19 as tutorials or Circuit as first appearing at 20.
 2. **Still requires owner approval:** canonical byte/hash encoding and integer/colour limits; selection and invalid-tap behaviour; undoable Restart/history persistence; optional timer tie-break (if introduced); PRNG algorithm/vectors and generator budgets; exact save slots/migration/checksum layout and RULE-01..15 oracles.
-3. **Approval path for the rest of the contract:** owner-approved dated ADR + update to `00-START-HERE.md` and affected `03-PRODUCTION.md`/`02-ENGINEERING.md`/QA catalog, then separate G2 authorization. Neither this draft nor ADR-0002 authorizes gameplay code or resolving remaining choices by implementation.
+3. **Approval path for the rest of the contract:** owner-approved dated ADR + update to `00-START-HERE.md` and affected `03-PRODUCTION.md`/`02-ENGINEERING.md`/QA catalog. ADR-0003 already authorizes G2 Classic baseline gameplay with documented reversible choices; neither this draft nor ADR-0002 approves implementing deferred systems or silently locking unresolved details.

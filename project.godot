@@ -8,8 +8,8 @@ config_version=5
 [application]
 
 config/name="Layer Sort"
-config/version="0.1.0-g1"
-run/main_scene="res://scenes/boot/boot.tscn"
+config/version="0.2.0-g2"
+run/main_scene="res://scenes/game/classic_game.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

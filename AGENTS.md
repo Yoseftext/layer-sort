@@ -13,10 +13,11 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - Later gates: read the sections the gate names (UX → `01-UX-ART.md`, engineering/risk/Firebase → `02-ENGINEERING.md`).
 
 ## Current scope
-- **G0, G1, and the owner-authorized G1.5 only.** Do not start G2+ gameplay until the owner says so.
+- **G0/G1/G1.5 and owner-authorized G2 Classic prototype only** (ADR-0003). No Circuit, G3+ or PR merges without separate owner approval.
 - G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
 - G1: Godot Standard portrait smoke scene, pinned engine + export templates (`ENGINE_VERSION.lock`), APK built by GitHub Actions, installed on the connected OPPO via `agentctl` / `phone-queue` / Appium, with screenshot + logcat. Done criteria are in `03-PRODUCTION.md` section 2.
 - G1.5: project-scoped OpenCode agents (`.opencode/agents/`), QA workflows under `tools/qa/`, dependency inventory, negative-test evidence, screenshot review, and optional Shizuku preparation. Policy: `docs/current/04`–`06`, `docs/adr/ADR-0001`. No gameplay, Firebase, signing, or paid services.
+- G2: Classic domain, minimal playable portrait scene, individually versioned fixture levels, unit tests and **separate** CI versus locked real-device evidence; G15-QA-001 remains OPEN.
 
 ## Hard rules
 - Never merge to or modify `main`. Never force-push, rewrite history, delete branches/tags, or run `rm -rf` on the repo or phone. Keep branch `spike/godot-csharp-android` and its history.
@@ -31,7 +32,7 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 1. **Resolved by owner ADR-0002:** 20-level Core MVP, Classic 1–14 (only 1–5 tutorials), automatic Circuit starts at 15; Circuit/ordinary Classic alternate through 16–29, Frozen starts 30, Shift 45, Connected 60. G3 covers Classic 1–14; G5 completes 15–20. No G2 implementation authorization follows from this decision.
 2. Final `applicationId` (use a local debug id; it must not collide with the old spike app).
 3. G1 smoke pinned Godot Standard 4.7.2 and a stable debug keystore in CI; do not change the pin or credentials without a reviewed decision.
-4. `docs/current/04-RULES-CONTRACT.md` is a **draft awaiting owner approval**; progression in ADR-0002 is approved, but pour/hash/PRNG/save/test details and G2 implementation are not.
+4. `docs/current/04-RULES-CONTRACT.md` is a **draft awaiting owner approval**; approved Classic baseline and G2 implementation are authorized in ADR-0003, but its proposed permanent hash/PRNG/save/UX details are not.
 5. G1.5 is **ACCEPTED WITH KNOWN LIMITATIONS**; G15-QA-001 remains OPEN. Shizuku native-Termux `rish id` yielded `uid=2000(shell)` by owner report; Debian/QA bridge remains optional, unverified, and not approved.
 
 ## Output of each session

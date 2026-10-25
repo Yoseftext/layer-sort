@@ -49,7 +49,7 @@ class QAOracles(unittest.TestCase):
                 raise AssertionError(f"unexpected external call: {command}")
 
             for field, value in (("sha256", "0" * 64), ("package", "com.wrong"), ("orientation", "LANDSCAPE")):
-                defaults = dict(apk=apk, sha256=None, package=qa.PKG, orientation="PORTRAIT",
+                defaults = dict(apk=apk, sha256=None, package=qa.PKG, orientation="PORTRAIT", artifact_name="layer-sort-g1-debug-apk",
                                 run_id=None, commit=None, installed=False, out=None)
                 defaults[field] = value
                 with patch.object(qa, "run", side_effect=fake_run), contextlib.redirect_stdout(io.StringIO()) as output:

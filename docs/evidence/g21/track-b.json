@@ -1,0 +1,65 @@
+{
+  "track": "B \u2014 Real Android Device QA",
+  "status": "PASS",
+  "checks": [
+    {
+      "test": "installed APK SHA-256",
+      "status": "PASS"
+    },
+    {
+      "test": "launch/foreground/portrait/READY",
+      "status": "PASS"
+    },
+    {
+      "test": "valid move",
+      "status": "PASS"
+    },
+    {
+      "test": "invalid colour",
+      "status": "PASS"
+    },
+    {
+      "test": "Undo",
+      "status": "PASS"
+    },
+    {
+      "test": "Restart",
+      "status": "PASS"
+    },
+    {
+      "test": "rapid 4-tap single-request input lock",
+      "status": "PASS"
+    },
+    {
+      "test": "solution/Win",
+      "status": "PASS"
+    }
+  ],
+  "workflow_run": "40226927770",
+  "tested_code_commit": "b9f7584d700d016036e2143a07dbee09ee7a4ee3",
+  "commit": "b9f7584",
+  "expected_apk_sha256": "e1a1e941ea2750eebc092106563dec1382bbc5c6697aaa131f300901151178a9",
+  "installed_apk_sha256": "e1a1e941ea2750eebc092106563dec1382bbc5c6697aaa131f300901151178a9",
+  "device_model": "CPH1937",
+  "android_api": 30,
+  "screen": "720x1600 portrait",
+  "issue": "G15-QA-001 remains OPEN; no external overlay appeared in this final run",
+  "rapid_input_method": "one W3C touch action request, four 20 ms contacts at tube centres 0,3,1,4; exactly one committed move and expected board required",
+  "visual_review": {
+    "rapid": "Moves: 1; 'Moved 1 layer(s)'; no stale 'Pour in progress'",
+    "win": "Moves: 10; 'Solved!'; four monochrome tubes and empty tubes",
+    "orientation": "portrait; tubes stable left-to-right; touch mapping matched indexes 0..4"
+  },
+  "screenshots": {
+    "initial": "initial.png",
+    "valid": "valid.png",
+    "invalid": "invalid.png",
+    "undo": "undo.png",
+    "restart": "restart.png",
+    "rapid": "rapid.png",
+    "win": "win.png"
+  },
+  "marker_evidence": "markers.log",
+  "fatal_line_count": 0,
+  "raw_device_evidence_private": "/tmp/opencode/g21-final-b9f7584/device"
+}
