@@ -7,13 +7,16 @@ private run directory; an external overlay is UNVERIFIED, never a device PASS.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import time
 
 from appium import webdriver
+from PIL import Image, ImageChops
 
 sys.path.insert(0, "/root/device-tests")
 import device_common as dc  # existing, owner-approved Appium options and ADB
@@ -47,14 +50,32 @@ def check_focus(driver: webdriver.Remote) -> None:
         raise Interrupted("external overlay or unknown focused window; raw title redacted")
 
 
-def marker(pid: str, expected: str, previous: int, seconds: float = 8) -> int:
+def marker(pid: str, expected: str, previous: int, out: Path, seconds: float = 8) -> int:
     end = time.monotonic() + seconds
     while time.monotonic() < end:
-        amount = log(pid).count(expected)
+        captured = log(pid)
+        amount = captured.count(expected)
         if amount > previous:
+            hits = [line for line in captured.splitlines() if expected in line]
+            with (out / "markers.log").open("a") as evidence:
+                evidence.write(hits[-1] + "\n")
             return amount
         time.sleep(0.4)
     raise RuntimeError(f"missing logcat marker {expected} after {seconds}s")
+
+
+def board_difference(out: Path, a: str, b: str) -> int:
+    with Image.open(out / (a + ".png")) as left, Image.open(out / (b + ".png")) as right:
+        if left.size != right.size:
+            raise RuntimeError("screenshots have different sizes")
+        total = 0
+        # Centre strips of five tube interiors; excludes selection borders/text.
+        for index in range(5):
+            x = int((left.width - 548) / 2 + 50 + 112 * index)
+            area = (x - 15, 610, x + 15, 980)
+            pixels = ImageChops.difference(left.convert("RGB").crop(area), right.convert("RGB").crop(area))
+            total += sum(1 for px in pixels.get_flattened_data() if px != (0, 0, 0))
+        return total
 
 
 def tap(driver: webdriver.Remote, index: int) -> None:
@@ -68,9 +89,10 @@ def tap(driver: webdriver.Remote, index: int) -> None:
     driver.execute_script("mobile: clickGesture", {"x": x, "y": y})
 
 
-def run(out: Path) -> int:
+def run(out: Path, expected_sha256: str, ci_run: str, commit: str) -> int:
     out.mkdir(parents=True, exist_ok=True)
     report: dict = {"track": "B — Real Android Device QA", "status": "UNVERIFIED", "checks": [],
+                    "workflow_run": ci_run, "commit": commit, "expected_apk_sha256": expected_sha256,
                     "issue": "G15-QA-001 remains OPEN; no external-overlay retry"}
     driver = None
     pid = ""
@@ -78,6 +100,22 @@ def run(out: Path) -> int:
         devices = dc.ensure_device()
         report["device_model"] = adb("shell", "getprop", "ro.product.model").strip()
         report["android_api"] = adb("shell", "getprop", "ro.build.version.sdk").strip()
+        paths = adb("shell", "pm", "path", PACKAGE)
+        base = next((line.removeprefix("package:") for line in paths.splitlines() if line.startswith("package:") and line.endswith("base.apk")), "")
+        if not base:
+            raise RuntimeError("installed base.apk path missing")
+        with tempfile.TemporaryDirectory(prefix="g2-installed-", dir=out) as folder:
+            apk = Path(folder) / "base.apk"
+            proc = subprocess.run(["adb", "pull", base, str(apk)], capture_output=True, text=True, timeout=90, check=False)
+            if proc.returncode or not apk.is_file():
+                raise RuntimeError("installed APK pull failed")
+            digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+        report["installed_apk_sha256"] = digest
+        if digest != expected_sha256:
+            raise RuntimeError("installed APK SHA-256 does not match CI artifact")
+        report["checks"].append({"test": "installed APK SHA-256", "status": "PASS"})
+        # Project package only: ensure READY belongs to this attempt's PID.
+        dc.force_stop(PACKAGE)
         driver = webdriver.Remote("http://127.0.0.1:4723", options=dc.appium_options(devices[0]))
         driver.update_settings({"waitForIdleTimeout": 0})
         driver.activate_app(PACKAGE)
@@ -91,36 +129,52 @@ def run(out: Path) -> int:
         check_focus(driver)
         driver.get_screenshot_as_file(str(out / "initial.png"))
         report["checks"].append({"test": "launch/foreground/portrait/READY", "status": "PASS"})
-        # Invalid colour: source 0 has top 0; target 1 has top 1.
+        # Initially tubes 0..2 are full; establish a valid pour first.
         tap(driver, 0)
-        tap(driver, 1)
-        marker(pid, "LAYER_SORT_G2_REJECT COLOUR_MISMATCH", 0)
-        report["checks"].append({"test": "invalid colour", "status": "PASS"})
-        # Invalid destination deliberately retains selection in this G2 scene.
         tap(driver, 3)
-        marker(pid, "LAYER_SORT_G2_MOVE 0 3 1", 0)
+        marker(pid, "LAYER_SORT_G2_MOVE 0 3 1", 0, out)
         driver.get_screenshot_as_file(str(out / "valid.png"))
+        if board_difference(out, "initial", "valid") == 0:
+            raise RuntimeError("valid move did not visibly change board")
         report["checks"].append({"test": "valid move", "status": "PASS"})
         time.sleep(0.4)
+        # Source 0 now tops with colour 2; target 3 tops with colour 0.
+        tap(driver, 0)
+        tap(driver, 3)
+        marker(pid, "LAYER_SORT_G2_REJECT COLOUR_MISMATCH", 0, out)
+        driver.get_screenshot_as_file(str(out / "invalid.png"))
+        if board_difference(out, "valid", "invalid") != 0:
+            raise RuntimeError("invalid move changed tube interiors")
+        report["checks"].append({"test": "invalid colour", "status": "PASS"})
         check_focus(driver)
         check_focus(driver)
         driver.execute_script("mobile: clickGesture", {"x": 263, "y": 1360})
-        marker(pid, "LAYER_SORT_G2_UNDO", 0)
+        marker(pid, "LAYER_SORT_G2_UNDO", 0, out)
+        driver.get_screenshot_as_file(str(out / "undo.png"))
+        if board_difference(out, "initial", "undo") != 0:
+            raise RuntimeError("Undo did not visually restore initial board")
         report["checks"].append({"test": "Undo", "status": "PASS"})
         check_focus(driver)
         driver.execute_script("mobile: clickGesture", {"x": 457, "y": 1360})
-        marker(pid, "LAYER_SORT_G2_RESTART", 0)
+        marker(pid, "LAYER_SORT_G2_RESTART", 0, out)
         driver.get_screenshot_as_file(str(out / "restart.png"))
+        if board_difference(out, "initial", "restart") != 0:
+            raise RuntimeError("Restart did not visually restore initial board")
         report["checks"].append({"test": "Restart", "status": "PASS"})
         for source, destination in SOLUTION:
             check_focus(driver)
             tap(driver, source)
             tap(driver, destination)
             time.sleep(0.38)
-        marker(pid, "LAYER_SORT_G2_WIN", 0, 12)
+        marker(pid, "LAYER_SORT_G2_WIN", 0, out, 12)
         check_focus(driver)
         driver.get_screenshot_as_file(str(out / "win.png"))
+        if board_difference(out, "initial", "win") == 0:
+            raise RuntimeError("Win board did not change")
         report["checks"].append({"test": "solution/Win", "status": "PASS"})
+        report["screenshots"] = {name: str(out / (name + ".png")) for name in
+                                 ("initial", "valid", "invalid", "undo", "restart", "win")}
+        report["marker_evidence"] = str(out / "markers.log")
         report["status"] = "PASS"
     except Interrupted as e:
         report.update(status="UNVERIFIED", reason="EXTERNAL_OVERLAY_OR_FOCUS_INTERRUPTION: " + str(e))
@@ -150,5 +204,8 @@ def run(out: Path) -> int:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--sha256", required=True, help="verified CI APK SHA-256")
+    parser.add_argument("--run-id", required=True, help="CI run that produced the verified APK")
+    parser.add_argument("--commit", required=True, help="CI head commit prefix")
     args = parser.parse_args()
-    raise SystemExit(run(args.out))
+    raise SystemExit(run(args.out, args.sha256, args.run_id, args.commit))

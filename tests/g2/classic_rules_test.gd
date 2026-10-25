@@ -107,6 +107,16 @@ func _run() -> void:
 			_check(move.ok, "fixture solution legal move " + str(step))
 			puzzle.finish_animation()
 		_check(WinRules.is_won(puzzle.snapshot()), "fixture solution reaches win")
+	var second: Dictionary = LevelLoader.read_file("res://content/levels/level_002.json")
+	_check(second.ok and second.state.level_id == "level_002", "second independently editable level loads")
+	if second.ok:
+		var second_solution: Array[Vector2i] = [Vector2i(0, 3), Vector2i(1, 0), Vector2i(2, 1), Vector2i(2, 3),
+			Vector2i(1, 2), Vector2i(0, 1), Vector2i(0, 3), Vector2i(1, 0), Vector2i(2, 1), Vector2i(2, 3)]
+		var second_puzzle: GameSession = GameSession.new(second.state)
+		for step: Vector2i in second_solution:
+			_check(second_puzzle.submit(step.x, step.y).ok, "second level legal move " + str(step))
+			second_puzzle.finish_animation()
+		_check(WinRules.is_won(second_puzzle.snapshot()), "second level fixture reaches win")
 	print("G2_RULE_TESTS status=%s checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])
 	quit(0 if failures == 0 else 1)
 
