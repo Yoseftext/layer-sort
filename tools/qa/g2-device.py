@@ -147,7 +147,6 @@ def run(out: Path, expected_sha256: str, ci_run: str, commit: str) -> int:
             raise RuntimeError("invalid move changed tube interiors")
         report["checks"].append({"test": "invalid colour", "status": "PASS"})
         check_focus(driver)
-        check_focus(driver)
         driver.execute_script("mobile: clickGesture", {"x": 263, "y": 1360})
         marker(pid, "LAYER_SORT_G2_UNDO", 0, out)
         driver.get_screenshot_as_file(str(out / "undo.png"))
@@ -161,6 +160,31 @@ def run(out: Path, expected_sha256: str, ci_run: str, commit: str) -> int:
         if board_difference(out, "initial", "restart") != 0:
             raise RuntimeError("Restart did not visually restore initial board")
         report["checks"].append({"test": "Restart", "status": "PASS"})
+        # One real rapid sequence in a single W3C request (<280ms total), not
+        # separately queued Appium commands whose latency masks lock defects.
+        check_focus(driver)
+        prior_moves = log(pid).count("LAYER_SORT_G2_MOVE")
+        actions = []
+        for index in (0, 3, 1, 4):
+            actions += [{"type": "pointerMove", "duration": 0,
+                         "x": 136 + 112 * index, "y": 800},
+                        {"type": "pointerDown", "button": 0},
+                        {"type": "pause", "duration": 20},
+                        {"type": "pointerUp", "button": 0}]
+        driver.execute("actions", {"actions": [{"type": "pointer", "id": "rapid-finger",
+                       "parameters": {"pointerType": "touch"}, "actions": actions}]})
+        time.sleep(0.4)
+        captured = log(pid)
+        if captured.count("LAYER_SORT_G2_MOVE") != prior_moves + 1:
+            raise RuntimeError("rapid taps did not commit exactly one move")
+        driver.get_screenshot_as_file(str(out / "rapid.png"))
+        if board_difference(out, "valid", "rapid") != 0:
+            raise RuntimeError("rapid taps produced unexpected board")
+        report["checks"].append({"test": "rapid 4-tap single-request input lock", "status": "PASS"})
+        check_focus(driver)
+        prior_restarts = log(pid).count("LAYER_SORT_G2_RESTART")
+        driver.execute_script("mobile: clickGesture", {"x": 457, "y": 1360})
+        marker(pid, "LAYER_SORT_G2_RESTART", prior_restarts, out)
         for source, destination in SOLUTION:
             check_focus(driver)
             tap(driver, source)
@@ -173,7 +197,7 @@ def run(out: Path, expected_sha256: str, ci_run: str, commit: str) -> int:
             raise RuntimeError("Win board did not change")
         report["checks"].append({"test": "solution/Win", "status": "PASS"})
         report["screenshots"] = {name: str(out / (name + ".png")) for name in
-                                 ("initial", "valid", "invalid", "undo", "restart", "win")}
+                                 ("initial", "valid", "invalid", "undo", "restart", "rapid", "win")}
         report["marker_evidence"] = str(out / "markers.log")
         report["status"] = "PASS"
     except Interrupted as e:

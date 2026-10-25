@@ -158,19 +158,20 @@ func _hardening_tests() -> void:
 	var external: GameState = session.snapshot()
 	external.tubes[0].layers.clear()
 	_check(session.snapshot().tubes[0].layers == [0, 1], "snapshot cannot mutate session")
-	var start: String = session.snapshot().identity()
+	var cycle: GameSession = GameSession.new(_board([[0], [1], [], []]))
+	var cycle_start: String = cycle.snapshot().identity()
 	var started: int = Time.get_ticks_usec()
 	for step: int in range(GameSession.MAX_HISTORY):
-		var source: int = 0 if step % 2 == 0 else 1
-		var destination: int = 1 if step % 2 == 0 else 0
-		_check(session.submit(source, destination).ok, "bounded cyclic move")
-		session.finish_animation()
-	var full: String = session.snapshot().identity()
-	_check(session.submit(0, 1).reason == "HISTORY_FULL", "history limit explicit rejection")
-	_check(session.snapshot().identity() == full and session.history_size() == GameSession.MAX_HISTORY, "history rejection no mutation")
+		var source: int = 0 if step % 2 == 0 else 2
+		var destination: int = 2 if step % 2 == 0 else 0
+		_check(cycle.submit(source, destination).ok, "bounded cyclic move")
+		cycle.finish_animation()
+	var full: String = cycle.snapshot().identity()
+	_check(cycle.submit(0, 2).reason == "HISTORY_FULL", "history limit explicit rejection")
+	_check(cycle.snapshot().identity() == full and cycle.history_size() == GameSession.MAX_HISTORY, "history rejection no mutation")
 	for _step: int in range(GameSession.MAX_HISTORY):
-		_check(session.undo(), "bounded history Undo")
-	_check(session.snapshot().identity() == start, "full history restores initial")
+		_check(cycle.undo(), "bounded history Undo")
+	_check(cycle.snapshot().identity() == cycle_start, "full history restores initial")
 	for _step: int in range(3):
 		_check(not session.undo(), "repeated empty Undo safe")
 	print("G21_BOUNDED_HISTORY elapsed_us=%d snapshots=%d" % [Time.get_ticks_usec() - started, GameSession.MAX_HISTORY])
