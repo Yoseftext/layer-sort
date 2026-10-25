@@ -8,8 +8,9 @@ config_version=5
 [application]
 
 config/name="Layer Sort"
-config/version="0.2.0-g2"
-run/main_scene="res://scenes/game/classic_game.tscn"
+config/version="0.3.0-g3a"
+run/main_scene="res://scenes/navigation/root.tscn"
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -28,3 +29,7 @@ window/stretch/aspect="expand"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
+
+[internationalization]
+
+locale/fallback="en"

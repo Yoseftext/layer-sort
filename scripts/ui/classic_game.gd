@@ -1,10 +1,15 @@
+class_name ClassicGame
 extends Control
+
+signal home_requested
 
 ## G2 test scene only; future G3 navigation may instantiate this scene.
 const LEVEL_PATH: String = "res://content/levels/level_001.json"
 const MOVE_MARKER: String = "LAYER_SORT_G2_MOVE"
 const READY_MARKER: String = "LAYER_SORT_G2_READY"
 
+var level_path: String = LEVEL_PATH
+var language: String = "en"
 var _session: GameSession
 var _selected_source: int = -1
 var _animation_token: int = 0
@@ -17,10 +22,11 @@ var _conflicting_touch: bool = false
 
 
 func _ready() -> void:
-	var loaded: Dictionary = LevelLoader.read_file(LEVEL_PATH)
+	layout_direction = Control.LAYOUT_DIRECTION_RTL if language == "ar" else Control.LAYOUT_DIRECTION_LTR
+	var loaded: Dictionary = LevelLoader.read_file(level_path)
 	if not loaded.ok:
 		push_error("G2_LEVEL_ERROR " + String(loaded.error))
-		var error_label: Label = _make_label("Cannot load test level: " + String(loaded.error), 28)
+		var error_label: Label = _make_label(UiText.get_text("content_error", language), 28)
 		error_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		add_child(error_label)
 		return
@@ -43,14 +49,19 @@ func _build_ui() -> void:
 	margins.add_child(layout)
 	var title: Label = _make_label("LAYER SORT  •  CLASSIC", 38)
 	layout.add_child(title)
-	_moves = _make_label("Moves: 0", 29)
+	var home: Button = _make_button(UiText.get_text("home", language))
+	home.name = "HomeButton"
+	layout.add_child(home)
+	home.pressed.connect(func() -> void: home_requested.emit())
+	_moves = _make_label(UiText.get_text("moves", language) % 0, 29)
 	layout.add_child(_moves)
-	_status = _make_label("Choose a source tube", 26)
+	_status = _make_label(UiText.get_text("choose", language), 26)
 	layout.add_child(_status)
 	var center: CenterContainer = CenterContainer.new()
 	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	layout.add_child(center)
 	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "TubeRow"
 	row.add_theme_constant_override("separation", 12)
 	# Tube/colour ordering is logical, not mirrored by Android's RTL locale.
 	row.layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -64,16 +75,15 @@ func _build_ui() -> void:
 		_views.append(tube)
 	var buttons: HBoxContainer = HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 24)
-	buttons.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	layout.add_child(buttons)
-	var undo: Button = _make_button("Undo")
+	var undo: Button = _make_button(UiText.get_text("undo", language))
 	buttons.add_child(undo)
 	undo.pressed.connect(_on_undo)
-	var restart: Button = _make_button("Restart")
+	var restart: Button = _make_button(UiText.get_text("restart", language))
 	buttons.add_child(restart)
 	restart.pressed.connect(_on_restart)
-	layout.add_child(_make_label("Tap a tube, then a destination. Test level 001", 22))
+	layout.add_child(_make_label(UiText.get_text("game_help", language), 22))
 
 
 func _make_label(value: String, font_size: int) -> Label:
@@ -88,6 +98,7 @@ func _make_label(value: String, font_size: int) -> Label:
 func _make_button(value: String) -> Button:
 	var button: Button = Button.new()
 	button.text = value
+	button.accessibility_name = value
 	button.custom_minimum_size = Vector2(170, 92)
 	button.add_theme_font_size_override("font_size", 30)
 	return button
@@ -95,7 +106,7 @@ func _make_button(value: String) -> Button:
 
 func _refresh() -> void:
 	var state: GameState = _session.snapshot()
-	_moves.text = "Moves: %d" % state.move_count
+	_moves.text = UiText.get_text("moves", language) % state.move_count
 	for index: int in range(_views.size()):
 		_views[index].show_tube(state.tubes[index], state.capacity, index == _selected_source)
 
@@ -109,30 +120,30 @@ func _on_tube_pressed(index: int) -> void:
 		return
 	var state: GameState = _session.snapshot()
 	if WinRules.is_won(state):
-		_status.text = "Puzzle complete! Undo or Restart."
+		_status.text = UiText.get_text("already_won", language)
 		return
 	if _selected_source < 0:
 		if state.tubes[index].layers.is_empty():
-			_status.text = "That tube is empty"
+			_status.text = UiText.get_text("empty", language)
 			print("LAYER_SORT_G2_REJECT EMPTY_SOURCE")
 			return
 		_selected_source = index
-		_status.text = "Source %d selected — choose a destination" % (index + 1)
+		_status.text = UiText.get_text("choose_destination", language) % (index + 1)
 		_refresh()
 		return
 	if _selected_source == index:
 		_selected_source = -1
-		_status.text = "Selection cleared"
+		_status.text = UiText.get_text("cleared", language)
 		_refresh()
 		return
 	var source: int = _selected_source
 	var result: Dictionary = _session.submit(source, index)
 	if not result.ok:
-		_status.text = "Cannot pour: " + String(result.reason).replace("_", " ").to_lower()
+		_status.text = UiText.get_text("cannot_pour", language) % String(result.reason).replace("_", " ").to_lower()
 		print("LAYER_SORT_G2_REJECT %s" % result.reason)
 		return
 	_selected_source = -1
-	_status.text = "Solved!" if result.won else "Moved %d layer(s)" % result.moved
+	_status.text = UiText.get_text("won", language) if result.won else UiText.get_text("moved", language) % result.moved
 	_refresh()
 	print("%s %d %d %d" % [MOVE_MARKER, source, index, result.moved])
 	if result.won:
@@ -152,7 +163,7 @@ func _on_undo() -> void:
 		return
 	_animation_token += 1
 	_selected_source = -1
-	_status.text = "Undo" if _session.undo() else "Nothing to undo"
+	_status.text = UiText.get_text("undone", language) if _session.undo() else UiText.get_text("nothing_to_undo", language)
 	_refresh()
 	print("LAYER_SORT_G2_UNDO %s" % _session.snapshot().identity())
 
@@ -163,7 +174,7 @@ func _on_restart() -> void:
 	_animation_token += 1
 	_selected_source = -1
 	_session.restart()
-	_status.text = "Restarted — choose a source tube"
+	_status.text = UiText.get_text("restarted", language)
 	_refresh()
 	print("LAYER_SORT_G2_RESTART %s" % _session.snapshot().identity())
 
@@ -179,7 +190,7 @@ func _input(event: InputEvent) -> void:
 			_conflicting_touch = true
 			_selected_source = -1
 			if _session != null:
-				_status.text = "Use one finger at a time"
+				_status.text = UiText.get_text("one_finger", language)
 				_refresh()
 		if _conflicting_touch:
 			get_viewport().set_input_as_handled()
@@ -196,7 +207,7 @@ func _notification(what: int) -> void:
 		_animation_token += 1
 		if _session != null:
 			_session.finish_animation()
-			_status.text = "Paused — selection cleared"
+			_status.text = UiText.get_text("paused", language)
 			_refresh()
 	elif what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_APPLICATION_RESUMED:
 		_suspended = false
