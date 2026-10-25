@@ -46,9 +46,6 @@ permissions:
   - action: shell
     resource: "agentctl runtime *"
     effect: allow
-  - action: shell
-    resource: "ls *"
-    effect: allow
 ---
 
 You are the Layer Sort **device-qa** specialist: the only role allowed to run

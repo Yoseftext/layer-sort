@@ -26,6 +26,8 @@
     { "action": "tool.use", "resource": "shell:gh pr merge*", "effect": "deny" },
     { "action": "tool.use", "resource": "shell:git reset --hard*", "effect": "deny" },
     { "action": "tool.use", "resource": "shell:git branch -D*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git branch -d*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git remote remove*", "effect": "deny" },
     { "action": "tool.use", "resource": "shell:git tag -d*", "effect": "deny" },
     { "action": "tool.use", "resource": "shell:rm -rf *", "effect": "deny" },
     { "action": "tool.use", "resource": "read:*/.ssh/*", "effect": "deny" },

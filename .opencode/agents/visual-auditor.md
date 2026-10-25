@@ -25,9 +25,6 @@ permissions:
   - action: shell
     resource: "python3 tools/qa/qa-visual.py *"
     effect: allow
-  - action: shell
-    resource: "ls *"
-    effect: allow
 ---
 
 You are the Layer Sort **visual-auditor**. You inspect actual on-device

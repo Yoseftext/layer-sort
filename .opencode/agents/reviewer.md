@@ -46,9 +46,6 @@ permissions:
   - action: shell
     resource: "gh run view *"
     effect: allow
-  - action: shell
-    resource: "ls *"
-    effect: allow
 ---
 
 You are the Layer Sort **reviewer**: an independent, read-only cross-check of a

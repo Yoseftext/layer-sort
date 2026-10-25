@@ -32,16 +32,13 @@ permissions:
     resource: "git rev-parse *"
     effect: allow
   - action: shell
-    resource: "git branch *"
+    resource: "git branch --show-current"
     effect: allow
   - action: shell
-    resource: "git remote *"
+    resource: "git remote -v"
     effect: allow
   - action: shell
     resource: "git ls-files *"
-    effect: allow
-  - action: shell
-    resource: "ls *"
     effect: allow
   - action: shell
     resource: "bash tools/qa/qa-env.sh *"
