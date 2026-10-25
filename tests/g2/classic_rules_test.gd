@@ -201,6 +201,7 @@ func _interaction_tests() -> void:
 	scene._on_tube_pressed(1)
 	scene._on_tube_pressed(4)
 	_check(scene._session.snapshot().move_count == 1, "rapid UI taps locked")
+	_check(scene._status.text != "Pour in progress", "rapid rejection retains committed feedback")
 	scene._on_restart()
 	await create_timer(0.35).timeout
 	_check(scene._session.snapshot().identity() == before and scene._selected_source == -1, "Restart cancels old timer/selection")

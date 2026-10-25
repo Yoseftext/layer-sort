@@ -163,7 +163,6 @@ def run(out: Path, expected_sha256: str, ci_run: str, commit: str) -> int:
         # One real rapid sequence in a single W3C request (<280ms total), not
         # separately queued Appium commands whose latency masks lock defects.
         check_focus(driver)
-        prior_moves = log(pid).count("LAYER_SORT_G2_MOVE")
         actions = []
         for index in (0, 3, 1, 4):
             actions += [{"type": "pointerMove", "duration": 0,
@@ -175,8 +174,13 @@ def run(out: Path, expected_sha256: str, ci_run: str, commit: str) -> int:
                        "parameters": {"pointerType": "touch"}, "actions": actions}]})
         time.sleep(0.4)
         captured = log(pid)
-        if captured.count("LAYER_SORT_G2_MOVE") != prior_moves + 1:
+        if "LAYER_SORT_G2_RESTART" not in captured:
+            raise RuntimeError("rapid test Restart anchor rotated out of logcat; outcome unverified")
+        since_restart = captured.rsplit("LAYER_SORT_G2_RESTART", 1)[1]
+        if since_restart.count("LAYER_SORT_G2_MOVE") != 1:
             raise RuntimeError("rapid taps did not commit exactly one move")
+        with (out / "markers.log").open("a") as evidence:
+            evidence.write(next(line for line in captured.splitlines()[::-1] if "LAYER_SORT_G2_MOVE" in line) + "\n")
         driver.get_screenshot_as_file(str(out / "rapid.png"))
         if board_difference(out, "valid", "rapid") != 0:
             raise RuntimeError("rapid taps produced unexpected board")

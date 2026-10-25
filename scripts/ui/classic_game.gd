@@ -104,7 +104,8 @@ func _on_tube_pressed(index: int) -> void:
 	if _session == null or _suspended or _conflicting_touch:
 		return
 	if _session.animation_locked:
-		_status.text = "Pour in progress"
+		# Retain the committed result; a transient rejected tap must not leave
+		# a stale "in progress" message after the lock expires.
 		return
 	var state: GameState = _session.snapshot()
 	if WinRules.is_won(state):

@@ -16,6 +16,7 @@ That baseline evidence is not a G2.1 verdict.
 | MEDIUM | `tests/g2/classic_rules_test.gd:84–101` | Missing-field/type/fractional/overflow validation and interrupted/Win session lifecycle cases absent; add focused regressions and snapshot ownership checks. |
 | MEDIUM | `classic_game.gd:17–20` | Load error only logs and returns an empty screen. Show a visible error, do not emit READY. |
 | LOW | `tube_view.gd:15`, `classic_game.gd:54` | Two conflicting minimum widths (106 vs 100), plus fixture-specific device coordinates. Use one declared G2 width; don't build speculative layout infrastructure. |
+| LOW | `classic_game.gd:97` | Rapid rejected taps overwrote the committed result with "Pour in progress" and never cleared it after unlock (seen in G2.1 rapid screenshot). Retain committed-result feedback instead. |
 | LOW | `classic_game.gd:27–72`, `g2-device.py` | Fixed margins and coordinate/image strips only validate OPPO 720×1600. Other profiles and true dp/safe-area instrumentation remain later UX/device work. |
 | LOW | `game_state.gd`, `move_rules.gd`, `game_session.gd` | Defensive full copies on commands/read are small (fixture: 5 tubes/12 layers), not per frame. No caching/pooling justified; measure bounded history workload in CI instead. |
 
@@ -43,5 +44,34 @@ editable file per fixture, schema/content version 1, layers bottom→top, capaci
 
 ## QA results
 
-Pending separate Track A (code/CI/APK) and Track B (real OPPO) execution. No
-G2.1 PASS is claimed by this initial audit document.
+Track A and Track B are independent; results will be appended after execution.
+The first hardening CI [40214515717](https://github.com/Yoseftext/layer-sort/actions/runs/40214515717)
+failed because the new stress test attempted to pour colour 1 back onto colour
+0, so its alleged cycle was illegal. This was a **test-oracle error**, not a
+domain bug: the corrected fixture cycles a single layer between two empties
+while another partial tube keeps the board unsolved. The failure remains in CI.
+
+## Fixed / intentionally unchanged
+
+- Lifecycle/contacts cleanup in `classic_game.gd`, finite history and externally
+  read-only lock property in `game_session.gd`, canonical packaged path and
+  byte/numeric bounds in `level_loader.gd`, consistent 100px minimum tube width
+  in `tube_view.gd`; no domain transition rewrite. Loader failures now show text.
+- History accepts **512** committed snapshots; when full, a legal move is
+  rejected with `HISTORY_FULL` and no mutation. Undo/Restart remain available.
+  This G2 safety limit is reversible, not a permanent campaign/save decision.
+  No history truncation and no hidden loss of Undo states.
+- `classic_rules_test.gd` adds actual gap coverage: numeric/missing/structural
+  rejection, external snapshot ownership, bounded cyclic commit/Undo, Restart
+  during Win lock, focus cleanup, rapid callbacks, conflicting contact cleanup,
+  and stale timer cancellation. A timed stress log records the 512-snapshot
+  workload; we did not optimize or add caching/pooling based on tiny fixtures.
+- `g2-device.py` adds one four-tap rapid sequence in a single W3C action request
+  (four 20ms contacts), requiring exactly one move and the expected visual
+  board; not four slow independent Appium calls. Existing real touch/Undo/
+  Restart/ten-move Win sequence and APK hash check remain.
+- Static source coupling and defensive copies remain appropriate. No Circuit,
+  save migration, canonical permanent hash, asset dependency, G3 navigation,
+  global service or permissions changes. Fixed OPPO layout/English copy remain
+  prototype limitations. Full multi-touch hardware and lifecycle device stress
+  are not implied by headless lifecycle/contact tests.
