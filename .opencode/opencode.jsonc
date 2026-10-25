@@ -14,8 +14,11 @@
     "subagent_depth": 1
   },
 
-  // Hard denies: statements never prompt and cannot be lifted by a saved
-  // approval. They enforce the AGENTS.md hard rules technically.
+  // Defense-in-depth guards against common literal command spellings. These
+  // are NOT a complete parser for shell/Git syntax: flags, aliases, -C, and
+  // redirections can bypass a pattern. AGENTS.md rules and protected remote
+  // branch settings remain necessary; do not claim these rules alone enforce
+  // branch protection.
   "policies": [
     { "action": "tool.use", "resource": "shell:git push --force*", "effect": "deny" },
     { "action": "tool.use", "resource": "shell:git push -f*", "effect": "deny" },

@@ -33,6 +33,10 @@ jobs:
           config = json.loads('\n'.join(line for line in raw.splitlines() if not line.lstrip().startswith('//')))
           assert config['experimental']['subagent_depth'] == 1
           assert config['$schema'] == 'https://opencode.ai/config.json'
+          device_text = Path('.opencode/agents/device-qa.md').read_text()
+          assert 'resource: "agentctl touch *"' not in device_text
+          assert 'resource: "agentctl smoke *"' not in device_text
+          assert 'resource: "agentctl runtime *"' not in device_text
           for agent in agents:
               text = Path(f'.opencode/agents/{agent}.md').read_text()
               assert text.startswith('---\n') and '\n---\n' in text

@@ -146,3 +146,56 @@ under the existing queue; no system settings or services were changed.
 **Owner review required:** approve ADR-0001 and G1.5 PR for merge; decide
 whether to authorize a separate Appium focus-race fix and optional Shizuku
 bridge. G2 remains unauthorized.
+
+## Continuation: bounded acceptance checks (2026-10-25)
+
+**Agent runtime, one task each:** `repo-auditor` PASS in the earlier checkpoint
+(`ses_e8f4e5342ffeMqiGTwiF0TY1if`); `device-qa` PASS for an actual
+`qa-apk-provenance.sh --installed` check (CI APK and installed bytes matched;
+session `ses_e8e338da4ffe2pThYV0tNKlPO3`); `visual-auditor` PASS for actual
+image reading of `docs/evidence/g15/smoke.png` (session
+`ses_e8e36152fffeAbxNWtrrAinlUd`, independently rehashing was unavailable);
+`reviewer` **PASS for invocation, CHANGES_REQUIRED for PR acceptance** (session
+`ses_e8e3bcd92ffeJ1ABjPTau2pjUm`). The reviewer read code and committed
+evidence but reported shell/Git and GitHub API access denied, so independent
+live PR/CI and private device log review remain **UNVERIFIED for that role**.
+
+Reviewer findings: policies matched literal shell strings and were incorrectly
+described as comprehensive enforcement; direct `agentctl` permissions in
+`device-qa` bypassed wrapper provenance; `qa-smoke` command claimed runtime
+despite not running it. These were corrected by narrowing `device-qa`,
+fixing command text, and explicitly documenting pattern-based policy limits.
+**Residual risk:** shell syntax variants can bypass the project policy; remote
+branch protection and human review remain required. No claim that project
+policies can prevent every forbidden Git command. Parent session separately
+verified PR #1/#2 states, refs and CI (links in final report).
+
+**Shizuku verification: BLOCKED from this Debian proot context.** Owner reports
+Shizuku connected to Termux. Under `phone-queue` we tried a minimal clean-env
+`/system/bin/sh` invocation of the exported `rish -c id`, but it emitted no
+`id` result; a preceding `id` returned `uid=0` **from proot's fake root**, not
+the Android/Shizuku shell. `adb shell run-as com.termux id` returned
+`run-as: package not debuggable: com.termux` (no permission changes). Therefore
+the effective Shizuku UID and usability *from this QA process* are **UNVERIFIED**;
+this is **not** a root claim, and no bridge was installed. The owner can run in
+the actual native Termux prompt:
+
+```sh
+RISH_APPLICATION_ID=com.termux "$HOME/.local/share/layersort-rish/rish" -c 'id'
+```
+
+If that path does not exist, use the actual existing native rish location
+instead; do not copy/install anything just for this report. Send the exact
+output and exit status with personal identifiers redacted. Until then, ADB /
+Appium remain primary and there are **no Shizuku diagnostics in automated QA**.
+
+**G15-QA-001: partially mitigated, not closed.** The first failed `before.png`
+(private, browser content) differs from the verified game-title crop by
+**93.04%**; the bounded successful recheck's `before.png` differs by **0%**.
+`tools/qa/qa-focus.py` now fails closed on the first and passes the second.
+`qa-smoke.sh` records this guard after `agentctl touch` and will fail if a
+reported touch pass actually started on another screen; the original FAILED
+touch run and logs are preserved. This is evidence validation, not a fix for
+intermittent focus stealing inside existing Appium. No global service or
+existing `agentctl` script was edited. Race window between screenshot and tap,
+non-G1 themes/resolutions, and a fresh full-wrapper run remain **UNVERIFIED**.

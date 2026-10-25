@@ -37,15 +37,6 @@ permissions:
   - action: shell
     resource: "agentctl status"
     effect: allow
-  - action: shell
-    resource: "agentctl smoke *"
-    effect: allow
-  - action: shell
-    resource: "agentctl touch *"
-    effect: allow
-  - action: shell
-    resource: "agentctl runtime *"
-    effect: allow
 ---
 
 You are the Layer Sort **device-qa** specialist: the only role allowed to run

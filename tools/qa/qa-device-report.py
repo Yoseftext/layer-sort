@@ -11,15 +11,15 @@ p.add_argument("--out", type=Path, required=True, help="qa-smoke output director
 p.add_argument("--exit", type=int, required=True, dest="exit_code")
 a = p.parse_args()
 phases = {}
-for name in ("preflight", "install", "provenance", "smoke", "touch"):
-    log = a.out / (name + (".json" if name in ("preflight", "provenance") else ".log"))
+for name in ("preflight", "install", "provenance", "smoke", "touch", "focus"):
+    log = a.out / (name + (".json" if name in ("preflight", "provenance", "focus") else ".log"))
     if not log.exists():
         phases[name] = {"status": "UNVERIFIED", "evidence": str(log)}
         continue
     text = log.read_text(errors="replace")
     saved = re.search(r"Saved to: (.+)", text)
     target = Path(saved.group(1)) / "status.json" if saved else None
-    if name in ("preflight", "provenance"):
+    if name in ("preflight", "provenance", "focus"):
         try:
             status = json.loads(text)["status"]
         except (json.JSONDecodeError, KeyError):

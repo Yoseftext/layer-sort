@@ -2,7 +2,7 @@
 # Bounds device test via existing agentctl. No raw ADB action or service edits.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-usage() { echo 'Usage: qa-smoke.sh --apk FILE [--sha256 HASH] [--run-id CI_ID] [--out DIR] [--dry-run]'; }
+usage() { echo 'Usage: qa-smoke.sh --apk FILE --run-id CI_ID [--sha256 HASH] [--out DIR] [--dry-run]'; }
 APK='' SHA='' RUN='' OUT='' DRY=0
 while (( $# )); do
   case "$1" in
@@ -46,4 +46,9 @@ agentctl install "$APK" > "$OUT/install.log" 2>&1 || { echo 'FAIL: install (see 
 python3 "$ROOT/tools/qa/qa.py" provenance "${args[@]}" > "$OUT/provenance.json" || exit 1
 agentctl smoke g15 > "$OUT/smoke.log" 2>&1 || { echo 'FAIL: smoke (see smoke.log)' >&2; exit 1; }
 agentctl touch g15 > "$OUT/touch.log" 2>&1 || { echo 'FAIL: touch (see touch.log)' >&2; exit 1; }
+touch_run="$(sed -n 's/^Saved to: //p' "$OUT/touch.log" | tail -1)"
+[[ -n "$touch_run" ]] || { echo 'FAIL: touch run directory missing' >&2; exit 1; }
+"${LAYER_SORT_TEST_PYTHON:-/root/device-tests/.venv/bin/python}" "$ROOT/tools/qa/qa-focus.py" \
+  --before "$touch_run/before.png" --reference "$ROOT/docs/evidence/g15/smoke.png" \
+  > "$OUT/focus.json" || { echo 'FAIL: touch began outside verified G1 title (see focus.json)' >&2; exit 1; }
 echo "PASS: provenance, install, smoke, touch; evidence: $OUT"
