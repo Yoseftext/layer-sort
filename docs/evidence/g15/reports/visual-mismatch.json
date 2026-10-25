@@ -1,0 +1,31 @@
+{
+  "workflow": "qa-visual",
+  "gate": "G1.5",
+  "status": "FAIL",
+  "timestamp_utc": "2026-10-25T04:06:47.966537+00:00",
+  "checks": [
+    {
+      "id": "VIS-01",
+      "status": "PASS",
+      "detail": "size=720x1600"
+    },
+    {
+      "id": "VIS-02",
+      "status": "PASS",
+      "detail": "mean brightness=44.74; sampled colours=259"
+    },
+    {
+      "id": "VIS-09",
+      "status": "FAIL",
+      "detail": "changed pixels=85306; allowed=0; animated regions need reviewed masks"
+    }
+  ],
+  "screenshot": "docs/evidence/g1/01-smoke.png",
+  "screenshot_sha256": "774ccda8ebd2cb41d2e144b6df9854f89580d36ff25f2d2ea24944f4b0f5db39",
+  "width": 720,
+  "height": 1600,
+  "mean_brightness": 44.74,
+  "sampled_colors": 259,
+  "changed_pixels": 85306,
+  "qualitative_review": "UNVERIFIED: requires image-capable read of actual screenshot"
+}

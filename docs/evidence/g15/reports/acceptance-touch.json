@@ -1,0 +1,15 @@
+{
+  "workflow": "qa-touch",
+  "status": "FAIL",
+  "test": "G15-QA-001",
+  "run": "20261025-070542-30663-g15-acceptance-touch",
+  "device": "OPPO CPH1937 / Android 11",
+  "package": "com.yoseftext.layersort.dev",
+  "apk_sha256": "0b118493c17f4e86dad582bda1dbb967ae7d0f526ed4ead44c092da26421a41e",
+  "apk_provenance": "PASS: CI run 40102066642, local APK and installed base.apk byte-identical",
+  "appium_status": "PASS: game package foreground per driver, READY and TAP 1 markers, changed counter screenshot",
+  "focus_guard": "FAIL: initial title crop changed fraction 0.9983 (limit 0.0200)",
+  "visual_finding": "A personal incoming-call overlay obscured the top of the game in the before frame. Screenshot remains private.",
+  "evidence_private": "/root/device-tests/agent-runs/20261025-070542-30663-g15-acceptance-touch/status.json and logcat.txt; /tmp/opencode/g15-acceptance-touch/focus.json and provenance/report.json",
+  "conclusion": "Real game tap occurred and was logged; full end-to-end focus-safe touch test FAIL because an unrelated overlay was present. No retry performed."
+}

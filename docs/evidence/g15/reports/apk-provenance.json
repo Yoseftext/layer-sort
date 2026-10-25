@@ -1,0 +1,58 @@
+{
+  "workflow": "qa-apk-provenance",
+  "gate": "G1.5",
+  "status": "PASS",
+  "timestamp_utc": "2026-10-25T04:13:19.517879+00:00",
+  "checks": [
+    {
+      "id": "NEG-03",
+      "status": "PASS",
+      "detail": "expected hash=0b118493c17f4e86dad582bda1dbb967ae7d0f526ed4ead44c092da26421a41e; actual=0b118493c17f4e86dad582bda1dbb967ae7d0f526ed4ead44c092da26421a41e"
+    },
+    {
+      "id": "ENV-05",
+      "status": "PASS",
+      "detail": "valid APK=True; C# payload absent=True"
+    },
+    {
+      "id": "NEG-01",
+      "status": "PASS",
+      "detail": "expected package=com.yoseftext.layersort.dev; actual=com.yoseftext.layersort.dev"
+    },
+    {
+      "id": "SEC-01",
+      "status": "PASS",
+      "detail": "certificate SHA-256=de1faa3e10dbcc058f3f1b13c34fb1eb929140bbbe0a7499b348f75d8a1c095e"
+    },
+    {
+      "id": "NEG-02",
+      "status": "PASS",
+      "detail": "expected orientation=PORTRAIT; actual=PORTRAIT"
+    },
+    {
+      "id": "ENV-05",
+      "status": "PASS",
+      "detail": "launcher alias and arm64-v8a present"
+    },
+    {
+      "id": "DEV-06",
+      "status": "PASS",
+      "detail": "run=40102066642 conclusion=success commit=5905e7648fbae86bd98bf8db5ca385863b0c3f8c"
+    },
+    {
+      "id": "DEV-06",
+      "status": "PASS",
+      "detail": "CI artifact SHA-256=0b118493c17f4e86dad582bda1dbb967ae7d0f526ed4ead44c092da26421a41e; supplied APK SHA-256=0b118493c17f4e86dad582bda1dbb967ae7d0f526ed4ead44c092da26421a41e"
+    },
+    {
+      "id": "DEV-01",
+      "status": "PASS",
+      "detail": "installed APK SHA-256=0b118493c17f4e86dad582bda1dbb967ae7d0f526ed4ead44c092da26421a41e; expected=0b118493c17f4e86dad582bda1dbb967ae7d0f526ed4ead44c092da26421a41e"
+    }
+  ],
+  "APK_sha256": "0b118493c17f4e86dad582bda1dbb967ae7d0f526ed4ead44c092da26421a41e",
+  "APK_size": 28316466,
+  "expected_package": "com.yoseftext.layersort.dev",
+  "workflow_run": "40102066642",
+  "commit": null
+}

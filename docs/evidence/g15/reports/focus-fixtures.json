@@ -1,0 +1,23 @@
+{
+  "test": "G15-QA-001",
+  "source": "private agentctl touch run before.png files; browser-containing frame is not committed",
+  "reference": "docs/evidence/g15/smoke.png",
+  "crop": [100, 120, 620, 310],
+  "max_changed_fraction": 0.02,
+  "fixtures": [
+    {
+      "run": "20261025-041347-17631-g15-touch",
+      "expected": "FAIL",
+      "actual": "FAIL",
+      "changed_fraction": 0.9304,
+      "exit_code": 1
+    },
+    {
+      "run": "20261025-042421-21103-g15-recheck-touch",
+      "expected": "PASS",
+      "actual": "PASS",
+      "changed_fraction": 0.0,
+      "exit_code": 0
+    }
+  ]
+}
