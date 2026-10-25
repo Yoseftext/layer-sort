@@ -199,3 +199,47 @@ touch run and logs are preserved. This is evidence validation, not a fix for
 intermittent focus stealing inside existing Appium. No global service or
 existing `agentctl` script was edited. Race window between screenshot and tap,
 non-G1 themes/resolutions, and a fresh full-wrapper run remain **UNVERIFIED**.
+
+## Final acceptance review addendum (owner-provided Shizuku proof)
+
+**Shizuku native Termux: VERIFIED BY OWNER.** Owner executed `rish -c 'id'` in
+native Termux and provided `uid=2000(shell) gid=2000(shell)
+context=u:r:shell:s0`. Separate exit status was not captured, and this is
+owner-provided output rather than an agent-executed proof. It proves Android
+shell identity for that native-Termux command, **not root** and **not** working
+Debian-proot access or QA integration. The earlier `NEEDS_OWNER_AUTH` status
+above is superseded **for native Termux only**. No permanent bridge or added
+permission; ADB/Appium remain the primary QA path.
+
+**Reviewer CHANGES_REQUIRED disposition:**
+
+| Finding | Action and remaining limitation |
+|---|---|
+| Broad project shell policy claimed complete protection | `.opencode/opencode.jsonc` now explicitly says its patterns are defense-in-depth, not a shell/Git parser. The branch/merge prohibition remains an AGENTS.md rule, checked against actual refs and PRs; pattern variants remain possible. **Not technically enforceable in this configuration alone**; owner must not accept a claim of comprehensive policy blocking. |
+| Direct `agentctl smoke/touch/runtime *` permissions bypassed provenance | Removed all three from `.opencode/agents/device-qa.md`; the agent is directed through project QA wrappers. CI asserts their absence. Wrapper shell argument-pattern escape remains a residual risk requiring operator review. |
+| `qa-smoke` command advertised runtime | Corrected command description and PASS criteria; runtime has its own bounded wrapper. |
+| SEC-04 checked cached refs only | Report now labels it as local/cache parity, not live branch protection; final review separately checks PR #1/#2 and local refs with `gh`/`git`. |
+| CI statically checked strings only | Added direct-agent-command absence assertions to CI; it still does not prove full effective permission semantics or device behavior. Actual runtime checks of the four agents are described above. |
+| Shizuku license/version incomplete | No Shizuku package/bridge has been adopted as a new dependency; version/license inventory remains a prerequisite **if** later adopting a bridge. Native command proof does not authorize one. |
+| Reviewer could not independently execute Git/CI checks | Parent session performs read-only live checks and records links. This does not retroactively turn the reviewer's denied tool calls into successful ones. |
+
+**One fresh bounded Android touch test, no retry:** `qa-touch.sh` first matched
+the installed APK, supplied APK and CI artifact exactly (SHA above). Existing
+`agentctl touch` under the shared lock reported game package foreground,
+`LAYER_SORT_G1_READY`, `LAYER_SORT_G1_TAP 1`, and a visibly changed counter.
+But its initial screenshot had a private incoming-call overlay over the game;
+`qa-focus.py` rejected it (**99.83%** title-crop change versus 2% allowed).
+**Combined verdict: FAIL**, recorded in
+[`acceptance-touch.json`](evidence/g15/reports/acceptance-touch.json). Private
+image, raw logcat and private identifiers remain outside Git. The original
+Chrome/touch FAIL and bounded PASS recheck are also retained. **G15-QA-001
+remains open:** app-package foreground alone cannot detect system overlays,
+and this test does not prove that the race is fixed. No service restart or
+system-setting change was attempted.
+
+**Acceptance recommendation:** G1.5's agent roster, local QA oracles,
+negative tests, CI and Shizuku owner proof are reviewable, but owner acceptance
+should be **conditional**, not an unqualified PASS: focus-safe touch failed on
+a fresh run, and policy pattern matching is not complete branch protection.
+Owner may accept these as explicitly tracked G1.5 limitations or request a
+separate fix/verification; G2 still needs explicit authorization.
