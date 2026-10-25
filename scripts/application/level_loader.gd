@@ -44,8 +44,8 @@ static func from_data(value: Variant) -> Dictionary:
 		return {"ok": false, "error": "INVALID_TUBES"}
 	var state: GameState = GameState.new()
 	state.level_id = data.level_id
-	state.content_version = data.content_version
-	state.capacity = data.capacity
+	state.content_version = int(data.content_version)
+	state.capacity = int(data.capacity)
 	var empty_count: int = 0
 	var colour_counts: Array[int] = []
 	colour_counts.resize(data.palette.size())
@@ -57,10 +57,12 @@ static func from_data(value: Variant) -> Dictionary:
 		if raw_tube.is_empty():
 			empty_count += 1
 		for colour: Variant in raw_tube:
-			if typeof(colour) != TYPE_INT or colour < 0 or colour >= data.palette.size():
+			if typeof(colour) != TYPE_INT and typeof(colour) != TYPE_FLOAT:
 				return {"ok": false, "error": "INVALID_COLOUR"}
-			layers.append(colour)
-			colour_counts[colour] += 1
+			if colour < 0 or colour >= data.palette.size() or float(colour) != float(int(colour)):
+				return {"ok": false, "error": "INVALID_COLOUR"}
+			layers.append(int(colour))
+			colour_counts[int(colour)] += 1
 		state.tubes.append(TubeModel.new(layers))
 	if empty_count < 1 or empty_count > 2:
 		return {"ok": false, "error": "INVALID_EMPTY_COUNT"}
@@ -73,4 +75,4 @@ static func from_data(value: Variant) -> Dictionary:
 
 
 static func _integer_is(value: Variant, expected: int) -> bool:
-	return typeof(value) == TYPE_INT and value == expected
+	return (typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT) and value == expected
