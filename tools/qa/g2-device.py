@@ -41,7 +41,7 @@ def check_focus(driver: webdriver.Remote) -> None:
     # Appium package alone does not detect incoming-call overlays.
     if driver.current_package != PACKAGE or str(driver.orientation).upper() != "PORTRAIT":
         raise Interrupted("external focus or orientation interruption")
-    window = adb("shell", "dumpsys", "window", "windows")
+    window = adb("shell", "dumpsys", "window", "displays")
     focus = next((line.strip() for line in window.splitlines() if "mCurrentFocus=" in line), "")
     if not focus or PACKAGE not in focus:
         raise Interrupted("external overlay or unknown focused window; raw title redacted")

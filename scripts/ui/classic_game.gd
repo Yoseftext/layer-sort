@@ -46,6 +46,8 @@ func _build_ui() -> void:
 	layout.add_child(center)
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
+	# Tube/colour ordering is logical, not mirrored by Android's RTL locale.
+	row.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	center.add_child(row)
 	var state: GameState = _session.snapshot()
 	for index: int in range(state.tubes.size()):
@@ -56,6 +58,7 @@ func _build_ui() -> void:
 		_views.append(tube)
 	var buttons: HBoxContainer = HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 24)
+	buttons.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	layout.add_child(buttons)
 	var undo: Button = _make_button("Undo")
