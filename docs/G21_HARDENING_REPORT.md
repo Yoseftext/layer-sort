@@ -19,7 +19,8 @@ historical C# spike remain unmerged and unchanged.
 
 The earlier G2 evidence was re-read, not reused as G2.1 proof. Commits produced
 by this pass: `a5cc47e` (hardening), `bf8dc8e` (test/QA corrections), `6fccd14`
-(status fix and marker anchor), plus a documentation/evidence commit.
+(status fix and marker anchor), `b9f7584` (APK packaging boundary), plus a
+documentation/evidence commit. The final tested code head is `b9f7584`.
 
 ## Audit before edits
 
@@ -33,6 +34,7 @@ Severity is based on the baseline, not on the final fixed state.
 | MEDIUM | `scripts/application/level_loader.gd` path/read | Prefix-only path check allowed traversal-like paths; the whole file was read before the size check; non-finite colour values could reach numeric conversion. | Canonical packaged path, pre-read byte limit, finite/integer colour checks. |
 | MEDIUM | `scripts/ui/classic_game.gd` load failure | A bad level only logged an error and left an empty screen. | Visible load error; no `READY` marker; no session. |
 | MEDIUM | `tests/g2/classic_rules_test.gd` | Missing regression coverage for loader type/range/structure failures, snapshot ownership, bounded history, Restart during Win, focus cleanup, conflicting contacts and stale timers. | Add focused tests; keep the existing suite. |
+| MEDIUM | `export_presets.cfg`, export step in `.github/workflows/android-build-g2.yml` | Found during final provenance: `export_filter="all_resources"` packaged docs/evidence JSON, imported evidence textures, compiled test scripts and tooling under `assets/`. This bloated the APK and made docs-only commits change the APK hash. | Exclude `docs/`, `tests/`, `tools/`; add a CI guard that requires both level JSONs and forbids those folders; rebuild and re-test the APK. |
 | LOW | `scripts/presentation/tube_view.gd`, `classic_game.gd` layout | Two conflicting minimum tube widths (106 and 100). | One declared 100 px G2 minimum width. |
 | LOW | `scripts/ui/classic_game.gd` rapid rejection | A rejected tap during the animation lock replaced the committed result with “Pour in progress” and never cleared it after unlock. Observed in a G2.1 rapid screenshot. | Retain the committed-result status instead of writing a transient message. |
 | LOW | `scripts/ui/classic_game.gd`, `tools/qa/g2-device.py` | Fixed margins and image-strip coordinates only validate the owner's 720×1600 OPPO; no safe-area/dp abstraction. | Document as prototype-only; no speculative layout framework. |
@@ -56,6 +58,7 @@ unused plugin abstraction was found by source inspection.
 | `a5cc47e` | New loader, ownership, bounded-history, Win/Restart, focus, contact and timer regressions. | Closes actual coverage gaps rather than increasing test count for its own sake. |
 | `bf8dc8e` | Corrected the cyclic stress fixture; added one four-tap rapid sequence in a single W3C action request. | The first stress fixture was illegal (test-oracle error); the device test needed to exercise the input lock, not Appium command latency. |
 | `6fccd14` | Retained committed-result feedback after rapid rejected taps; anchored rapid evidence to the preceding Restart marker. | Removes a screenshot-confirmed stale status and makes logcat evidence robust to buffer rotation. |
+| `b9f7584` | `exclude_filter="docs/*, tests/*, tools/*"` and a CI packaging assertion that both level JSONs are present and those folders are absent. | Keeps internal evidence/test code out of the shipped APK and makes the APK independent of documentation commits. |
 
 The first G2.1 CI run `40214515717` **failed** because the new stress test tried
 to pour colour 1 onto colour 0; that was a test-oracle error, not a domain bug.
@@ -161,23 +164,27 @@ or add UI coordinates to the domain.
 
 ## Track A — Code and CI QA: PASS
 
-- **Final code head:** `6fccd144b5681b1d8e59fff5d11daae0661d647a`.
-- **CI:** [run 40216030520](https://github.com/Yoseftext/layer-sort/actions/runs/40216030520),
+- **Final code head:** `b9f7584d700d016036e2143a07dbee09ee7a4ee3`.
+- **CI:** [run 40226927770](https://github.com/Yoseftext/layer-sort/actions/runs/40226927770),
   conclusion `success`; PR check
-  [run 40216035428](https://github.com/Yoseftext/layer-sort/actions/runs/40216035428)
+  [run 40226931785](https://github.com/Yoseftext/layer-sort/actions/runs/40226931785)
   also `success` for the same commit.
 - **Headless suite:** `G2_RULE_TESTS status=PASS checks=1149 failures=0`.
   This includes 1,024 repeated assertions from the 512-commit/512-Undo stress
   cycle; it is not 1,149 distinct scenarios.
-- **Bounded history measurement:** `G21_BOUNDED_HISTORY elapsed_us=9435
+- **Bounded history measurement:** `G21_BOUNDED_HISTORY elapsed_us=9064
   snapshots=512` on the CI runner. This is not Android performance evidence.
 - **APK artifact:** SHA-256
-  `65b2872271403fc59ef26f7b11cfb5c3c718f31845f6beda13204b7b8d364800`,
-  size 28,485,467 bytes. `tools/verify-apk.sh` confirmed package
+  `e1a1e941ea2750eebc092106563dec1382bbc5c6697aaa131f300901151178a9`,
+  size 28,342,813 bytes. `tools/verify-apk.sh` confirmed package
   `com.yoseftext.layersort.dev`, version `0.2.0-g2` (code 2), portrait,
   certificate
   `de1faa3e10dbcc058f3f1b13c34fb1eb929140bbbe0a7499b348f75d8a1c095e`,
   `arm64-v8a`, and no C# payload.
+- **Packaging scope:** `APK packaging scope PASS: levels present;
+  docs/tests/tools absent.` Both `level_001.json` and `level_002.json` are in
+  `assets/content/levels/`; no `assets/docs/`, `assets/tests/` or
+  `assets/tools/` entries remain.
 - **Source hygiene:** no sensitive filenames, private-key blocks, GitHub token
   patterns or added C# references in the G2.1 diff. No secret or dependency was
   introduced. No global service or permission was changed.
@@ -188,14 +195,13 @@ is not a device verdict.
 ## Track B — Real Android Device QA: PASS
 
 - **Tested APK:** the Track A artifact, SHA-256
-  `65b2872271403fc59ef26f7b11cfb5c3c718f31845f6beda13204b7b8d364800`,
+  `e1a1e941ea2750eebc092106563dec1382bbc5c6697aaa131f300901151178a9`,
   installed through the existing `agentctl` phone lock. The installed
   `base.apk` hash matched the expected and CI hashes inside the same
   reservation.
 - **Device:** OPPO CPH1937, Android API 30, 720×1600 portrait. The app was
-  foreground, portrait and emitted `READY`; an external notification overlay
-  appeared later but did not interrupt focus or input. `G15-QA-001` remains
-  **OPEN**.
+  foreground, portrait and emitted `READY`; no external overlay appeared in
+  this final run. `G15-QA-001` remains **OPEN**.
 - **Checks passed:** APK identity; launch/foreground/portrait/READY; valid
   pour; colour-mismatch rejection without a board change; Undo; Restart;
   rapid four-tap single-request input lock; ten-move solution/Win.
@@ -207,17 +213,16 @@ is not a device verdict.
   and `Solved!` with four monochrome tubes and empty tubes. Tubes remained
   stable left-to-right under the device locale; touch indexes matched 0–4.
 - **Runtime:** zero fatal/script-error lines in the final PID-filtered logcat.
-  Markers record valid move, rejection, Undo, Restart, the rapid move, second
-  Restart, solution moves and Win.
+  Captured logcat records the valid move, rejection, Undo, Restart, the rapid
+  move, the second Restart, solution moves and Win; `markers.log` keeps the
+  stepwise contract markers.
 - **Evidence:** [Track B JSON](evidence/g21/track-b.json),
   [markers](evidence/g21/markers.log), and screenshots
   [initial](evidence/g21/initial.png), [valid](evidence/g21/valid.png),
   [invalid](evidence/g21/invalid.png), [Undo](evidence/g21/undo.png),
   [Restart](evidence/g21/restart.png), [rapid](evidence/g21/rapid.png),
-  [Win](evidence/g21/win.png). The external-notification strip was redacted in
-  three committed screenshots; gameplay/status/board pixels were not altered.
-  Raw PID-scoped logcat and original screenshots remain private at
-  `/tmp/opencode/g21-final-6fccd14/device/`.
+  [Win](evidence/g21/win.png). Raw PID-scoped logcat and original screenshots
+  remain private at `/tmp/opencode/g21-final-b9f7584/device/`.
 
 **Verdict: PASS for this APK, fixture and device run.** This does not certify
 other Android profiles, real-device lifecycle stress, full multi-touch hardware
@@ -227,17 +232,20 @@ coverage, accessibility, Arabic copy, or release art.
 
 | Item | Value |
 |---|---|
-| Final tested code commit | `6fccd144b5681b1d8e59fff5d11daae0661d647a` |
-| Final evidence commit | recorded in PR #3 after this report |
-| CI run / PR check | `40216030520` / `40216035428`, both success |
-| APK SHA-256 | `65b2872271403fc59ef26f7b11cfb5c3c718f31845f6beda13204b7b8d364800` |
+| Final tested code commit | `b9f7584d700d016036e2143a07dbee09ee7a4ee3` |
+| Final evidence commit | recorded in PR #3 after this report (docs-only) |
+| CI run / PR check | `40226927770` / `40226931785`, both success |
+| APK SHA-256 | `e1a1e941ea2750eebc092106563dec1382bbc5c6697aaa131f300901151178a9` |
+| APK size | 28,342,813 bytes |
 | Installed APK SHA-256 | identical to CI artifact |
 | Package / version | `com.yoseftext.layersort.dev` / `0.2.0-g2` (code 2) |
 | Device | OPPO CPH1937, API 30, 720×1600 portrait |
 | Track A artifact | `layer-sort-g2-debug.apk`, `arm64-v8a`, debug cert as above |
 
-The prior G2 APK (`437cd1f`, SHA-256 `1f6751e4…`) and the intermediate G2.1 APK
-(`bf8dc8e`, SHA-256 `e6d0f636…`) are **not** evidence for the final code.
+The prior G2 APK (`437cd1f`, SHA-256 `1f6751e4…`) and the intermediate G2.1 APKs
+(`bf8dc8e`, `e6d0f636…`; `6fccd14`, `65b287…`) are **not** evidence for the final
+code. The `6fccd14` APK was fully device-tested, but the later packaging fix
+changed the APK, so `b9f7584` was rebuilt and re-tested from scratch.
 
 ## Preserved failures and corrections
 
@@ -245,9 +253,10 @@ The prior G2 APK (`437cd1f`, SHA-256 `1f6751e4…`) and the intermediate G2.1 AP
 |---|---|
 | G2.1 CI `40214515717` (`a5cc47e`): `RULE_FAIL: bounded history Undo` | Test-oracle error: the cycle poured colour 1 onto colour 0. Corrected fixture uses a legal single-layer cycle; failure remains in CI history. |
 | G2.1 OPPO run 1 (`bf8dc8e`): rapid taps did not commit exactly one move | Logcat cumulative count rotated out. One rapid move was present; test was anchored to the preceding Restart marker. Not reported as a pass until rerun. |
-| G2.1 OPPO run 2 (`bf8dc8e`): all checks passed, but rapid screenshot showed “Pour in progress” | Screenshot review exposed stale status after rapid rejection. Fixed in `6fccd14`; final device run was repeated on the new APK. |
+| G2.1 OPPO run 2 (`bf8dc8e`): all checks passed, but rapid screenshot showed “Pour in progress” | Screenshot review exposed stale status after rapid rejection. Fixed in `6fccd14`; the device run was repeated on the new APK. |
+| Final provenance check (`92d5eb2`, docs-only): rebuild produced a different APK | `all_resources` packaged `docs/`, tests and tooling, so evidence commits changed the APK. Fixed in `b9f7584` with an exclude filter and CI packaging assertion; the APK was rebuilt and fully re-tested on OPPO. |
 | Earlier G2 failures (wrong focus query, RTL mirroring, full-destination oracle, stale READY) | Retained in G2 history; not erased or converted to passes. |
-| G15-QA-001 external overlay/focus interruption | Remains OPEN. The final run saw an overlay without interruption; one clean run does not close the issue. |
+| G15-QA-001 external overlay/focus interruption | Remains OPEN. The `6fccd14` run saw an overlay without interruption; the final `b9f7584` run was clean. One clean run does not close the issue. |
 
 ## Remaining limitations
 

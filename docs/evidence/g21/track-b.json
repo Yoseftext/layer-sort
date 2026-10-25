@@ -35,22 +35,21 @@
       "status": "PASS"
     }
   ],
-  "workflow_run": "40216030520",
-  "tested_code_commit": "6fccd144b5681b1d8e59fff5d11daae0661d647a",
-  "commit": "6fccd14",
-  "expected_apk_sha256": "65b2872271403fc59ef26f7b11cfb5c3c718f31845f6beda13204b7b8d364800",
-  "installed_apk_sha256": "65b2872271403fc59ef26f7b11cfb5c3c718f31845f6beda13204b7b8d364800",
+  "workflow_run": "40226927770",
+  "tested_code_commit": "b9f7584d700d016036e2143a07dbee09ee7a4ee3",
+  "commit": "b9f7584",
+  "expected_apk_sha256": "e1a1e941ea2750eebc092106563dec1382bbc5c6697aaa131f300901151178a9",
+  "installed_apk_sha256": "e1a1e941ea2750eebc092106563dec1382bbc5c6697aaa131f300901151178a9",
   "device_model": "CPH1937",
   "android_api": 30,
   "screen": "720x1600 portrait",
-  "issue": "G15-QA-001 remains OPEN; an external notification overlay obscured the title in three screenshots but did not interrupt focus or input",
+  "issue": "G15-QA-001 remains OPEN; no external overlay appeared in this final run",
   "rapid_input_method": "one W3C touch action request, four 20 ms contacts at tube centres 0,3,1,4; exactly one committed move and expected board required",
   "visual_review": {
     "rapid": "Moves: 1; 'Moved 1 layer(s)'; no stale 'Pour in progress'",
     "win": "Moves: 10; 'Solved!'; four monochrome tubes and empty tubes",
     "orientation": "portrait; tubes stable left-to-right; touch mapping matched indexes 0..4"
   },
-  "evidence_sanitization": "Top external-notification strip redacted in restart.png, rapid.png and win.png; gameplay/status/board pixels unchanged. Raw copies remain private.",
   "screenshots": {
     "initial": "initial.png",
     "valid": "valid.png",
@@ -62,5 +61,5 @@
   },
   "marker_evidence": "markers.log",
   "fatal_line_count": 0,
-  "raw_device_evidence_private": "/tmp/opencode/g21-final-6fccd14/device"
+  "raw_device_evidence_private": "/tmp/opencode/g21-final-b9f7584/device"
 }
