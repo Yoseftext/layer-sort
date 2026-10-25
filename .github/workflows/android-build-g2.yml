@@ -332,6 +332,16 @@ jobs:
           unzip -t build/layer-sort-g2-debug.apk > logs/apk-zip-test.log || {
             echo "::error::APK is not a valid zip."; exit 1; }
           unzip -l build/layer-sort-g2-debug.apk > logs/apk-contents.log
+          for required in content/levels/level_001.json content/levels/level_002.json; do
+            unzip -Z1 build/layer-sort-g2-debug.apk | grep -qx "assets/$required" || {
+              echo "::error::APK is missing gameplay resource $required"; exit 1; }
+          done
+          if unzip -Z1 build/layer-sort-g2-debug.apk | grep -Eq '^assets/(docs|tests|tools)/'; then
+            echo "::error::APK contains docs, tests or tooling that must not ship."
+            unzip -Z1 build/layer-sort-g2-debug.apk | grep -E '^assets/(docs|tests|tools)/' | head -20
+            exit 1
+          fi
+          echo 'APK packaging scope PASS: levels present; docs/tests/tools absent.' | tee logs/apk-packaging.log
           sha256sum build/layer-sort-g2-debug.apk > logs/apk-sha256.txt
           aapt2 dump badging build/layer-sort-g2-debug.apk > logs/apk-badging.txt
           aapt2 dump xmltree --file AndroidManifest.xml build/layer-sort-g2-debug.apk > logs/android-manifest.txt
