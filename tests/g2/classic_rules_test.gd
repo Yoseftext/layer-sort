@@ -43,7 +43,7 @@ func _run() -> void:
 	_check(state.identity() == original, "pour does not mutate input")
 	var match_move: Dictionary = MoveRules.pour(state, 0, 1)
 	_check(match_move.ok and match_move.moved == 2 and match_move.state.tubes[1].layers == [2, 0, 0, 0], "matching target")
-	_reject(state, 1, 0, "COLOUR_MISMATCH")
+	_reject(_board([[1], [2], []]), 0, 1, "COLOUR_MISMATCH")
 	_reject(_board([[], [0], []]), 0, 1, "EMPTY_SOURCE")
 	_reject(_board([[1], [1, 1, 1, 1], []]), 0, 1, "FULL_DESTINATION")
 	_reject(state, 0, 0, "SAME_TUBE")
