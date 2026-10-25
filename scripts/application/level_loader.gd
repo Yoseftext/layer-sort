@@ -3,11 +3,13 @@ extends RefCounted
 
 ## G2: strict, finite Classic fixture format. Later mechanics need a new parser.
 static func read_file(path: String) -> Dictionary:
-	if not path.begins_with("res://content/levels/level_") or not path.ends_with(".json"):
+	if path != path.simplify_path() or path.get_base_dir() != "res://content/levels" or not path.get_file().begins_with("level_") or not path.ends_with(".json"):
 		return {"ok": false, "error": "INVALID_PATH"}
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	if file == null:
 		return {"ok": false, "error": "FILE_NOT_FOUND"}
+	if file.get_length() > 16384:
+		return {"ok": false, "error": "LEVEL_TOO_LARGE"}
 	var text: String = file.get_as_text()
 	if text.length() > 16384:
 		return {"ok": false, "error": "LEVEL_TOO_LARGE"}
@@ -27,7 +29,7 @@ static func from_data(value: Variant) -> Dictionary:
 			return {"ok": false, "error": "MISSING_" + key.to_upper()}
 	if data.size() != required.size() or not _integer_is(data.schema_version, 1) or not _integer_is(data.content_version, 1):
 		return {"ok": false, "error": "UNSUPPORTED_VERSION_OR_FIELDS"}
-	if not data.level_id is String or not String(data.level_id).is_valid_identifier():
+	if not data.level_id is String or String(data.level_id).length() > 64 or not String(data.level_id).is_valid_identifier():
 		return {"ok": false, "error": "INVALID_ID"}
 	if not _integer_is(data.capacity, 4):
 		return {"ok": false, "error": "INVALID_CAPACITY"}
@@ -35,7 +37,7 @@ static func from_data(value: Variant) -> Dictionary:
 		return {"ok": false, "error": "INVALID_PALETTE"}
 	var names: Dictionary = {}
 	for name: Variant in data.palette:
-		if not name is String or String(name).is_empty() or names.has(name):
+		if not name is String or String(name).is_empty() or String(name).length() > 32 or names.has(name):
 			return {"ok": false, "error": "INVALID_PALETTE"}
 		names[name] = true
 	if not data.mechanics is Array or not data.mechanics.is_empty():
@@ -59,7 +61,7 @@ static func from_data(value: Variant) -> Dictionary:
 		for colour: Variant in raw_tube:
 			if typeof(colour) != TYPE_INT and typeof(colour) != TYPE_FLOAT:
 				return {"ok": false, "error": "INVALID_COLOUR"}
-			if colour < 0 or colour >= data.palette.size() or float(colour) != float(int(colour)):
+			if not is_finite(float(colour)) or colour < 0 or colour >= data.palette.size() or float(colour) != float(int(colour)):
 				return {"ok": false, "error": "INVALID_COLOUR"}
 			layers.append(int(colour))
 			colour_counts[int(colour)] += 1

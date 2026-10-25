@@ -11,12 +11,18 @@ var _animation_token: int = 0
 var _views: Array[TubeView] = []
 var _status: Label
 var _moves: Label
+var _contacts: Array[int] = []
+var _suspended: bool = false
+var _conflicting_touch: bool = false
 
 
 func _ready() -> void:
 	var loaded: Dictionary = LevelLoader.read_file(LEVEL_PATH)
 	if not loaded.ok:
 		push_error("G2_LEVEL_ERROR " + String(loaded.error))
+		var error_label: Label = _make_label("Cannot load test level: " + String(loaded.error), 28)
+		error_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(error_label)
 		return
 	_session = GameSession.new(loaded.state)
 	_build_ui()
@@ -95,6 +101,8 @@ func _refresh() -> void:
 
 
 func _on_tube_pressed(index: int) -> void:
+	if _session == null or _suspended or _conflicting_touch:
+		return
 	if _session.animation_locked:
 		_status.text = "Pour in progress"
 		return
@@ -139,6 +147,8 @@ func _unlock_after_delay(token: int) -> void:
 
 
 func _on_undo() -> void:
+	if _session == null or _suspended or _conflicting_touch:
+		return
 	_animation_token += 1
 	_selected_source = -1
 	_status.text = "Undo" if _session.undo() else "Nothing to undo"
@@ -147,9 +157,45 @@ func _on_undo() -> void:
 
 
 func _on_restart() -> void:
+	if _session == null or _suspended or _conflicting_touch:
+		return
 	_animation_token += 1
 	_selected_source = -1
 	_session.restart()
 	_status.text = "Restarted — choose a source tube"
 	_refresh()
 	print("LAYER_SORT_G2_RESTART %s" % _session.snapshot().identity())
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var touch: InputEventScreenTouch = event
+		if touch.pressed and not _contacts.has(touch.index):
+			_contacts.append(touch.index)
+		elif not touch.pressed:
+			_contacts.erase(touch.index)
+		if _contacts.size() > 1:
+			_conflicting_touch = true
+			_selected_source = -1
+			if _session != null:
+				_status.text = "Use one finger at a time"
+				_refresh()
+		if _conflicting_touch:
+			get_viewport().set_input_as_handled()
+			if _contacts.is_empty():
+				_conflicting_touch = false
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
+		_suspended = true
+		_contacts.clear()
+		_conflicting_touch = false
+		_selected_source = -1
+		_animation_token += 1
+		if _session != null:
+			_session.finish_animation()
+			_status.text = "Paused — selection cleared"
+			_refresh()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_APPLICATION_RESUMED:
+		_suspended = false

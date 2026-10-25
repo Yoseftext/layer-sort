@@ -10,7 +10,7 @@ var selected: bool = false
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(106, 440)
+	custom_minimum_size = Vector2(100, 440)
 	focus_mode = Control.FOCUS_NONE
 	flat = true
 	queue_redraw()

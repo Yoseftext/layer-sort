@@ -117,6 +117,8 @@ func _run() -> void:
 			_check(second_puzzle.submit(step.x, step.y).ok, "second level legal move " + str(step))
 			second_puzzle.finish_animation()
 		_check(WinRules.is_won(second_puzzle.snapshot()), "second level fixture reaches win")
+	_hardening_tests()
+	await _interaction_tests()
 	print("G2_RULE_TESTS status=%s checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])
 	quit(0 if failures == 0 else 1)
 
@@ -127,3 +129,92 @@ func _counts(state: GameState) -> Dictionary:
 		for colour: int in tube.layers:
 			totals[colour] = totals.get(colour, 0) + 1
 	return totals
+
+
+func _hardening_tests() -> void:
+	var valid: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://content/levels/level_001.json"))
+	for field: String in valid.keys():
+		var missing: Dictionary = valid.duplicate(true)
+		missing.erase(field)
+		_check(not LevelLoader.from_data(missing).ok, "missing required field " + field)
+	for field: String in ["capacity", "schema_version", "content_version"]:
+		for value: Variant in [true, "4", 1.5, -1, INF, NAN]:
+			var bad: Dictionary = valid.duplicate(true)
+			bad[field] = value
+			_check(not LevelLoader.from_data(bad).ok, "invalid numeric field " + field)
+	for value: Variant in [true, "0", 0.5, -1, 99, INF, NAN]:
+		var bad: Dictionary = valid.duplicate(true)
+		bad.tubes_bottom_to_top[0][0] = value
+		_check(not LevelLoader.from_data(bad).ok, "invalid numeric colour")
+	for value: Variant in [null, {}, "tube", [0, 0, 0, 0, 0]]:
+		var bad: Dictionary = valid.duplicate(true)
+		bad.tubes_bottom_to_top[0] = value
+		_check(not LevelLoader.from_data(bad).ok, "invalid tube structure/overflow")
+	_check(not LevelLoader.read_file("res://content/levels/level_../level_001.json").ok, "path traversal rejected")
+	var initial: GameState = _board([[0, 1], [], []])
+	var session: GameSession = GameSession.new(initial)
+	initial.tubes[0].layers.clear()
+	_check(session.snapshot().tubes[0].layers == [0, 1], "constructor copies initial state")
+	var external: GameState = session.snapshot()
+	external.tubes[0].layers.clear()
+	_check(session.snapshot().tubes[0].layers == [0, 1], "snapshot cannot mutate session")
+	var start: String = session.snapshot().identity()
+	var started: int = Time.get_ticks_usec()
+	for step: int in range(GameSession.MAX_HISTORY):
+		var source: int = 0 if step % 2 == 0 else 1
+		var destination: int = 1 if step % 2 == 0 else 0
+		_check(session.submit(source, destination).ok, "bounded cyclic move")
+		session.finish_animation()
+	var full: String = session.snapshot().identity()
+	_check(session.submit(0, 1).reason == "HISTORY_FULL", "history limit explicit rejection")
+	_check(session.snapshot().identity() == full and session.history_size() == GameSession.MAX_HISTORY, "history rejection no mutation")
+	for _step: int in range(GameSession.MAX_HISTORY):
+		_check(session.undo(), "bounded history Undo")
+	_check(session.snapshot().identity() == start, "full history restores initial")
+	for _step: int in range(3):
+		_check(not session.undo(), "repeated empty Undo safe")
+	print("G21_BOUNDED_HISTORY elapsed_us=%d snapshots=%d" % [Time.get_ticks_usec() - started, GameSession.MAX_HISTORY])
+	var winning: GameSession = GameSession.new(_board([[0, 0, 0], [0], []]))
+	_check(winning.submit(1, 0).won, "winning commit")
+	winning.restart()
+	_check(not WinRules.is_won(winning.snapshot()) and not winning.animation_locked, "Restart during winning lock")
+	_check(winning.history_size() == 0 and not winning.undo(), "Restart clears history after Win")
+
+
+func _interaction_tests() -> void:
+	var packed: PackedScene = load("res://scenes/game/classic_game.tscn")
+	var scene: Control = packed.instantiate()
+	root.add_child(scene)
+	await process_frame
+	scene._on_tube_pressed(0)
+	_check(scene._selected_source == 0, "source selection")
+	scene._notification(MainLoop.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	_check(scene._selected_source == -1 and scene._suspended, "focus loss clears selection")
+	var before: String = scene._session.snapshot().identity()
+	scene._on_tube_pressed(3)
+	_check(scene._session.snapshot().identity() == before, "suspended tap no mutation")
+	scene._notification(MainLoop.NOTIFICATION_APPLICATION_FOCUS_IN)
+	scene._on_tube_pressed(0)
+	scene._on_tube_pressed(3)
+	_check(scene._session.snapshot().move_count == 1, "one UI move committed")
+	scene._on_tube_pressed(1)
+	scene._on_tube_pressed(4)
+	_check(scene._session.snapshot().move_count == 1, "rapid UI taps locked")
+	scene._on_restart()
+	await create_timer(0.35).timeout
+	_check(scene._session.snapshot().identity() == before and scene._selected_source == -1, "Restart cancels old timer/selection")
+	for index: int in [0, 1]:
+		var touch: InputEventScreenTouch = InputEventScreenTouch.new()
+		touch.index = index
+		touch.pressed = true
+		scene._input(touch)
+	scene._on_tube_pressed(0)
+	_check(scene._selected_source == -1, "conflicting fingers cannot select")
+	for index: int in [1, 0]:
+		var touch: InputEventScreenTouch = InputEventScreenTouch.new()
+		touch.index = index
+		touch.pressed = false
+		scene._input(touch)
+	_check(not scene._conflicting_touch and scene._contacts.is_empty(), "contacts released cleanly")
+	scene.queue_free()
+	await process_frame
