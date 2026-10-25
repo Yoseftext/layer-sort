@@ -1,7 +1,8 @@
 # Layer Sort — G2 rules contract (DRAFT FOR OWNER APPROVAL)
 
-**Status:** PROPOSED, NOT APPROVED; planning only, no gameplay implementation authorized.  
-**Owner decision required:** accept/amend this contract via a dated ADR, update `00-START-HERE.md` and affected active files, then separately authorize G2.  
+**Status:** PROPOSED, NOT APPROVED; planning only, no gameplay implementation authorized.
+
+**Owner decision required:** accept/amend this contract via a dated ADR, update `00-START-HERE.md` and affected active files, then separately authorize G2.
 **Sources:** `00-START-HERE.md` B02/B03/B06/B09/B10, Q05 and §3; `02-ENGINEERING.md` S01–S04; `03-PRODUCTION.md` PLAN-G2/G3/G5/G6; `05-QA-TEST-CATALOG.md` RULE-01..15. Existing decisions are labelled **EXISTING**; exact serialization/algorithms/limits below are **PROPOSALS** until accepted. No GPLv3 reference is used.
 
 ## 1. Scope and terms
