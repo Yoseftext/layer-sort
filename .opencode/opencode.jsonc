@@ -1,0 +1,49 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Layer Sort G1.5 project configuration (OpenCode 2.1.4, V2 schema).
+  // Policy source: docs/current/04-AGENT-OPERATIONS.md and
+  // docs/adr/ADR-0001-g1.5-agent-orchestration.md.
+  //
+  // Only project-scoped settings live here. Global OpenCode configuration is
+  // not modified by this repo.
+
+  "experimental": {
+    // Subagents may not start further subagents (V2 default, stated explicitly
+    // so the bound is visible in review).
+    "subagent_depth": 1
+  },
+
+  // Hard denies: statements never prompt and cannot be lifted by a saved
+  // approval. They enforce the AGENTS.md hard rules technically.
+  "policies": [
+    { "action": "tool.use", "resource": "shell:git push --force*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git push -f*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git push --mirror*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git push origin main*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git push main*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git push * main", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:gh pr merge*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git reset --hard*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git branch -D*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git tag -d*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:rm -rf *", "effect": "deny" },
+    { "action": "tool.use", "resource": "read:*/.ssh/*", "effect": "deny" },
+    { "action": "tool.use", "resource": "read:*id_rsa*", "effect": "deny" },
+    { "action": "tool.use", "resource": "read:*id_ed25519*", "effect": "deny" }
+  ],
+
+  "agents": {
+    // The built-in Build agent stays the coordinator. It may launch only the
+    // four reviewed G1.5 specialists; no unbounded delegation.
+    "build": {
+      "permissions": [
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "repo-auditor", "effect": "allow" },
+        { "action": "subagent", "resource": "device-qa", "effect": "allow" },
+        { "action": "subagent", "resource": "visual-auditor", "effect": "allow" },
+        { "action": "subagent", "resource": "reviewer", "effect": "allow" }
+      ]
+    }
+  }
+}

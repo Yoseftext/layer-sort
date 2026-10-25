@@ -1,0 +1,43 @@
+name: qa-g15
+
+"on":
+  push:
+    branches: ["feat/agent-qa-orchestration"]
+  pull_request:
+    branches: ["feat/gdscript-foundation"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-oracles:
+    name: G1.5 static and oracle regression checks (no phone)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Bash syntax
+        run: bash -n tools/qa/*.sh
+      - name: Python syntax and stdlib regression oracles
+        run: |
+          python3 -m compileall -q tools/qa
+          python3 tools/qa/test_qa.py -v
+      - name: Project-scoped agent contract
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          agents = ('repo-auditor', 'device-qa', 'visual-auditor', 'reviewer')
+          raw = Path('.opencode/opencode.jsonc').read_text()
+          config = json.loads('\n'.join(line for line in raw.splitlines() if not line.lstrip().startswith('//')))
+          assert config['experimental']['subagent_depth'] == 1
+          assert config['$schema'] == 'https://opencode.ai/config.json'
+          for agent in agents:
+              text = Path(f'.opencode/agents/{agent}.md').read_text()
+              assert text.startswith('---\n') and '\n---\n' in text
+              frontmatter = text.split('---', 2)[1]
+              assert 'mode: subagent' in frontmatter
+              assert 'action: subagent' in frontmatter and 'effect: deny' in frontmatter
+          print('AGENT_CONTRACT_PASS: 4 bounded project-scoped agents')
+          PY
