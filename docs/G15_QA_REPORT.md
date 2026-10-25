@@ -269,8 +269,9 @@ Classic core, obtain:
    updates to `00-START-HERE.md` and the affected active spec. Specify pour
    batch/partial-capacity behavior, invalid moves, win, atomic undo/restart,
    deterministic event ordering, level JSON/versioning, PRNG/seed and save
-   schema. Resolve the current **Classic 1–19 vs “20 Core MVP levels”** count
-   ambiguity with the owner rather than inventing a level allocation.
+   schema. **Progression subsequently resolved by owner ADR-0002:** 20 total MVP
+   levels; five Classic tutorials at 1–5, Classic through 14, first Circuit at
+   15, G3 prepares 1–14 and G5 completes 15–20. No G2 implementation approval.
 3. G2 test oracles for `RULE-01..15`: typed GDScript unit/property cases
    covering empty/full, incompatible target, partial pour, contiguous top
    block, win and invalid action, restart/undo, deterministic replay and rapid

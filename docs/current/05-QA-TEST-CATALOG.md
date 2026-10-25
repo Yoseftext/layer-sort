@@ -17,7 +17,7 @@
 | RULE-01..15 | G2 | Tube capacity, compatible color, top-block amount, partial pour, invalid move, empty/full, win, restart, undo, double tap, no race, deterministic state |
 | SAVE-01..08 | G3 | Force-stop during animation/save, full storage, corrupt snapshot, schema upgrade, offline, pause/resume, settings persistence |
 | PERF-01..06 | G4 | Frame time p95, cold start, memory delta, 20min thermal/load, sound focus interruption, low quality tier |
-| CIR-01..08 | G5 | Sensor top color, latched unlock, signal visibility, undo rollback, replay, unreachable conditions, solver validity, tutorial clarity |
+| CIR-01..08 | G5 | First automatic Circuit at level 15 (simple introduction), sensor top color, latched unlock, signal visibility, undo rollback, replay, unreachable conditions, solver validity; levels 16–20 intersperse ordinary Classic before 20-level MVP acceptance |
 | GEN-01..10 | G6 | Seed consistency, versioned PRNG, bounded generation, solver proof, duplicate detection, difficulty, breather levels, catalog fallback |
 | MECH-01..10 | G7 | Freeze, Shift, Connected, combinations, priority of events, save/undo consistency, deterministic solver |
 | FIRE-01..08 | G8 | Spark-only verification, telemetry default off, consent/decline, offline, Firebase failure, sanitized error report, no billing, no gameplay dependency |

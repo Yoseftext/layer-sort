@@ -38,6 +38,8 @@
 ### S01 — ما المصدر الوحيد لحالة اللعبة؟
 **القرار:** `GameState` immutable أو منسوخ بشكل مضبوط، يحوي tubes, capacity, active_mechanics, gate_latches, frozen flags, shift charges, links, move_count, timer_mode, event_sequence, level_id/version/seed. لا Scene Node هي المصدر الحقيقي للطبقات؛ العرض مشتق من الحالة. كل أمر يمر من `GameController.submit_command` بعد Validation. **اختبار:** State hash قبل وبعد Undo/Redo (حيث يوجد) ومقارنة bit-exact للمنطق.
 
+**توضيح ADR-0002:** لا تُستنتج `active_mechanics` من رقم المستوى وحده: مستويات Classic عادية تتناوب مع Circuit من 16–29 وتستمر لاحقًا، لذا بيانات المستوى تصرّح بمجموعة الميكانيكيات والقواعد/نسخة المحتوى صراحة. لا يضيف هذا التوضيح ميكانيكية إلى نطاق G2 (Classic فقط).
+
 ### S02 — إيه حالة اللعبة أثناء السكب؟
 **القرار:** State machine `LOADING → READY → COMMITTING → ANIMATING → READY / WON / TIMED_OUT`, مع `PAUSED` و`RECOVERY`؛ تنفيذ الأمر والنتيجة يُحسمان مرة واحدة قبل بدء الأنيميشن، ثم يمنع إدخال حركة ثانية أثناء ANIMATING. الأنيميشن ليس مصدرًا للتغيير ويُلغى/يسوّى إلى committed state عند فقد التطبيق للتركيز. **اختبار:** 100 taps/second و2-finger gestures وRestart أثناء animation.
 

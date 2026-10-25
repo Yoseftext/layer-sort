@@ -25,15 +25,17 @@
 | G1 — Native Android Smoke | Godot Standard 4 + GDScript شاشة Portrait بسيط، Compatibility renderer مبدئيًا، APK عبر GitHub Actions | APK يثبت ويفتح على OPPO؛ Appium screenshot/tap؛ no crash/black screen؛ no C# runtime dependency |
 | G1.5 — Agent Orchestration & QA Tooling | وكلاء OpenCode للمشروع، سكربتات QA وكتالوج اختبارات، جرد اعتماديات، فحص Shizuku اختياري | roster وصلاحيات موثقة، workflowان عاملان على الأقل، اختبارات سالبة متعمدة، لقطة شاشة محللة، حالة Shizuku، بلا G2 وبلا تغيير main/خدمات الهاتف |
 | G2 — Core Rules | tube model، select/destination، pour batch، invalid action، win، atomic undo/restart، test scene | Unit/property cases تشمل full/empty/invalid/partial/undo، headless PASS، واجهة بسيطة قابلة للعب |
-| G3 — UX & Persistence | Splash/Home/Level Map/Game/Pause/Win/Settings/Error، Arabic/English، Save/Resume، 5 دروس، 20 مستوى | مخرجات UX Goldens معتمدة، Force Stop recovery، 20 مستويات حل قابل للتحقق، no stuck state |
+| G3 — UX & Persistence + Classic content | Splash/Home/Level Map/Game/Pause/Win/Settings/Error، Arabic/English، Save/Resume، خمس دروس Classic قصيرة 1–5، Classic سهلة 6–10 وأصعب تدريجيًا 11–14 | مخرجات UX Goldens معتمدة، Force Stop recovery، مستويات Classic 1–14 قابلة للحل، no stuck state؛ **ليس** إغلاق MVP ذي 20 مستوى قبل G5 |
 | G4 — Vertical Slice Art | Glass 2.5D وLiquid shaders، Pour/Win VFX، Audio cues، Color Assist، low/high tiers | صور ومقاطع مقارنة، OPPO Low tier p95 ضمن الهدف، لا ضرر للتنقل/اللمس |
-| G5 — Circuit Proof | Sensor/latch/lock، tutorial level 20، undo/canonical solver | حل معتمد، وحدة تعلم 20–23، حالات Undo/Save/Firebase-off متوافقة |
-| G6 — Procedural Content | Level generator/solver/certificates، difficulty curve، visual QA editor | Duplicate filter، bounded search، catalog version، curated teaching levels، اختبار N seeds |
-| G7 — Expansion | Frozen ثم Shift ثم Connected ثم Hybrid مع مستويات Classic بينهما | لكل mechanic عقد، unit/property tests، تعليم/Audio/Icon، playtest، لا دمج 3 أنظمة مبكرًا |
+| G5 — Automatic Layer Circuit Proof + 20-level MVP completion | Sensor/latch/lock، أول درس Circuit بسيط في مستوى 15، و16–20 تطوير تدريجي مع Classic عادية؛ undo/canonical solver | حل معتمد، محتوى 15–20 قابل للحل وحالات Undo/Save/Firebase-off متوافقة؛ لا إعلان اكتمال MVP 1–20 قبل قبول G5 |
+| G6 — Procedural Content | تطوير Circuit وClassic العادية حتى 29 (بعد مستويات MVP 16–20)، Level generator/solver/certificates، difficulty curve، visual QA editor | Duplicate filter، bounded search، catalog version، مستويات تعليمية مراجعة يدويًا، مستويات 21–29 قابلة للحل، اختبار N seeds؛ لا تفعيل ميكانيكية ثانية جديدة هنا |
+| G7 — Expansion | أول Frozen في 30، أول Layer Shift في 45، أول Connected Tubes في 60، ثم تركيبات تدريجية مع Classic عادية؛ ميكانيكية جديدة واحدة كل مرة | لكل mechanic عقد ودرس بسيط قبل التركيبات، unit/property tests، تعليم/Audio/Icon، playtest، لا جمع ميكانيكيات جديدة مبكرًا |
 | G8 — Firebase + Beta | Firebase Spark فقط، Android adapter/Noop، Consent/Privacy، Crash/Analytics test، واجهة القانون والشكر | SDK free-plan audit، offline pass، Crash sample قابل للرصد، Golden A11y، zero P0 issues |
 | G9 — Store لاحقًا | Release Signing، حساب مطور، AAB، التوافق والسياسة القانونية، إعلانات اختيارية إن اعتمدت | **مؤجل حاليًا**، لا تنفيذ ولا إنشاء حساب قبل إذن المالك |
 
 **مبدأ التسليم:** يمكن إنشاء نسخة Playable داخلية قبل اكتمال Circuit وFirebase، لكنها **ليست** Release/Beta على أنها مكتملة.
+
+**ADR-0002 (قرار المالك 2026-10-25):** 20 مستوى هي إجمالي Core MVP 1–20؛ الدروس Classic في 1–5 فقط وليست المستويات 1–19 كلها. G3 يكمل 1–14 Classic، وG5 يبدأ Circuit في 15 ويكمل 15–20 قبل اعتماد MVP. لا تغيير تلقائي لنطاق G2 (Classic فقط)، ولا تصريح بتنفيذه أو بدمج PRs.
 
 **حالة G1.5 بقرار المالك (2026-10-25): ACCEPTED WITH KNOWN LIMITATIONS، وليس PASS لكل الاختبارات.** `G15-QA-001` مفتوحة مع متابعة واحدة محدودة في `05-QA-TEST-CATALOG.md`. Shizuku موثقة من المالك في Termux الأصلي بصفة `uid=2000(shell)` فقط؛ جسر Debian وQA غير متحققين. لا دمج PR #1 أو PR #2 قبل مراجعة الفروق والأسرار وCI وترتيب الدمج وموافقة المالك الصريحة. لا بدء G2 قبل إذن منفصل وعقد قواعد `04-RULES-CONTRACT.md` معتمد.
 

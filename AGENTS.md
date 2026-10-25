@@ -27,13 +27,12 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - Every PR: scope IDs, commit, build link, screenshots, test output, install/touch/logcat evidence, rollback note (see `03-PRODUCTION.md` section 6).
 - Keep PRs small. One concern per PR. No unrelated refactors.
 
-## Open items — owner decides, agent does NOT decide
-1. Core MVP level count: Classic is 1–19 and Circuit starts at 20, but some text says "20 levels". Pending owner decision.
+## Decisions and open items — owner decides, agent does NOT decide
+1. **Resolved by owner ADR-0002:** 20-level Core MVP, Classic 1–14 (only 1–5 tutorials), automatic Circuit starts at 15; Circuit/ordinary Classic alternate through 16–29, Frozen starts 30, Shift 45, Connected 60. G3 covers Classic 1–14; G5 completes 15–20. No G2 implementation authorization follows from this decision.
 2. Final `applicationId` (use a local debug id; it must not collide with the old spike app).
-3. Which Godot Standard version to pin (decided only after a successful smoke).
-4. A `04-RULES-CONTRACT.md` (pour rules, level JSON, PRNG, save schema) will be added before G2.
-5. Use one stable debug keystore in CI so new APKs install over old ones (verify in G1).
-6. G1.5 acceptance and any permanent Shizuku/Termux bridge: owner approval required after a real `rish -c 'id'` proof. Shizuku stays optional and non-root.
+3. G1 smoke pinned Godot Standard 4.7.2 and a stable debug keystore in CI; do not change the pin or credentials without a reviewed decision.
+4. `docs/current/04-RULES-CONTRACT.md` is a **draft awaiting owner approval**; progression in ADR-0002 is approved, but pour/hash/PRNG/save/test details and G2 implementation are not.
+5. G1.5 is **ACCEPTED WITH KNOWN LIMITATIONS**; G15-QA-001 remains OPEN. Shizuku native-Termux `rish id` yielded `uid=2000(shell)` by owner report; Debian/QA bridge remains optional, unverified, and not approved.
 
 ## Output of each session
 Commit hash, branch, PR link, build link, device evidence, exact blockers. Nothing else is "done".
