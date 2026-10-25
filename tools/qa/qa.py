@@ -172,7 +172,7 @@ def provenance(args: argparse.Namespace) -> int:
             # actual CI artifact and compare bytes, not just an asserted hash.
             with tempfile.TemporaryDirectory(prefix="qa-ci-") as temp:
                 result = run("gh", "run", "download", args.run_id, "--repo", "Yoseftext/layer-sort",
-                             "-n", "layer-sort-g1-debug-apk", "-D", temp, timeout=120)
+                             "-n", args.artifact_name, "-D", temp, timeout=120)
                 artifacts = list(Path(temp).glob("*.apk"))
                 actual = sha(artifacts[0]) if result.returncode == 0 and len(artifacts) == 1 else "unavailable"
                 checks.append(check("DEV-06", actual == digest,
@@ -240,6 +240,7 @@ def main() -> int:
     q.add_argument("--package", default=PKG)
     q.add_argument("--orientation", choices=("PORTRAIT", "LANDSCAPE"), default="PORTRAIT")
     q.add_argument("--run-id", help="GitHub Actions run ID; downloads and compares artifact bytes")
+    q.add_argument("--artifact-name", default="layer-sort-g1-debug-apk", help="named CI APK artifact (G2: layer-sort-g2-debug-apk)")
     q.add_argument("--commit", help="expected CI head SHA prefix")
     q.add_argument("--installed", action="store_true", help="pull installed APK under device lock and compare exact bytes")
     q = sub.choices["visual"]
