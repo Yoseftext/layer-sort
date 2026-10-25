@@ -1,0 +1,73 @@
+{
+  "track": "A \u2014 Code & CI QA",
+  "status": "PASS",
+  "source_commit": "6fccd144b5681b1d8e59fff5d11daae0661d647a",
+  "workflow_run": "40216030520",
+  "workflow_url": "https://github.com/Yoseftext/layer-sort/actions/runs/40216030520",
+  "pull_request_check_run": "40216035428",
+  "pull_request_check_url": "https://github.com/Yoseftext/layer-sort/actions/runs/40216035428",
+  "headless_checks": 1149,
+  "headless_failures": 0,
+  "headless_note": "1149 includes 1024 repeated assertions in the bounded 512-commit/512-Undo stress cycle; it does not represent 1149 distinct scenarios.",
+  "bounded_history": {
+    "snapshots": 512,
+    "elapsed_us": 9435,
+    "scope": "CI runner, not Android performance evidence"
+  },
+  "apk_sha256": "65b2872271403fc59ef26f7b11cfb5c3c718f31845f6beda13204b7b8d364800",
+  "apk_size": 28485467,
+  "provenance_checks": [
+    {
+      "id": "DEV-06",
+      "status": "PASS",
+      "detail": "run=40216030520 conclusion=success commit=6fccd144b5681b1d8e59fff5d11daae0661d647a"
+    },
+    {
+      "id": "DEV-06",
+      "status": "PASS",
+      "detail": "pull_request run=40216035428 conclusion=success commit=6fccd144b5681b1d8e59fff5d11daae0661d647a"
+    },
+    {
+      "id": "RULE-SUITE",
+      "status": "PASS",
+      "detail": "G2_RULE_TESTS status=PASS checks=1149 failures=0"
+    },
+    {
+      "id": "PERF-01",
+      "status": "PASS",
+      "detail": "G21_BOUNDED_HISTORY elapsed_us=9435 snapshots=512"
+    },
+    {
+      "id": "NEG-03",
+      "status": "PASS",
+      "detail": "CI artifact SHA-256=65b2872271403fc59ef26f7b11cfb5c3c718f31845f6beda13204b7b8d364800; expected=65b2872271403fc59ef26f7b11cfb5c3c718f31845f6beda13204b7b8d364800"
+    },
+    {
+      "id": "NEG-01",
+      "status": "PASS",
+      "detail": "package=com.yoseftext.layersort.dev versionName=0.2.0-g2 versionCode=2"
+    },
+    {
+      "id": "NEG-02",
+      "status": "PASS",
+      "detail": "orientation=PORTRAIT"
+    },
+    {
+      "id": "SEC-01",
+      "status": "PASS",
+      "detail": "certificate SHA-256=de1faa3e10dbcc058f3f1b13c34fb1eb929140bbbe0a7499b348f75d8a1c095e"
+    },
+    {
+      "id": "ENV-05",
+      "status": "PASS",
+      "detail": "C# payload absent; native-code arm64-v8a"
+    }
+  ],
+  "source_scan": {
+    "changed_files_since_baseline": 7,
+    "sensitive_filenames": 0,
+    "private_key_blocks": 0,
+    "github_token_patterns": 0,
+    "added_csharp_references": 0
+  }
+}
