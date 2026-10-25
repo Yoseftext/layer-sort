@@ -30,3 +30,15 @@
 - **P3:** polish, mild timing, optional enhancements. Track and prioritize.
 
 Every bug ticket includes: expected/actual, steps, screen/seed, installed APK hash, captured logs, screenshots, source of evidence, probable ownership, fix commit, regression test, re-test outcome. A screenshot diff alone is a finding, not proof of a logic error. At G1.5 only design the G2+ matrix; **do not fake execution**.
+
+## G1.5 open QA backlog — one bounded follow-up
+
+**G15-QA-001 · OPEN · P2 test reliability / external interruption, not an established gameplay defect.** On the first failed touch run a browser stole focus; on the later fresh run the game logged `LAYER_SORT_G1_TAP 1` and changed its counter, but an incoming-call overlay obscured the before screenshot. Appium reported the game package as foreground while the project-local image guard correctly returned **FAIL**. Keep both raw failed runs and their private screenshots/logcat; do not publish personal overlay content. See `docs/G15_QA_REPORT.md` and `docs/evidence/g15/reports/acceptance-touch.json`. G1.5 was **ACCEPTED WITH KNOWN LIMITATIONS** by the owner on 2026-10-25, not an all-tests PASS.
+
+**Scheduled follow-up (single bounded task; separate review):**
+1. Check the active window/overlay state **before screenshot capture**, then inspect the captured frame **before tapping** to establish that `com.yoseftext.layersort.dev` is visibly unobstructed. Package foreground alone is insufficient. Record the app/window/overlay classification without storing unrelated personal contents in Git.
+2. Classify `EXTERNAL_OVERLAY_OR_FOCUS_INTERRUPTION` separately from `APP_FAILURE` in the report while keeping the strict test result `FAIL` when a valid unobstructed test was not obtained. Do not suppress crashes, missing TAP markers, or wrong app behavior as environmental interruptions.
+3. Once the environment is demonstrably stable, allow **at most one controlled retry** using the existing phone lock and provenanced APK. Give each attempt its own report, screenshots and logcat; a later PASS does not overwrite any earlier FAIL. Stop after the retry or on persistent interruption; no phone-service restart or settings change.
+4. Negative fixture: deliberately obscured or off-app before frame must be classified as external interruption and rejected; unobstructed frame with genuine TAP logcat/visible response may PASS. Preserve existing Chrome and incoming-call failure artifacts. Owner reviews outcomes before closing the issue.
+
+No new agent, privileged bridge, or infrastructure installation is scheduled.

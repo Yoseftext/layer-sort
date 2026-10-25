@@ -35,6 +35,8 @@
 
 **مبدأ التسليم:** يمكن إنشاء نسخة Playable داخلية قبل اكتمال Circuit وFirebase، لكنها **ليست** Release/Beta على أنها مكتملة.
 
+**حالة G1.5 بقرار المالك (2026-10-25): ACCEPTED WITH KNOWN LIMITATIONS، وليس PASS لكل الاختبارات.** `G15-QA-001` مفتوحة مع متابعة واحدة محدودة في `05-QA-TEST-CATALOG.md`. Shizuku موثقة من المالك في Termux الأصلي بصفة `uid=2000(shell)` فقط؛ جسر Debian وQA غير متحققين. لا دمج PR #1 أو PR #2 قبل مراجعة الفروق والأسرار وCI وترتيب الدمج وموافقة المالك الصريحة. لا بدء G2 قبل إذن منفصل وعقد قواعد `04-RULES-CONTRACT.md` معتمد.
+
 ## 3. نقل المشروع القديم دون خسارة أي شيء
 
 1. الوكيل يراجع `git status`, current branch, commits, tags, remotes, CI current workflow دون فتح المشروع المرجعي GPLv3.
@@ -94,7 +96,7 @@ Approved Art Brief / Visual Bible
 - [x] UX Art/Audio target specs وRisk Register وطرق الرصد موثقة.
 - [ ] أول محرك Godot Standard وExport Templates مثبتان برقم إصدار فعلي بعد smoke.
 - [ ] فرع GDScript جديد وCI Android يعملان.
-- [ ] G1.5 — وكلاء/QA/أدوات مقبولة من المالك قبل G2 (وفق `04-AGENT-OPERATIONS.md`).
+- [x] G1.5 — وكلاء/QA/أدوات **مقبولة من المالك بقيود موثقة** (2026-10-25؛ ليست جميع الاختبارات PASS). G2 ما زالت تحتاج تفويضًا منفصلًا.
 - [ ] UI/Glass/Sound assets موجودة فعلًا ومراجعة من المالك.
 - [ ] Firebase project Spark وخدماته موصولة ومختبرة لاحقًا، بعد الموافقة.
 - [ ] اختبارات محتوى/حلّال/حفظ/Android/RTL حقيقية ومصحوبة بأدلة.

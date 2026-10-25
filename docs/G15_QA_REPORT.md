@@ -243,3 +243,39 @@ should be **conditional**, not an unqualified PASS: focus-safe touch failed on
 a fresh run, and policy pattern matching is not complete branch protection.
 Owner may accept these as explicitly tracked G1.5 limitations or request a
 separate fix/verification; G2 still needs explicit authorization.
+
+## Owner decision and G2 readiness (2026-10-25)
+
+**G1.5 status: ACCEPTED WITH KNOWN LIMITATIONS by owner.** This supersedes the
+earlier *recommendation*, not the failed test results. `G15-QA-001` remains
+OPEN; the focus guard's incoming-call rejection is a QA interruption finding,
+not proof of a game defect or a successful visual test. One bounded follow-up,
+with at most one stable-environment retry and separate evidence per attempt,
+is specified in `docs/current/05-QA-TEST-CATALOG.md`. No new agent or tooling
+is requested. Shizuku native Termux is VERIFIED BY OWNER as `uid=2000(shell)`;
+no Debian integration or QA use is claimed. PR #1 and #2 remain unmerged until
+their diffs, secrets, CI and merge order are reviewed and the owner explicitly
+approves merging.
+
+**G2 readiness, planning only:** G1 provides a CI-built Godot Standard Android
+smoke APK; G1.5 adds scoped agents, negative-testable QA and a retained device
+evidence workflow. Neither proves pour rules. Before implementing the approved
+Classic core, obtain:
+
+1. **Separate explicit G2 implementation authorization** and a reviewed PR
+   base/merge order for open PR #1 (foundation) and stacked PR #2 (G1.5),
+   including diff, tracked-secret and CI checks. Do not merge without approval.
+2. An owner-approved `docs/current/04-RULES-CONTRACT.md` plus a dated ADR and
+   updates to `00-START-HERE.md` and the affected active spec. Specify pour
+   batch/partial-capacity behavior, invalid moves, win, atomic undo/restart,
+   deterministic event ordering, level JSON/versioning, PRNG/seed and save
+   schema. Resolve the current **Classic 1–19 vs “20 Core MVP levels”** count
+   ambiguity with the owner rather than inventing a level allocation.
+3. G2 test oracles for `RULE-01..15`: typed GDScript unit/property cases
+   covering empty/full, incompatible target, partial pour, contiguous top
+   block, win and invalid action, restart/undo, deterministic replay and rapid
+   input; headless CI PASS plus an actual portrait OPPO test scene with
+   screenshot, touch and logcat tied to APK/commit provenance. External overlay
+   interruptions must not be misclassified as gameplay failures.
+
+No implementation of those prerequisites or G2 mechanics is included here.
