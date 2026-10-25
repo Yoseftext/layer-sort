@@ -8,6 +8,12 @@
 Android: OPPO CPH1937, API 30, 720×1600. G1.5 scripts are tested
 independently of the G1 app; this is **not** G2 gameplay evidence.
 
+Sanitized machine-readable snapshots are committed under
+[`docs/evidence/g15/reports/`](evidence/g15/reports/) (environment,
+provenance, composite smoke, three negatives, visual pass/mismatch). Raw
+logcat and the first touch *before* screenshot remain only in the private
+device-test directories because they include unrelated application content.
+
 | Test ID | Status | Observed evidence |
 |---|---|---|
 | ENV-01/02/04, SEC-04 | PASS | OpenCode 2.1.4, Python 3.13.5, ADB connected, >1 GiB free, protected refs equal origin; `/tmp/opencode/g15-env-2/report.json` |
