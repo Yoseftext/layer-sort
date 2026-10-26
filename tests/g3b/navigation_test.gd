@@ -35,6 +35,19 @@ func _run() -> void:
 	leave.hide()
 	leave.confirmed.emit()
 	check(navigation.current_screen() is LevelMapScreen, "confirmed exit opens Map")
+	level_map = navigation.current_screen() as LevelMapScreen
+	(level_map.find_child("level_001", true, false) as Button).pressed.emit()
+	game = navigation.current_screen() as ClassicGame
+	var solution: Array[Vector2i] = [Vector2i(0, 3), Vector2i(2, 0), Vector2i(1, 2), Vector2i(1, 3), Vector2i(0, 1), Vector2i(2, 0), Vector2i(2, 3), Vector2i(1, 2), Vector2i(0, 1), Vector2i(0, 3)]
+	for move: Vector2i in solution:
+		game._on_tube_pressed(move.x)
+		game._on_tube_pressed(move.y)
+		await create_timer(0.3).timeout
+	check(navigation.get("_win_dialog") != null, "valid win opens completion")
+	(navigation.get("_win_dialog") as AcceptDialog).hide()
+	(navigation.get("_win_dialog") as AcceptDialog).confirmed.emit()
+	level_map = navigation.current_screen() as LevelMapScreen
+	check(not (level_map.find_child("level_002", true, false) as Button).disabled, "win unlocks next level")
 	navigation.queue_free()
 	print("G3B_NAV_TESTS status=%s checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])
 	quit(0 if failures == 0 else 1)
