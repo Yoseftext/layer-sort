@@ -1,7 +1,7 @@
 class_name NavigationState
 extends RefCounted
 
-enum Route { SPLASH, HOME, SETTINGS, ABOUT, GAME }
+enum Route { SPLASH, HOME, SETTINGS, ABOUT, MAP, GAME }
 
 var route: Route = Route.SPLASH
 var level_id: String = ""
@@ -14,6 +14,10 @@ func open_home() -> void:
 
 func open_settings() -> void:
 	route = Route.SETTINGS
+
+
+func open_map() -> void:
+	route = Route.MAP
 
 
 func open_about() -> void:

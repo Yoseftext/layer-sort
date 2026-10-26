@@ -2,11 +2,15 @@ class_name HomeScreen
 extends Control
 
 signal play_requested
+signal map_requested
+signal continue_requested
 signal settings_requested
 signal about_requested
 
 var language: String = "en"
 var play_enabled: bool = true
+var continue_enabled: bool = false
+var save_error: bool = false
 
 
 func _ready() -> void:
@@ -15,6 +19,8 @@ func _ready() -> void:
 	var column: VBoxContainer = ScreenWidgets.stack(self)
 	column.add_child(ScreenWidgets.label("LAYER SORT", 58))
 	column.add_child(ScreenWidgets.label(UiText.get_text("subtitle", language), 26, true))
+	if save_error:
+		column.add_child(ScreenWidgets.label(UiText.get_text("save_error", language), 23, true))
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size.y = 70
 	column.add_child(spacer)
@@ -23,6 +29,15 @@ func _ready() -> void:
 	play.disabled = not play_enabled
 	column.add_child(play)
 	play.pressed.connect(func() -> void: play_requested.emit())
+	var continue_button: Button = ScreenWidgets.button(UiText.get_text("continue", language))
+	continue_button.name = "ContinueButton"
+	continue_button.disabled = not continue_enabled
+	column.add_child(continue_button)
+	continue_button.pressed.connect(func() -> void: continue_requested.emit())
+	var map_button: Button = ScreenWidgets.button(UiText.get_text("level_map", language))
+	map_button.name = "MapButton"
+	column.add_child(map_button)
+	map_button.pressed.connect(func() -> void: map_requested.emit())
 	var settings: Button = ScreenWidgets.button(UiText.get_text("settings", language))
 	settings.name = "SettingsButton"
 	column.add_child(settings)

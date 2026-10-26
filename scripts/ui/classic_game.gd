@@ -3,6 +3,8 @@ extends Control
 
 signal home_requested
 signal pause_requested
+signal state_committed(state: GameState, won: bool)
+var restored_state: Dictionary = {}
 
 ## G2 test scene only; future G3 navigation may instantiate this scene.
 const LEVEL_PATH: String = "res://content/levels/level_001.json"
@@ -36,6 +38,8 @@ func _ready() -> void:
 		add_child(error_label)
 		return
 	_session = GameSession.new(loaded.state)
+	if not restored_state.is_empty():
+		_session.restore_committed(restored_state)
 	_build_ui()
 	_refresh()
 	print(READY_MARKER)
@@ -155,6 +159,7 @@ func _on_tube_pressed(index: int) -> void:
 	_selected_source = -1
 	_status.text = UiText.get_text("won", language) if result.won else UiText.get_text("moved", language) % result.moved
 	_refresh()
+	state_committed.emit(_session.snapshot(), result.won)
 	print("%s %d %d %d" % [MOVE_MARKER, source, index, result.moved])
 	if result.won:
 		print("LAYER_SORT_G2_WIN")
@@ -175,6 +180,7 @@ func _on_undo() -> void:
 	_selected_source = -1
 	_status.text = UiText.get_text("undone", language) if _session.undo() else UiText.get_text("nothing_to_undo", language)
 	_refresh()
+	state_committed.emit(_session.snapshot(), false)
 	print("LAYER_SORT_G2_UNDO %s" % _session.snapshot().identity())
 
 
@@ -190,6 +196,7 @@ func _on_restart() -> void:
 	_session.restart()
 	_status.text = UiText.get_text("restarted", language)
 	_refresh()
+	state_committed.emit(_session.snapshot(), false)
 	print("LAYER_SORT_G2_RESTART %s" % _session.snapshot().identity())
 
 
