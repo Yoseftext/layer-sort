@@ -54,6 +54,33 @@ func _run() -> void:
 		game._on_tube_pressed(0)
 		game._on_tube_pressed(3)
 		_expect(game.has_unsaved_move(), "fixture move committed")
+		navigation.go_back()
+		var pause: PauseScreen = navigation.get("_pause_screen") as PauseScreen
+		_expect(pause != null and pause.visible, "game Back opens Pause")
+		_expect(game.has_unsaved_move(), "Pause retains committed move")
+		navigation.go_back()
+		_expect(navigation.get("_pause_screen") == null and game.has_unsaved_move(), "Back resumes without changing move")
+		var pause_button: Button = game.find_child("PauseButton", true, false) as Button
+		pause_button.pressed.emit()
+		pause = navigation.get("_pause_screen") as PauseScreen
+		var settings_from_pause: Button = pause.find_child("SettingsButton", true, false) as Button
+		settings_from_pause.pressed.emit()
+		_expect(navigation.get("_pause_settings") is SettingsScreen, "Pause Settings opens")
+		navigation.go_back()
+		_expect(navigation.get("_pause_settings") == null and navigation.get("_pause_screen") != null, "Settings Back returns Pause")
+		var restart_from_pause: Button = pause.find_child("RestartButton", true, false) as Button
+		restart_from_pause.pressed.emit()
+		var restart_dialog: ConfirmationDialog = navigation.get("_restart_dialog") as ConfirmationDialog
+		_expect(restart_dialog != null and restart_dialog.visible, "played attempt restart confirms")
+		navigation.go_back()
+		_expect(game.has_unsaved_move(), "cancelled restart retains move")
+		var exit_from_pause: Button = pause.find_child("HomeButton", true, false) as Button
+		exit_from_pause.pressed.emit()
+		_expect(navigation.get("_leave_dialog") != null, "Pause exit uses unsaved confirmation")
+		navigation.go_back()
+		var resume: Button = pause.find_child("ResumeButton", true, false) as Button
+		resume.pressed.emit()
+		_expect(navigation.get("_pause_screen") == null and game.has_unsaved_move(), "Resume retains move")
 		var game_home_button: Button = game.find_child("HomeButton", true, false) as Button
 		_expect(game_home_button != null, "game Home button reachable")
 		game_home_button.pressed.emit()
@@ -68,7 +95,18 @@ func _run() -> void:
 			_expect(navigation.current_route() == NavigationState.Route.HOME, "confirmed leave returns Home")
 		_expect(navigation.open_level(catalog_result.catalog.entry_level_id), "fixture reopens")
 		navigation.go_back()
-		_expect(navigation.current_route() == NavigationState.Route.HOME, "game Back returns Home")
+		_expect(navigation.get("_pause_screen") is PauseScreen, "fresh game Back opens Pause")
+		var fresh_game: ClassicGame = navigation.current_screen() as ClassicGame
+		fresh_game._on_tube_pressed(0)
+		fresh_game._on_tube_pressed(3)
+		var fresh_pause: PauseScreen = navigation.get("_pause_screen") as PauseScreen
+		(fresh_pause.find_child("RestartButton", true, false) as Button).pressed.emit()
+		(navigation.get("_restart_dialog") as ConfirmationDialog).confirmed.emit()
+		_expect(not fresh_game.has_unsaved_move() and navigation.get("_pause_screen") == null, "confirmed Restart resets attempt")
+		(navigation.get("_restart_dialog") as ConfirmationDialog).hide()
+		navigation.go_back()
+		(navigation.get("_pause_screen") as PauseScreen).find_child("HomeButton", true, false).pressed.emit()
+		_expect(navigation.current_route() == NavigationState.Route.HOME, "unused attempt exits without confirmation")
 	navigation.go_back()
 	var exit_dialog: ConfirmationDialog = navigation.get("_exit_dialog") as ConfirmationDialog
 	_expect(exit_dialog != null and exit_dialog.visible, "Home Back confirms exit")

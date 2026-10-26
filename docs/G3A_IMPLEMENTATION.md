@@ -19,3 +19,9 @@ The short splash leads to Home after 0.5 seconds. Settings changes language in t
 G3-B can add a level map that calls `open_level(level_id)`, use catalog metadata to choose unlocked levels, and replace `AppSettings`' in-memory lifetime with a separately tested repository. A progress/save coordinator must own crash-safe snapshots before Home can offer Continue. No implicit default level ID should enter the navigation contract. The two current fixture files are not a shipped campaign.
 
 QA is split: `tests/g3a/navigation_test.gd` checks route/screen/language/catalog behavior; the unchanged G2 rule suite checks Classic regression. Device QA must install the exact CI APK and separately capture splash/Home, Settings, About, game move, return/reopen and Android Back, with AR/EN screenshots and logcat. G15-QA-001 remains open. Track B is UNVERIFIED until that run occurs.
+
+## G3-A Pause correction (2026-10-26)
+
+Android Back in Classic opens a Pause overlay over the live G2 scene. Resume and Settings return keep the same session; Settings is displayed over Pause and its Back button returns there. Pause Restart asks for confirmation after a committed move, then uses the existing G2 restart path. Pause Exit to Home uses the existing unsaved-attempt confirmation. No Chapter Map action is presented. `pause_screen.gd` owns only Pause controls; the coordinator owns overlay routing. G15-QA-001 remains OPEN.
+
+Track A local checks: G3-A navigation 53/53 PASS and G2 regression 1,149/1,149 PASS with local Godot 4.6.3. The pinned Android toolchain is Godot 4.7.2 with Android SDK 36; this workspace has neither matching export templates nor Android build-tools. Exact APK build and package verification are UNVERIFIED pending CI. Track B is UNVERIFIED: no OPPO device or phone lock is attached to this workspace, so installation, actual UI screenshots, Arabic/English layout, safe area, Android Back and logcat cannot be claimed.

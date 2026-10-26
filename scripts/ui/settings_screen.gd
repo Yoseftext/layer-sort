@@ -5,6 +5,7 @@ signal language_selected(code: String)
 signal home_requested
 
 var language: String = "en"
+var return_to_pause: bool = false
 
 
 func _ready() -> void:
@@ -24,7 +25,7 @@ func _ready() -> void:
 	column.add_child(arabic)
 	arabic.pressed.connect(func() -> void: language_selected.emit("ar"))
 	column.add_child(ScreenWidgets.label(UiText.get_text("session_only", language), 21, true))
-	var home: Button = ScreenWidgets.button(UiText.get_text("home", language))
+	var home: Button = ScreenWidgets.button(UiText.get_text("back", language) if return_to_pause else UiText.get_text("home", language))
 	home.name = "HomeButton"
 	column.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())

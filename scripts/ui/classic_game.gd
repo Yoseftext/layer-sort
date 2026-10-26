@@ -2,6 +2,7 @@ class_name ClassicGame
 extends Control
 
 signal home_requested
+signal pause_requested
 
 ## G2 test scene only; future G3 navigation may instantiate this scene.
 const LEVEL_PATH: String = "res://content/levels/level_001.json"
@@ -57,6 +58,10 @@ func _build_ui() -> void:
 	home.name = "HomeButton"
 	layout.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
+	var pause: Button = _make_button(UiText.get_text("pause", language))
+	pause.name = "PauseButton"
+	layout.add_child(pause)
+	pause.pressed.connect(func() -> void: pause_requested.emit())
 	_moves = _make_label(UiText.get_text("moves", language) % 0, 29)
 	layout.add_child(_moves)
 	_status = _make_label(UiText.get_text("choose", language), 26)
@@ -171,6 +176,10 @@ func _on_undo() -> void:
 	_status.text = UiText.get_text("undone", language) if _session.undo() else UiText.get_text("nothing_to_undo", language)
 	_refresh()
 	print("LAYER_SORT_G2_UNDO %s" % _session.snapshot().identity())
+
+
+func restart_attempt() -> void:
+	_on_restart()
 
 
 func _on_restart() -> void:

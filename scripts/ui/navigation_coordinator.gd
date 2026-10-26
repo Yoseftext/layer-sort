@@ -5,6 +5,7 @@ const SPLASH_SCENE: PackedScene = preload("res://scenes/navigation/splash.tscn")
 const HOME_SCENE: PackedScene = preload("res://scenes/navigation/home.tscn")
 const SETTINGS_SCENE: PackedScene = preload("res://scenes/navigation/settings.tscn")
 const ABOUT_SCENE: PackedScene = preload("res://scenes/navigation/about.tscn")
+const PAUSE_SCENE: PackedScene = preload("res://scenes/navigation/pause.tscn")
 const GAME_SCENE: PackedScene = preload("res://scenes/game/classic_game.tscn")
 
 var _state: NavigationState = NavigationState.new()
@@ -13,6 +14,9 @@ var _catalog: LevelCatalog
 var _surface: MarginContainer
 var _screen: Control
 var _exit_dialog: ConfirmationDialog
+var _restart_dialog: ConfirmationDialog
+var _pause_screen: PauseScreen
+var _pause_settings: SettingsScreen
 var _leave_dialog: ConfirmationDialog
 
 
@@ -43,6 +47,7 @@ func current_screen() -> Control:
 func go_home() -> void:
 	if _leave_dialog != null and is_instance_valid(_leave_dialog):
 		_leave_dialog.hide()
+	_close_pause()
 	_state.open_home()
 	_show(HOME_SCENE)
 
@@ -73,6 +78,7 @@ func open_level(level_id: String) -> bool:
 	game.language = _settings.language
 	_replace_screen(game)
 	game.home_requested.connect(request_home)
+	game.pause_requested.connect(_open_pause)
 	print("LAYER_SORT_G3_GAME_READY " + level_id)
 	return true
 
@@ -84,8 +90,17 @@ func go_back() -> void:
 	if _exit_dialog != null and is_instance_valid(_exit_dialog) and _exit_dialog.visible:
 		_exit_dialog.hide()
 		return
+	if _pause_settings != null:
+		_close_pause_settings()
+		return
+	if _restart_dialog != null and _restart_dialog.visible:
+		_restart_dialog.hide()
+		return
+	if _pause_screen != null:
+		_close_pause()
+		return
 	if _state.route == NavigationState.Route.GAME:
-		request_home()
+		_open_pause()
 		return
 	if _state.back():
 		go_home()
@@ -118,6 +133,7 @@ func _show(scene: PackedScene) -> void:
 
 
 func _replace_screen(next: Control) -> void:
+	_close_pause()
 	if _screen != null:
 		_surface.remove_child(_screen)
 		_screen.queue_free()
@@ -133,7 +149,82 @@ func _on_play() -> void:
 
 func _on_language_selected(code: String) -> void:
 	if _settings.set_language(code):
-		_show(SETTINGS_SCENE)
+		if _pause_settings != null:
+			_close_pause_settings()
+			_open_pause_settings()
+		else:
+			_show(SETTINGS_SCENE)
+
+
+func _open_pause() -> void:
+	var game: ClassicGame = _screen as ClassicGame
+	if game == null or _pause_screen != null:
+		return
+	game.set_process_input(false)
+	_pause_screen = PAUSE_SCENE.instantiate() as PauseScreen
+	_pause_screen.language = _settings.language
+	_surface.add_child(_pause_screen)
+	_pause_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pause_screen.resume_requested.connect(_close_pause)
+	_pause_screen.restart_requested.connect(_request_restart)
+	_pause_screen.settings_requested.connect(_open_pause_settings)
+	_pause_screen.home_requested.connect(request_home)
+
+
+func _close_pause() -> void:
+	_close_pause_settings()
+	if _pause_screen != null:
+		_pause_screen.queue_free()
+		_pause_screen = null
+	var game: ClassicGame = _screen as ClassicGame
+	if game != null:
+		game.set_process_input(true)
+
+
+func _open_pause_settings() -> void:
+	if _pause_screen == null:
+		return
+	_pause_screen.hide()
+	_pause_settings = SETTINGS_SCENE.instantiate() as SettingsScreen
+	_pause_settings.language = _settings.language
+	_pause_settings.return_to_pause = true
+	_surface.add_child(_pause_settings)
+	_pause_settings.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pause_settings.language_selected.connect(_on_language_selected)
+	_pause_settings.home_requested.connect(_close_pause_settings)
+
+
+func _close_pause_settings() -> void:
+	if _pause_settings != null:
+		_pause_settings.queue_free()
+		_pause_settings = null
+	if _pause_screen != null:
+		_pause_screen.show()
+
+
+func _request_restart() -> void:
+	var game: ClassicGame = _screen as ClassicGame
+	if game == null:
+		return
+	if not game.has_unsaved_move():
+		_restart_game()
+		return
+	if _restart_dialog == null:
+		_restart_dialog = ConfirmationDialog.new()
+		add_child(_restart_dialog)
+		_restart_dialog.confirmed.connect(_restart_game)
+	_restart_dialog.title = UiText.get_text("restart_title", _settings.language)
+	_restart_dialog.dialog_text = UiText.get_text("restart_message", _settings.language)
+	_restart_dialog.ok_button_text = UiText.get_text("restart", _settings.language)
+	_restart_dialog.cancel_button_text = UiText.get_text("cancel", _settings.language)
+	_restart_dialog.popup_centered()
+
+
+func _restart_game() -> void:
+	var game: ClassicGame = _screen as ClassicGame
+	if game != null:
+		game.restart_attempt()
+	_close_pause()
 
 
 func request_home() -> void:
