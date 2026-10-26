@@ -303,6 +303,13 @@ jobs:
           grep -q 'G3A_NAV_TESTS status=PASS' logs/g3a-navigation.log
           if grep -Eq 'SCRIPT ERROR|G3A_FAIL' logs/g3a-navigation.log; then exit 1; fi
 
+      - name: Run G3-B navigation suite
+        run: |
+          set -o pipefail
+          godot --headless --path . --script res://tests/g3b/navigation_test.gd 2>&1 | tee logs/g3b-navigation.log
+          grep -q 'G3B_NAV_TESTS status=PASS' logs/g3b-navigation.log
+          if grep -Eq 'SCRIPT ERROR|G3B_NAV_FAIL' logs/g3b-navigation.log; then exit 1; fi
+
       - name: Run G3-B progression and save suite
         run: |
           set -o pipefail

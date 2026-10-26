@@ -24,6 +24,7 @@ var _exit_dialog: ConfirmationDialog
 var _restart_dialog: ConfirmationDialog
 var _pause_screen: PauseScreen
 var _pause_settings: SettingsScreen
+var _leave_to_map: bool = false
 var _leave_dialog: ConfirmationDialog
 
 
@@ -253,6 +254,7 @@ func _open_pause() -> void:
 	_pause_screen.restart_requested.connect(_request_restart)
 	_pause_screen.settings_requested.connect(_open_pause_settings)
 	_pause_screen.home_requested.connect(request_home)
+	_pause_screen.map_requested.connect(request_map)
 
 
 func _close_pause() -> void:
@@ -312,14 +314,33 @@ func _restart_game() -> void:
 
 
 func request_home() -> void:
+	_leave_to_map = false
+	_request_leave()
+
+
+func request_map() -> void:
+	_leave_to_map = true
+	_request_leave()
+
+
+func _finish_leave() -> void:
+	if _leave_to_map:
+		_active = {}
+		_persist()
+		show_map()
+	else:
+		go_home()
+
+
+func _request_leave() -> void:
 	var game: ClassicGame = _screen as ClassicGame
 	if game == null or not game.has_unsaved_move():
-		go_home()
+		_finish_leave()
 		return
 	if _leave_dialog == null:
 		_leave_dialog = ConfirmationDialog.new()
 		add_child(_leave_dialog)
-		_leave_dialog.confirmed.connect(go_home)
+		_leave_dialog.confirmed.connect(_finish_leave)
 	_leave_dialog.title = UiText.get_text("leave_title", _settings.language)
 	_leave_dialog.dialog_text = UiText.get_text("leave_message", _settings.language)
 	_leave_dialog.ok_button_text = UiText.get_text("leave_confirm", _settings.language)

@@ -5,6 +5,7 @@ signal resume_requested
 signal restart_requested
 signal settings_requested
 signal home_requested
+signal map_requested
 
 var language: String = "en"
 
@@ -18,6 +19,7 @@ func _ready() -> void:
 	_add_button(column, "resume", "ResumeButton", resume_requested)
 	_add_button(column, "restart", "RestartButton", restart_requested)
 	_add_button(column, "settings", "SettingsButton", settings_requested)
+	_add_button(column, "level_map", "MapButton", map_requested)
 	_add_button(column, "home", "HomeButton", home_requested)
 
 
