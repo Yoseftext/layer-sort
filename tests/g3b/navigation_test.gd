@@ -48,7 +48,21 @@ func _run() -> void:
 	(navigation.get("_win_dialog") as AcceptDialog).confirmed.emit()
 	level_map = navigation.current_screen() as LevelMapScreen
 	check(not (level_map.find_child("level_002", true, false) as Button).disabled, "win unlocks next level")
+	(level_map.find_child("level_002", true, false) as Button).pressed.emit()
+	game = navigation.current_screen() as ClassicGame
+	game._on_tube_pressed(0)
+	game._on_tube_pressed(3)
+	check(game.has_unsaved_move(), "second level attempt committed")
 	navigation.queue_free()
+	await process_frame
+	var restarted: NavigationCoordinator = scene.instantiate()
+	root.add_child(restarted)
+	await create_timer(0.65).timeout
+	home = restarted.current_screen() as HomeScreen
+	check(home.continue_enabled, "restarted app offers saved Continue")
+	(home.find_child("ContinueButton", true, false) as Button).pressed.emit()
+	check((restarted.current_screen() as ClassicGame).has_unsaved_move(), "Continue restores committed board")
+	restarted.queue_free()
 	print("G3B_NAV_TESTS status=%s checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])
 	quit(0 if failures == 0 else 1)
 
