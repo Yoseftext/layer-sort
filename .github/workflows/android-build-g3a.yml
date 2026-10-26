@@ -339,7 +339,7 @@ jobs:
           unzip -t build/layer-sort-g3a-debug.apk > logs/apk-zip-test.log || {
             echo "::error::APK is not a valid zip."; exit 1; }
           unzip -l build/layer-sort-g3a-debug.apk > logs/apk-contents.log
-          for required in content/levels/level_001.json content/levels/level_002.json content/levels/catalog.json content/about/credits.json scenes/navigation/root.tscn; do
+          for required in content/levels/level_001.json content/levels/level_002.json content/levels/catalog.json content/about/credits.json scenes/navigation/root.tscn.remap; do
             unzip -Z1 build/layer-sort-g3a-debug.apk | grep -qx "assets/$required" || {
               echo "::error::APK is missing gameplay resource $required"; exit 1; }
           done
