@@ -13,6 +13,7 @@ var _catalog: LevelCatalog
 var _surface: MarginContainer
 var _screen: Control
 var _exit_dialog: ConfirmationDialog
+var _leave_dialog: ConfirmationDialog
 
 
 func _ready() -> void:
@@ -40,6 +41,8 @@ func current_screen() -> Control:
 
 
 func go_home() -> void:
+	if _leave_dialog != null and is_instance_valid(_leave_dialog):
+		_leave_dialog.hide()
 	_state.open_home()
 	_show(HOME_SCENE)
 
@@ -69,14 +72,20 @@ func open_level(level_id: String) -> bool:
 	game.level_path = path
 	game.language = _settings.language
 	_replace_screen(game)
-	game.home_requested.connect(go_home)
+	game.home_requested.connect(request_home)
 	print("LAYER_SORT_G3_GAME_READY " + level_id)
 	return true
 
 
 func go_back() -> void:
+	if _leave_dialog != null and is_instance_valid(_leave_dialog) and _leave_dialog.visible:
+		_leave_dialog.hide()
+		return
 	if _exit_dialog != null and is_instance_valid(_exit_dialog) and _exit_dialog.visible:
 		_exit_dialog.hide()
+		return
+	if _state.route == NavigationState.Route.GAME:
+		request_home()
 		return
 	if _state.back():
 		go_home()
@@ -125,6 +134,22 @@ func _on_play() -> void:
 func _on_language_selected(code: String) -> void:
 	if _settings.set_language(code):
 		_show(SETTINGS_SCENE)
+
+
+func request_home() -> void:
+	var game: ClassicGame = _screen as ClassicGame
+	if game == null or not game.has_unsaved_move():
+		go_home()
+		return
+	if _leave_dialog == null:
+		_leave_dialog = ConfirmationDialog.new()
+		add_child(_leave_dialog)
+		_leave_dialog.confirmed.connect(go_home)
+	_leave_dialog.title = UiText.get_text("leave_title", _settings.language)
+	_leave_dialog.dialog_text = UiText.get_text("leave_message", _settings.language)
+	_leave_dialog.ok_button_text = UiText.get_text("leave_confirm", _settings.language)
+	_leave_dialog.cancel_button_text = UiText.get_text("cancel", _settings.language)
+	_leave_dialog.popup_centered()
 
 
 func _confirm_exit() -> void:

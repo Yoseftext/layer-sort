@@ -47,8 +47,19 @@ func _run() -> void:
 		_expect(game.language == "ar", "game inherits locale")
 		var board: HBoxContainer = game.find_child("TubeRow", true, false) as HBoxContainer
 		_expect(board != null and board.layout_direction == Control.LAYOUT_DIRECTION_LTR, "tube order stays LTR")
+		game._on_tube_pressed(0)
+		game._on_tube_pressed(3)
+		_expect(game.has_unsaved_move(), "fixture move committed")
 		game.home_requested.emit()
-		_expect(navigation.current_route() == NavigationState.Route.HOME, "game Home returns safely")
+		_expect(navigation.current_route() == NavigationState.Route.GAME, "unsaved attempt requires confirmation")
+		var leave: ConfirmationDialog = navigation.get("_leave_dialog") as ConfirmationDialog
+		_expect(leave != null and leave.visible, "leave confirmation displayed")
+		navigation.go_back()
+		_expect(navigation.current_route() == NavigationState.Route.GAME, "Back dismisses confirmation")
+		game.home_requested.emit()
+		if leave != null:
+			leave.confirmed.emit()
+			_expect(navigation.current_route() == NavigationState.Route.HOME, "confirmed leave returns Home")
 		_expect(navigation.open_level(catalog_result.catalog.entry_level_id), "fixture reopens")
 		navigation.go_back()
 		_expect(navigation.current_route() == NavigationState.Route.HOME, "game Back returns Home")

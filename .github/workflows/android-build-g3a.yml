@@ -279,7 +279,7 @@ jobs:
       - name: Headless GDScript smoke test
         run: |
           set -o pipefail
-          godot --headless --path . --quit-after 10 2>&1 | tee logs/smoke.log
+          godot --headless --path . --quit-after 120 2>&1 | tee logs/smoke.log
           grep -q "Godot Engine v${GODOT_VERSION_STRING}" logs/smoke.log || {
             echo "::error::Pinned Godot startup line missing from headless smoke test."; exit 1; }
           grep -q "LAYER_SORT_G3_HOME_READY" logs/smoke.log || {

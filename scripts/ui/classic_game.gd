@@ -21,6 +21,10 @@ var _suspended: bool = false
 var _conflicting_touch: bool = false
 
 
+func has_unsaved_move() -> bool:
+	return _session != null and _session.snapshot().move_count > 0
+
+
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_RTL if language == "ar" else Control.LAYOUT_DIRECTION_LTR
 	var loaded: Dictionary = LevelLoader.read_file(level_path)
@@ -71,6 +75,7 @@ func _build_ui() -> void:
 		var tube: TubeView = TubeView.new()
 		tube.custom_minimum_size = Vector2(100, 440)
 		row.add_child(tube)
+		tube.accessibility_name = UiText.get_text("tube", language) % (index + 1)
 		tube.pressed.connect(_on_tube_pressed.bind(index))
 		_views.append(tube)
 	var buttons: HBoxContainer = HBoxContainer.new()

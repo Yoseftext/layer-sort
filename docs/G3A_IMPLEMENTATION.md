@@ -1,6 +1,6 @@
 # G3-A — navigation foundation
 
-The entry scene is `scenes/navigation/root.tscn`. `NavigationCoordinator` owns the active screen and Android Back routing. `NavigationState` records the route and selected level. Home reads the validated entry ID from `content/levels/catalog.json`; the game receives a validated level path before it enters the tree. `LevelLoader` retains its strict G2 schema. Returning Home discards the in-memory G2 session; this is visible prototype behavior, not save/resume.
+The entry scene is `scenes/navigation/root.tscn`. `NavigationCoordinator` owns the active screen and Android Back routing. `NavigationState` records the route and selected level. Home reads the validated entry ID from `content/levels/catalog.json`; the game receives a validated level path before it enters the tree. `LevelLoader` retains its strict G2 schema. Returning Home discards the in-memory G2 session; a played attempt requires confirmation before leaving. This is prototype behavior, not save/resume.
 
 The short splash leads to Home after 0.5 seconds. Settings changes language in the current process and updates screen direction. The settings screen says explicitly that the choice lasts for this session. About reads bounded attribution entries from `content/about/credits.json`. The UI uses the approved dark/cyan palette and scalable containers; premium assets remain G4.
 
