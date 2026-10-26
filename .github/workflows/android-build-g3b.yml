@@ -296,12 +296,12 @@ jobs:
           grep -q 'G2_RULE_TESTS status=PASS' logs/g2-rules.log
           if grep -Eq 'SCRIPT ERROR|RULE_FAIL' logs/g2-rules.log; then exit 1; fi
 
-      - name: Run G3-B navigation and settings suite
+      - name: Run G3-A navigation regression
         run: |
           set -o pipefail
-          godot --headless --path . --script res://tests/g3b/navigation_test.gd 2>&1 | tee logs/g3b-navigation.log
-          grep -q 'G3B_NAV_TESTS status=PASS' logs/g3b-navigation.log
-          if grep -Eq 'SCRIPT ERROR|G3B_FAIL' logs/g3b-navigation.log; then exit 1; fi
+          godot --headless --path . --script res://tests/g3a/navigation_test.gd 2>&1 | tee logs/g3a-navigation.log
+          grep -q 'G3A_NAV_TESTS status=PASS' logs/g3a-navigation.log
+          if grep -Eq 'SCRIPT ERROR|G3A_FAIL' logs/g3a-navigation.log; then exit 1; fi
 
       - name: Run G3-B progression and save suite
         run: |
