@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "name": "Godot Engine",
+      "role": "Game engine",
+      "license": "MIT",
+      "url": "https://godotengine.org/license/"
+    }
+  ]
+}

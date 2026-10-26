@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "entry_level_id": "level_001",
+  "available_level_ids": ["level_001", "level_002"]
+}
