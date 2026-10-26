@@ -25,7 +25,9 @@ func _run() -> void:
 	settings_button.pressed.emit()
 	_expect(navigation.current_route() == NavigationState.Route.SETTINGS, "Settings opens")
 	var settings: SettingsScreen = navigation.current_screen() as SettingsScreen
-	settings.language_selected.emit("ar")
+	var arabic_button: Button = settings.find_child("ArabicButton", true, false) as Button
+	_expect(arabic_button != null, "Arabic setting reachable")
+	arabic_button.pressed.emit()
 	settings = navigation.current_screen() as SettingsScreen
 	_expect(settings.language == "ar", "language changes immediately")
 	_expect(settings.layout_direction == Control.LAYOUT_DIRECTION_RTL, "Arabic UI is RTL")
@@ -33,7 +35,9 @@ func _run() -> void:
 	_expect(navigation.current_route() == NavigationState.Route.HOME, "Back to Home")
 	home = navigation.current_screen() as HomeScreen
 	_expect(home.language == "ar", "language survives screen changes")
-	home.about_requested.emit()
+	var about_button: Button = home.find_child("AboutButton", true, false) as Button
+	_expect(about_button != null, "About button reachable")
+	about_button.pressed.emit()
 	_expect(navigation.current_screen() is AboutScreen, "About opens")
 	navigation.go_back()
 	_expect(navigation.current_route() == NavigationState.Route.HOME, "About Back returns Home")
@@ -50,19 +54,26 @@ func _run() -> void:
 		game._on_tube_pressed(0)
 		game._on_tube_pressed(3)
 		_expect(game.has_unsaved_move(), "fixture move committed")
-		game.home_requested.emit()
+		var game_home_button: Button = game.find_child("HomeButton", true, false) as Button
+		_expect(game_home_button != null, "game Home button reachable")
+		game_home_button.pressed.emit()
 		_expect(navigation.current_route() == NavigationState.Route.GAME, "unsaved attempt requires confirmation")
 		var leave: ConfirmationDialog = navigation.get("_leave_dialog") as ConfirmationDialog
 		_expect(leave != null and leave.visible, "leave confirmation displayed")
 		navigation.go_back()
 		_expect(navigation.current_route() == NavigationState.Route.GAME, "Back dismisses confirmation")
-		game.home_requested.emit()
+		game_home_button.pressed.emit()
 		if leave != null:
 			leave.confirmed.emit()
 			_expect(navigation.current_route() == NavigationState.Route.HOME, "confirmed leave returns Home")
 		_expect(navigation.open_level(catalog_result.catalog.entry_level_id), "fixture reopens")
 		navigation.go_back()
 		_expect(navigation.current_route() == NavigationState.Route.HOME, "game Back returns Home")
+	navigation.go_back()
+	var exit_dialog: ConfirmationDialog = navigation.get("_exit_dialog") as ConfirmationDialog
+	_expect(exit_dialog != null and exit_dialog.visible, "Home Back confirms exit")
+	navigation.go_back()
+	_expect(not exit_dialog.visible and navigation.current_route() == NavigationState.Route.HOME, "Back dismisses exit confirmation")
 	navigation.queue_free()
 	print("G3A_NAV_TESTS status=%s checks=%d failures=%d" % ["PASS" if _failures == 0 else "FAIL", _checks, _failures])
 	quit(0 if _failures == 0 else 1)
