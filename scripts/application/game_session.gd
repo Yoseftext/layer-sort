@@ -58,3 +58,16 @@ func restart() -> void:
 
 func history_size() -> int:
 	return _history.size()
+
+
+func restore_committed(saved: Dictionary) -> void:
+	var restored: GameState = _initial.copy()
+	restored.move_count = saved.move_count
+	for index: int in range(restored.tubes.size()):
+		var layers: Array[int] = []
+		for colour: Variant in saved.tubes[index]:
+			layers.append(int(colour))
+		restored.tubes[index] = TubeModel.new(layers)
+	_state = restored
+	_history.clear()
+	_animation_locked = false
