@@ -6,9 +6,9 @@ name: android-build-g3b
 
 "on":
   push:
-    branches: ["feat/g3b-progression"]
+    branches: ["feat/g3b-progression", "feat/g3b-remediation"]
   pull_request:
-    branches: ["feat/g3a-navigation"]
+    branches: ["feat/g3a-navigation", "feat/g3b-progression"]
   workflow_dispatch:
 
 concurrency:
