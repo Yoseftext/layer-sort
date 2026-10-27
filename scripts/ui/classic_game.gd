@@ -56,7 +56,7 @@ func _build_ui() -> void:
 	var layout: VBoxContainer = VBoxContainer.new()
 	layout.add_theme_constant_override("separation", 24)
 	margins.add_child(layout)
-	var title: Label = _make_label("LAYER SORT  •  CLASSIC", 38)
+	var title: Label = _make_label(UiText.get_text("game_title", language), 38)
 	layout.add_child(title)
 	var home: Button = _make_button(UiText.get_text("home", language))
 	home.name = "HomeButton"
@@ -153,7 +153,7 @@ func _on_tube_pressed(index: int) -> void:
 	var source: int = _selected_source
 	var result: Dictionary = _session.submit(source, index)
 	if not result.ok:
-		_status.text = UiText.get_text("cannot_pour", language) % String(result.reason).replace("_", " ").to_lower()
+		_status.text = UiText.get_text("reject_" + String(result.reason).to_lower(), language)
 		print("LAYER_SORT_G2_REJECT %s" % result.reason)
 		return
 	_selected_source = -1

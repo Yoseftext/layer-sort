@@ -16,6 +16,9 @@ var _progression: Progression
 var _saves: SaveRepository = SaveRepository.new()
 var _save_sequence: int = 0
 var _save_blocked: bool = false
+var _save_failed: bool = false
+var _save_status: String = ""
+var _save_dialog: ConfirmationDialog
 var _active: Dictionary = {}
 var _win_dialog: AcceptDialog
 var _surface: MarginContainer
@@ -38,8 +41,11 @@ func _ready() -> void:
 			_progression.load_records(saved.completed)
 			_save_sequence = saved.sequence
 			_active = saved.active
-		elif saved.error != "NO_SAVE":
+			_save_status = String(saved.status)
+			_save_blocked = bool(saved.get("write_blocked", false))
+		elif saved.status != "NO_SAVE":
 			_save_blocked = true
+			_save_status = String(saved.status)
 			push_error("G3B_SAVE_RECOVERY_FAILED")
 	else:
 		push_error("G3_CATALOG_ERROR " + String(loaded.error))
@@ -66,8 +72,7 @@ func go_home() -> void:
 		_leave_dialog.hide()
 	_close_pause()
 	if _state.route == NavigationState.Route.GAME:
-		_active = {}
-		_persist()
+		_clear_active_attempt()
 	_state.open_home()
 	_show(HOME_SCENE)
 
@@ -130,8 +135,12 @@ func open_level(level_id: String, restore: bool = false) -> bool:
 
 
 func go_back() -> void:
+	if _save_dialog != null and _save_dialog.visible:
+		_save_dialog.hide()
+		return
 	if _win_dialog != null and _win_dialog.visible:
 		_win_dialog.hide()
+		show_map()
 		return
 	if _leave_dialog != null and is_instance_valid(_leave_dialog) and _leave_dialog.visible:
 		_leave_dialog.hide()
@@ -170,12 +179,14 @@ func _show(scene: PackedScene) -> void:
 	if next is HomeScreen:
 		(next as HomeScreen).play_enabled = _catalog != null and not _save_blocked
 		(next as HomeScreen).continue_enabled = not _active.is_empty() and not _save_blocked
-		(next as HomeScreen).save_error = _save_blocked
+		(next as HomeScreen).save_error = _save_blocked or _save_failed or _save_status == "RECOVERED"
+		(next as HomeScreen).save_status = _save_status
 	_replace_screen(next)
 	if next is HomeScreen:
 		(next as HomeScreen).play_requested.connect(_on_play)
 		(next as HomeScreen).map_requested.connect(show_map)
 		(next as HomeScreen).continue_requested.connect(continue_game)
+		(next as HomeScreen).retry_save_requested.connect(_retry_save)
 		(next as HomeScreen).settings_requested.connect(show_settings)
 		(next as HomeScreen).about_requested.connect(show_about)
 	elif next is SettingsScreen:
@@ -202,13 +213,45 @@ func _snapshot_data(state: GameState) -> Dictionary:
 	return {"level_id": state.level_id, "content_version": state.content_version, "move_count": state.move_count, "tubes": tubes}
 
 
-func _persist() -> void:
+func _clear_active_attempt() -> void:
+	var previous: Dictionary = _active.duplicate(true)
+	_active = {}
+	if not _persist():
+		_active = previous
+
+
+func _persist() -> bool:
 	if _progression == null or _save_blocked:
-		return
-	if _saves.write(_save_sequence + 1, _progression.completed, _active):
+		return false
+	var result: Dictionary = _saves.write_result(_save_sequence + 1, _progression.completed, _active)
+	if result.ok:
 		_save_sequence += 1
-	else:
-		push_error("G3B_SAVE_WRITE_FAILED")
+		_save_failed = false
+		_save_status = ""
+		return true
+	_save_failed = true
+	_save_status = String(result.status)
+	push_error("G3B_SAVE_" + _save_status)
+	_show_save_warning()
+	return false
+
+
+func _retry_save() -> void:
+	var succeeded: bool = _persist()
+	if succeeded and _state.route == NavigationState.Route.HOME:
+		_show(HOME_SCENE)
+
+
+func _show_save_warning() -> void:
+	if _save_dialog == null:
+		_save_dialog = ConfirmationDialog.new()
+		add_child(_save_dialog)
+		_save_dialog.confirmed.connect(_retry_save)
+	_save_dialog.title = UiText.get_text("save_warning_title", _settings.language)
+	_save_dialog.dialog_text = UiText.get_text("save_write_error", _settings.language)
+	_save_dialog.ok_button_text = UiText.get_text("retry_save", _settings.language)
+	_save_dialog.cancel_button_text = UiText.get_text("continue_unsaved", _settings.language)
+	ScreenWidgets.show_dialog(_save_dialog)
 
 
 func _on_game_commit(state: GameState, won: bool) -> void:
@@ -223,8 +266,8 @@ func _on_game_commit(state: GameState, won: bool) -> void:
 			add_child(_win_dialog)
 			_win_dialog.confirmed.connect(show_map)
 		_win_dialog.title = UiText.get_text("completed", _settings.language)
-		_win_dialog.dialog_text = UiText.get_text("completed", _settings.language)
-		_win_dialog.popup_centered()
+		_win_dialog.dialog_text = UiText.get_text("completed", _settings.language) + ("\n" + UiText.get_text("save_write_error", _settings.language) if _save_failed else "")
+		ScreenWidgets.show_dialog(_win_dialog)
 
 
 func _on_play() -> void:
@@ -303,7 +346,7 @@ func _request_restart() -> void:
 	_restart_dialog.dialog_text = UiText.get_text("restart_message", _settings.language)
 	_restart_dialog.ok_button_text = UiText.get_text("restart", _settings.language)
 	_restart_dialog.cancel_button_text = UiText.get_text("cancel", _settings.language)
-	_restart_dialog.popup_centered()
+	ScreenWidgets.show_dialog(_restart_dialog)
 
 
 func _restart_game() -> void:
@@ -325,8 +368,7 @@ func request_map() -> void:
 
 func _finish_leave() -> void:
 	if _leave_to_map:
-		_active = {}
-		_persist()
+		_clear_active_attempt()
 		show_map()
 	else:
 		go_home()
@@ -345,7 +387,7 @@ func _request_leave() -> void:
 	_leave_dialog.dialog_text = UiText.get_text("leave_message", _settings.language)
 	_leave_dialog.ok_button_text = UiText.get_text("leave_confirm", _settings.language)
 	_leave_dialog.cancel_button_text = UiText.get_text("cancel", _settings.language)
-	_leave_dialog.popup_centered()
+	ScreenWidgets.show_dialog(_leave_dialog)
 
 
 func _confirm_exit() -> void:
@@ -356,7 +398,7 @@ func _confirm_exit() -> void:
 	_exit_dialog.title = UiText.get_text("exit_title", _settings.language)
 	_exit_dialog.ok_button_text = UiText.get_text("exit_confirm", _settings.language)
 	_exit_dialog.cancel_button_text = UiText.get_text("cancel", _settings.language)
-	_exit_dialog.popup_centered()
+	ScreenWidgets.show_dialog(_exit_dialog)
 
 
 func _apply_safe_area() -> void:

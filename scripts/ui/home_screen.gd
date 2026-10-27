@@ -4,6 +4,7 @@ extends Control
 signal play_requested
 signal map_requested
 signal continue_requested
+signal retry_save_requested
 signal settings_requested
 signal about_requested
 
@@ -11,6 +12,7 @@ var language: String = "en"
 var play_enabled: bool = true
 var continue_enabled: bool = false
 var save_error: bool = false
+var save_status: String = ""
 
 
 func _ready() -> void:
@@ -20,7 +22,11 @@ func _ready() -> void:
 	column.add_child(ScreenWidgets.label("LAYER SORT", 58))
 	column.add_child(ScreenWidgets.label(UiText.get_text("subtitle", language), 26, true))
 	if save_error:
-		column.add_child(ScreenWidgets.label(UiText.get_text("save_error", language), 23, true))
+		column.add_child(ScreenWidgets.label(UiText.get_text("save_recovered", language) if save_status == "RECOVERED" else (UiText.get_text("save_error", language) if save_status == "CORRUPT" or save_status == "UNSUPPORTED_VERSION" else UiText.get_text("save_write_error", language)), 23, true))
+		if save_status == "WRITE_FAILED" or save_status == "REPLACE_FAILED":
+			var retry: Button = ScreenWidgets.button(UiText.get_text("retry_save", language))
+			column.add_child(retry)
+			retry.pressed.connect(func() -> void: retry_save_requested.emit())
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size.y = 70
 	column.add_child(spacer)
