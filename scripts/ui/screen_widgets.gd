@@ -19,6 +19,8 @@ static func background(parent: Control) -> void:
 static func stack(parent: Control) -> VBoxContainer:
 	var center: CenterContainer = CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.offset_left = 16
+	center.offset_right = -16
 	parent.add_child(center)
 	var column: VBoxContainer = VBoxContainer.new()
 	column.custom_minimum_size = Vector2(0, 360)
@@ -33,7 +35,7 @@ static func label(value: String, size: int, muted: bool = false) -> Label:
 	node.text = value
 	node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	node.autowrap_mode = TextServer.AUTOWRAP_WORD
 	node.add_theme_font_size_override("font_size", size)
 	node.add_theme_color_override("font_color", MUTED if muted else TEXT)
 	return node
@@ -56,5 +58,24 @@ static func button(value: String, primary: bool = false) -> Button:
 	pressed.bg_color = Color("#55b9cf") if primary else Color("#29415d")
 	node.add_theme_stylebox_override("pressed", pressed)
 	node.add_theme_stylebox_override("hover", normal)
-	node.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	var focus: StyleBoxFlat = normal.duplicate()
+	focus.border_color = ACCENT
+	focus.set_border_width_all(4)
+	node.add_theme_stylebox_override("focus", focus)
 	return node
+
+
+static func show_dialog(dialog: AcceptDialog) -> void:
+	var theme: Theme = Theme.new()
+	var panel: StyleBoxFlat = StyleBoxFlat.new()
+	panel.bg_color = CARD
+	panel.border_color = ACCENT
+	panel.set_border_width_all(2)
+	panel.set_corner_radius_all(20)
+	panel.set_content_margin_all(24)
+	theme.set_stylebox("panel", "AcceptDialog", panel)
+	theme.set_stylebox("panel", "ConfirmationDialog", panel)
+	theme.set_color("font_color", "Label", TEXT)
+	dialog.theme = theme
+	dialog.min_size = Vector2i(520, 240)
+	dialog.popup_centered(Vector2i(600, 300))

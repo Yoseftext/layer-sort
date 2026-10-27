@@ -16,12 +16,14 @@ func _ready() -> void:
 	column.add_child(ScreenWidgets.label(UiText.get_text("language", language), 28, true))
 	var english: Button = ScreenWidgets.button(UiText.get_text("english", language))
 	english.name = "EnglishButton"
-	english.disabled = language == "en"
+	english.toggle_mode = true
+	english.button_pressed = language == "en"
 	column.add_child(english)
 	english.pressed.connect(func() -> void: language_selected.emit("en"))
 	var arabic: Button = ScreenWidgets.button(UiText.get_text("arabic", language))
 	arabic.name = "ArabicButton"
-	arabic.disabled = language == "ar"
+	arabic.toggle_mode = true
+	arabic.button_pressed = language == "ar"
 	column.add_child(arabic)
 	arabic.pressed.connect(func() -> void: language_selected.emit("ar"))
 	column.add_child(ScreenWidgets.label(UiText.get_text("session_only", language), 21, true))

@@ -1,5 +1,13 @@
 extends SceneTree
 
+class FailingWrite extends SaveRepository:
+	func _write_temp(_path: String, _contents: String) -> bool:
+		return false
+
+class FailingReplace extends SaveRepository:
+	func _replace_temp(_temporary: String, _target: String) -> bool:
+		return false
+
 var checks: int = 0
 var failures: int = 0
 
@@ -23,6 +31,7 @@ func _run() -> void:
 	var saves: SaveRepository = SaveRepository.new()
 	saves.directory = "user://g3b_test"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(saves.directory))
+	check(saves.load_latest(catalog).status == "NO_SAVE" or saves.load_latest(catalog).ok, "missing save distinguished")
 	var initial: Dictionary = LevelLoader.read_file(catalog.path_for("level_001"))
 	var tubes: Array = []
 	for tube: TubeModel in initial.state.tubes:
@@ -43,6 +52,34 @@ func _run() -> void:
 	future.store_string('{"payload":{"save_schema_version":2},"checksum":"x"}')
 	future.close()
 	check(saves.load_latest(catalog).sequence == 1, "unsupported schema preserves older")
+	var future_payload: Dictionary = {"save_schema_version": 2, "sequence": 3, "completed": {}, "active": {}}
+	var canonical: String = JSON.stringify(JSON.parse_string(JSON.stringify(future_payload, "", true)), "", true)
+	var future_envelope: Dictionary = {"payload": future_payload, "checksum": canonical.sha256_text()}
+	future = FileAccess.open(saves.directory.path_join("save_b.json"), FileAccess.WRITE)
+	future.store_string(JSON.stringify(future_envelope))
+	future.close()
+	var recovered: Dictionary = saves.load_latest(catalog)
+	check(recovered.status == "UNSUPPORTED_VERSION" and recovered.sequence == 1, "future schema blocks downgrade")
+	check(saves.write_result(3, progress.completed, active).status == "UNSUPPORTED_VERSION", "future slot not overwritten")
+	var failed_write: FailingWrite = FailingWrite.new()
+	failed_write.directory = saves.directory
+	check(failed_write.write_result(5, progress.completed, active).status == "WRITE_FAILED", "write failure reported")
+	var failed_replace: FailingReplace = FailingReplace.new()
+	failed_replace.directory = saves.directory
+	check(failed_replace.write_result(5, progress.completed, active).status == "REPLACE_FAILED", "replace failure reported")
+	check(not FileAccess.file_exists(saves.directory.path_join("save_a.json.tmp")), "failed replacement temp cleaned")
+	check(FileAccess.file_exists(saves.directory.path_join("save_a.json")), "last valid slot retained")
+	check(saves.write_result(1000000001, progress.completed, active).status == "UNSUPPORTED_VERSION", "future schema still blocks writes")
+	var temporary: FileAccess = FileAccess.open(saves.directory.path_join("save_a.json.tmp"), FileAccess.WRITE)
+	temporary.store_string("{incomplete")
+	temporary.close()
+	check(saves.load_latest(catalog).sequence == 1, "orphan temp ignored")
+	var bounded: SaveRepository = SaveRepository.new()
+	bounded.directory = saves.directory
+	check(bounded.write_result(1000000001, progress.completed, active).status == "INVALID_SEQUENCE", "sequence bound")
+	var oversized: Dictionary = active.duplicate(true)
+	oversized.move_count = 1000001
+	check(not bounded._valid_active(oversized, catalog), "move bound")
 	var invalid: Progression = Progression.new(catalog)
 	check(not invalid.load_records({"level_404": {"stars": 1, "best_moves": 1}}), "unknown level refused")
 	print("G3B_TESTS status=%s checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])

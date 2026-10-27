@@ -317,6 +317,14 @@ jobs:
           grep -q 'G3B_TESTS status=PASS' logs/g3b-progression.log
           if grep -Eq 'SCRIPT ERROR|G3B_FAIL' logs/g3b-progression.log; then exit 1; fi
 
+      - name: Run G3-B remediation and APK-report tests
+        run: |
+          set -o pipefail
+          godot --headless --path . --script res://tests/g3b/remediation_test.gd 2>&1 | tee logs/g3b-remediation.log
+          grep -q 'G3B_REMEDIATION_TESTS status=PASS' logs/g3b-remediation.log
+          if grep -Eq 'SCRIPT ERROR|G3B_REMEDIATION_FAIL' logs/g3b-remediation.log; then exit 1; fi
+          python3 -m unittest tests/test_apk_report.py
+
       - name: Export Android G3-B debug APK
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD }}
@@ -367,7 +375,13 @@ jobs:
           aapt2 dump badging build/layer-sort-g3b-debug.apk > logs/apk-badging.txt
           aapt2 dump xmltree --file AndroidManifest.xml build/layer-sort-g3b-debug.apk > logs/android-manifest.txt
           apksigner verify --verbose --print-certs build/layer-sort-g3b-debug.apk > logs/apk-signing.txt
-          LAYER_SORT_VERSION_NAME=0.3.1-g3b LAYER_SORT_VERSION_CODE=4 tools/verify-apk.sh build/layer-sort-g3b-debug.apk tools/device-tests/expected-debug-cert.sha256 | tee logs/apk-verification.txt
+          LAYER_SORT_VERSION_NAME=0.3.2-g3b LAYER_SORT_VERSION_CODE=5 tools/verify-apk.sh build/layer-sort-g3b-debug.apk tools/device-tests/expected-debug-cert.sha256 | tee logs/apk-verification.txt
+          grep -q 'config/version="0.3.2-g3b"' project.godot
+          grep -q 'Version 0.3.2-g3b' scripts/ui/ui_text.gd
+          grep -q 'الإصدار 0.3.2-g3b' scripts/ui/ui_text.gd
+          python3 tools/apk-report.py build/layer-sort-g3b-debug.apk --budget-mib "${APK_BUDGET_MIB:-32}" --output logs/apk-report.json
+          cat logs/apk-report.json | python3 -c 'import json,sys; r=json.load(sys.stdin); print("APK_SIZE_BUDGET_PASS bytes=%s budget_mib=%s" % (r["bytes"], r["budget_mib"]))'
+
 
       - name: Publish APK summary
         run: |
