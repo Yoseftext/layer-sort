@@ -62,12 +62,21 @@ def main():
     parser.add_argument("apk", type=Path)
     parser.add_argument("--baseline", type=Path)
     parser.add_argument("--budget-mib", type=float, default=32.0)
+    parser.add_argument("--verification", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     current = inspect(args.apk)
     baseline = inspect(args.baseline) if args.baseline else None
     report = {k: v for k, v in current.items() if k != "entries"}
     report["budget_mib"] = args.budget_mib
+    if args.verification:
+        fields = {}
+        for line in args.verification.read_text(encoding="utf-8").splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                if key in {"package", "version_name", "version_code", "orientation", "signing_cert_sha256", "native-code"}:
+                    fields[key] = value
+        report["verified_identity"] = fields
     report["budget_pass"] = current["bytes"] <= args.budget_mib * 1048576
     if baseline:
         before, after = baseline["entries"], current["entries"]

@@ -80,6 +80,11 @@ func _run() -> void:
 	var oversized: Dictionary = active.duplicate(true)
 	oversized.move_count = 1000001
 	check(not bounded._valid_active(oversized, catalog), "move bound")
+	check(recovered.status == "UNSUPPORTED_VERSION", "future status retained")
+	future = FileAccess.open(saves.directory.path_join("save_b.json"), FileAccess.WRITE)
+	future.store_string('{"payload":{"save_schema_version":2},"checksum":"future-algorithm"}')
+	future.close()
+	check(saves.load_latest(catalog).status == "UNSUPPORTED_VERSION", "future checksum algorithm blocks overwrite")
 	var invalid: Progression = Progression.new(catalog)
 	check(not invalid.load_records({"level_404": {"stars": 1, "best_moves": 1}}), "unknown level refused")
 	print("G3B_TESTS status=%s checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])

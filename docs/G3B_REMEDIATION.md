@@ -6,12 +6,12 @@ Base: `feat/g3b-progression` at `20b0755cbcf3c869237c7b7f90fe720b68012978`. The 
 
 | Severity | Defect / cause | Correction / regression |
 |---|---|---|
-| High | Write failure only reached logcat while gameplay continued | Explicit write result, localized modal warning and retry preserving the in-memory board; `remediation_test.gd` |
-| High | A newer valid save schema could be ignored in favor of an older slot and overwritten | Detect valid newer schema, read older state only for diagnosis, block writes; `progression_test.gd` |
+| High | Write failure only reached logcat while gameplay continued; failed exit erased in-memory attempt | Explicit write result, localized modal warning and retry preserving the in-memory board; `remediation_test.gd` |
+| High | A newer save schema could be ignored in favor of an older slot and overwritten, especially if its checksum differs from v1 | Detect valid newer schema, read older state only for diagnosis, block writes; `progression_test.gd` |
 | Medium | Recovery could not distinguish missing, corrupt, recovered and future-schema slots | Structured recovery status and bounded sequence/move values; `progression_test.gd` |
 | Medium | Project/About showed G3-A while APK showed G3-B | Debug update version `0.3.2-g3b` / code 5 across metadata and both locales; CI checks |
 | Medium | Selected language was disabled and visually ambiguous | Enabled toggle with selected state; `remediation_test.gd` |
-| Medium | Dialogs used inconsistent default presentation; focus outline was empty | Shared dialog style/size and visible button focus; G3-A/G3-B navigation regression |
+| Medium | Back from Win exposed an already-completed board; dialogs used inconsistent default presentation and focus outline was empty | Shared dialog style/size and visible button focus; G3-A/G3-B navigation regression |
 | Medium | Rejection reasons leaked English codes into Arabic | Localized Classic rejection messages; G2 and navigation regression |
 | Medium | No repeatable APK content/size comparison | `tools/apk-report.py`, 32 MiB CI budget and ZIP-entry tests |
 

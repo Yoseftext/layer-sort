@@ -379,7 +379,7 @@ jobs:
           grep -q 'config/version="0.3.2-g3b"' project.godot
           grep -q 'Version 0.3.2-g3b' scripts/ui/ui_text.gd
           grep -q 'الإصدار 0.3.2-g3b' scripts/ui/ui_text.gd
-          python3 tools/apk-report.py build/layer-sort-g3b-debug.apk --budget-mib "${APK_BUDGET_MIB:-32}" --output logs/apk-report.json
+          python3 tools/apk-report.py build/layer-sort-g3b-debug.apk --budget-mib "${APK_BUDGET_MIB:-32}" --verification logs/apk-verification.txt --output logs/apk-report.json
           cat logs/apk-report.json | python3 -c 'import json,sys; r=json.load(sys.stdin); print("APK_SIZE_BUDGET_PASS bytes=%s budget_mib=%s" % (r["bytes"], r["budget_mib"]))'
 
 

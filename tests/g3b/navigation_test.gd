@@ -44,8 +44,8 @@ func _run() -> void:
 		game._on_tube_pressed(move.y)
 		await create_timer(0.3).timeout
 	check(navigation.get("_win_dialog") != null, "valid win opens completion")
-	(navigation.get("_win_dialog") as AcceptDialog).hide()
-	(navigation.get("_win_dialog") as AcceptDialog).confirmed.emit()
+	navigation.go_back()
+	check(navigation.current_screen() is LevelMapScreen, "Back from win returns Map")
 	level_map = navigation.current_screen() as LevelMapScreen
 	check(not (level_map.find_child("level_002", true, false) as Button).disabled, "win unlocks next level")
 	(level_map.find_child("level_002", true, false) as Button).pressed.emit()

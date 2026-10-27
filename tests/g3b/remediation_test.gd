@@ -41,6 +41,11 @@ func _run() -> void:
 	check(warning.dialog_text == UiText.get_text("save_write_error", "ar"), "Arabic save failure text")
 	check((nav.current_screen() as ClassicGame) != null, "game retained in memory")
 	warning.hide()
+	nav.request_home()
+	check(nav.current_screen() is HomeScreen, "failed exit reaches Home with warning")
+	check((nav.current_screen() as HomeScreen).continue_enabled, "failed exit retains Continue")
+	check(not (nav.get("_active") as Dictionary).is_empty(), "failed exit keeps attempt in memory")
+	(nav.get("_save_dialog") as ConfirmationDialog).hide()
 	var repository: SaveRepository = SaveRepository.new()
 	repository.directory = "user://g3br_remediation_test"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(repository.directory))

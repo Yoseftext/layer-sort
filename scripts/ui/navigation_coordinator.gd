@@ -72,8 +72,7 @@ func go_home() -> void:
 		_leave_dialog.hide()
 	_close_pause()
 	if _state.route == NavigationState.Route.GAME:
-		_active = {}
-		_persist()
+		_clear_active_attempt()
 	_state.open_home()
 	_show(HOME_SCENE)
 
@@ -141,6 +140,7 @@ func go_back() -> void:
 		return
 	if _win_dialog != null and _win_dialog.visible:
 		_win_dialog.hide()
+		show_map()
 		return
 	if _leave_dialog != null and is_instance_valid(_leave_dialog) and _leave_dialog.visible:
 		_leave_dialog.hide()
@@ -211,6 +211,13 @@ func _snapshot_data(state: GameState) -> Dictionary:
 	for tube: TubeModel in state.tubes:
 		tubes.append(tube.layers.duplicate())
 	return {"level_id": state.level_id, "content_version": state.content_version, "move_count": state.move_count, "tubes": tubes}
+
+
+func _clear_active_attempt() -> void:
+	var previous: Dictionary = _active.duplicate(true)
+	_active = {}
+	if not _persist():
+		_active = previous
 
 
 func _persist() -> bool:
@@ -361,8 +368,7 @@ func request_map() -> void:
 
 func _finish_leave() -> void:
 	if _leave_to_map:
-		_active = {}
-		_persist()
+		_clear_active_attempt()
 		show_map()
 	else:
 		go_home()

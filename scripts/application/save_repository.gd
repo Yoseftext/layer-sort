@@ -87,12 +87,12 @@ func _read(path: String, catalog: LevelCatalog) -> Dictionary:
 	if not envelope.has("payload") or not envelope.payload is Dictionary or not envelope.has("checksum") or not envelope.checksum is String:
 		return {"ok": false}
 	var payload: Dictionary = envelope.payload
-	if JSON.stringify(payload, "", true).sha256_text() != envelope.checksum:
-		return {"ok": false}
 	if not _nonnegative_integer(payload.get("save_schema_version")):
 		return {"ok": false}
 	if payload.save_schema_version > SCHEMA:
 		return {"ok": false, "status": "UNSUPPORTED_VERSION"}
+	if JSON.stringify(payload, "", true).sha256_text() != envelope.checksum:
+		return {"ok": false}
 	if payload.save_schema_version != SCHEMA or not Progression._positive_integer(payload.get("sequence")) or payload.sequence > 1000000000:
 		return {"ok": false}
 	var progress: Progression = Progression.new(catalog)
