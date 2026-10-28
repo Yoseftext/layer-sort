@@ -2,10 +2,12 @@ class_name SettingsScreen
 extends Control
 
 signal language_selected(code: String)
+signal motion_selected(value: bool)
 signal home_requested
 
 var language: String = "en"
 var return_to_pause: bool = false
+var reduce_motion: bool = false
 
 
 func _ready() -> void:
@@ -27,6 +29,13 @@ func _ready() -> void:
 	column.add_child(arabic)
 	arabic.pressed.connect(func() -> void: language_selected.emit("ar"))
 	column.add_child(ScreenWidgets.label(UiText.get_text("session_only", language), 21, true))
+	var motion: CheckButton = CheckButton.new()
+	motion.text = UiText.get_text("reduce_motion", language)
+	motion.accessibility_name = motion.text
+	motion.custom_minimum_size = Vector2(0, 96)
+	motion.button_pressed = reduce_motion
+	column.add_child(motion)
+	motion.toggled.connect(func(value: bool) -> void: motion_selected.emit(value))
 	var home: Button = ScreenWidgets.button(UiText.get_text("back", language) if return_to_pause else UiText.get_text("home", language))
 	home.name = "HomeButton"
 	column.add_child(home)
