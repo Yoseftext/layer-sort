@@ -11,6 +11,14 @@ spec.loader.exec_module(module)
 
 
 class ApkReportTests(unittest.TestCase):
+    def test_imported_visual_evidence_is_forbidden(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            apk = Path(temporary) / "bad.apk"
+            name = "assets/.godot/imported/gameplay-ar.png-012345.ctex"
+            with zipfile.ZipFile(apk, "w") as archive:
+                archive.writestr(name, b"capture")
+            self.assertEqual(module.inspect(apk)["forbidden_entries"], [name])
+
     def test_classification_and_diff_use_actual_entries(self):
         with tempfile.TemporaryDirectory() as temporary:
             before = Path(temporary) / "before.apk"

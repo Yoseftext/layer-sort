@@ -74,6 +74,7 @@ func _capture(filename: String) -> void:
 	if directory.is_empty():
 		return
 	DirAccess.make_dir_recursive_absolute(directory)
+	await create_timer(0.25).timeout
 	await process_frame
 	await process_frame
 	var output: String = directory.path_join(filename)

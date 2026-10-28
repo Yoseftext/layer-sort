@@ -75,6 +75,7 @@ func _build_ui() -> void:
 	header.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
 	var title: Label = _make_label(UiText.get_text("game_title", language), 30)
+	title.custom_minimum_size.y = 110
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	var pause: Button = _make_button(UiText.get_text("pause", language))
@@ -123,7 +124,9 @@ func _build_ui() -> void:
 	var restart: Button = _make_button(UiText.get_text("restart", language))
 	buttons.add_child(restart)
 	restart.pressed.connect(_on_restart)
-	layout.add_child(_make_label(UiText.get_text("game_help", language), 21))
+	var help: Label = _make_label(UiText.get_text("game_help", language), 21)
+	help.custom_minimum_size.y = 72
+	layout.add_child(help)
 	_trail = PourTrail.new()
 	_trail.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_trail)

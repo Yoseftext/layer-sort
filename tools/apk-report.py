@@ -8,7 +8,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-BANNED = re.compile(r"(^|/)(docs|tests|tools|\.env|secrets)(/|$)|\.(keystore|jks)$", re.I)
+BANNED = re.compile(r"(^|/)(docs|tests|tools|logs|build|\.env|secrets)(/|$)|\.(keystore|jks)$|gameplay-(en|ar|selected|after-pour)\.png", re.I)
 
 
 def inspect(path):
