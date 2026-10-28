@@ -2,6 +2,7 @@ class_name AppSettings
 extends RefCounted
 
 var language: String = "en"
+var reduce_motion: bool = false
 
 
 func _init() -> void:

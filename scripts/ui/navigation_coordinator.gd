@@ -21,6 +21,7 @@ var _save_status: String = ""
 var _save_dialog: ConfirmationDialog
 var _active: Dictionary = {}
 var _win_dialog: AcceptDialog
+var _win_pending: bool = false
 var _surface: MarginContainer
 var _screen: Control
 var _exit_dialog: ConfirmationDialog
@@ -68,6 +69,7 @@ func current_screen() -> Control:
 
 
 func go_home() -> void:
+	_win_pending = false
 	if _leave_dialog != null and is_instance_valid(_leave_dialog):
 		_leave_dialog.hide()
 	_close_pause()
@@ -80,6 +82,7 @@ func go_home() -> void:
 func show_map() -> void:
 	if _catalog == null:
 		return
+	_win_pending = false
 	_state.open_map()
 	var level_map: LevelMapScreen = MAP_SCENE.instantiate() as LevelMapScreen
 	level_map.language = _settings.language
@@ -117,10 +120,12 @@ func open_level(level_id: String, restore: bool = false) -> bool:
 		return false
 	if String(loaded.state.level_id) != level_id:
 		return false
+	_win_pending = false
 	_state.open_game(level_id)
 	var game: ClassicGame = GAME_SCENE.instantiate() as ClassicGame
 	game.level_path = path
 	game.language = _settings.language
+	game.reduce_motion = _settings.reduce_motion
 	if restore and _active.get("level_id") == level_id:
 		game.restored_state = _active.duplicate(true)
 	else:
@@ -130,6 +135,7 @@ func open_level(level_id: String, restore: bool = false) -> bool:
 	game.home_requested.connect(request_home)
 	game.pause_requested.connect(_open_pause)
 	game.state_committed.connect(_on_game_commit)
+	game.presentation_complete.connect(_on_game_presentation_complete)
 	print("LAYER_SORT_G3_GAME_READY " + level_id)
 	return true
 
@@ -176,6 +182,8 @@ func _show_splash() -> void:
 func _show(scene: PackedScene) -> void:
 	var next: Control = scene.instantiate() as Control
 	next.set("language", _settings.language)
+	if next is SettingsScreen:
+		(next as SettingsScreen).reduce_motion = _settings.reduce_motion
 	if next is HomeScreen:
 		(next as HomeScreen).play_enabled = _catalog != null and not _save_blocked
 		(next as HomeScreen).continue_enabled = not _active.is_empty() and not _save_blocked
@@ -191,6 +199,7 @@ func _show(scene: PackedScene) -> void:
 		(next as HomeScreen).about_requested.connect(show_about)
 	elif next is SettingsScreen:
 		(next as SettingsScreen).language_selected.connect(_on_language_selected)
+		(next as SettingsScreen).motion_selected.connect(_on_motion_selected)
 		(next as SettingsScreen).home_requested.connect(go_home)
 	elif next is AboutScreen:
 		(next as AboutScreen).home_requested.connect(go_home)
@@ -260,14 +269,25 @@ func _on_game_commit(state: GameState, won: bool) -> void:
 		_progression.record_win(state.level_id, state.move_count)
 		_active = {}
 	_persist()
-	if won:
-		if _win_dialog == null:
-			_win_dialog = AcceptDialog.new()
-			add_child(_win_dialog)
-			_win_dialog.confirmed.connect(show_map)
-		_win_dialog.title = UiText.get_text("completed", _settings.language)
-		_win_dialog.dialog_text = UiText.get_text("completed", _settings.language) + ("\n" + UiText.get_text("save_write_error", _settings.language) if _save_failed else "")
-		ScreenWidgets.show_dialog(_win_dialog)
+
+
+func _on_game_presentation_complete(won: bool) -> void:
+	if won and _state.route == NavigationState.Route.GAME:
+		if _pause_screen != null:
+			_win_pending = true
+			return
+		_show_win_dialog()
+
+
+func _show_win_dialog() -> void:
+	_win_pending = false
+	if _win_dialog == null:
+		_win_dialog = AcceptDialog.new()
+		add_child(_win_dialog)
+		_win_dialog.confirmed.connect(show_map)
+	_win_dialog.title = UiText.get_text("completed", _settings.language)
+	_win_dialog.dialog_text = UiText.get_text("completed", _settings.language) + ("\n" + UiText.get_text("save_write_error", _settings.language) if _save_failed else "")
+	ScreenWidgets.show_dialog(_win_dialog)
 
 
 func _on_play() -> void:
@@ -282,6 +302,21 @@ func _on_language_selected(code: String) -> void:
 			_open_pause_settings()
 		else:
 			_show(SETTINGS_SCENE)
+		var game: ClassicGame = _screen as ClassicGame
+		if game != null:
+			game.reduce_motion = _settings.reduce_motion
+
+
+func _on_motion_selected(value: bool) -> void:
+	_settings.reduce_motion = value
+	var game: ClassicGame = _screen as ClassicGame
+	if game != null:
+		game.reduce_motion = value
+	if _pause_settings != null:
+		_close_pause_settings()
+		_open_pause_settings()
+	else:
+		_show(SETTINGS_SCENE)
 
 
 func _open_pause() -> void:
@@ -308,6 +343,8 @@ func _close_pause() -> void:
 	var game: ClassicGame = _screen as ClassicGame
 	if game != null:
 		game.set_process_input(true)
+		if _win_pending and _state.route == NavigationState.Route.GAME:
+			_show_win_dialog()
 
 
 func _open_pause_settings() -> void:
@@ -316,10 +353,12 @@ func _open_pause_settings() -> void:
 	_pause_screen.hide()
 	_pause_settings = SETTINGS_SCENE.instantiate() as SettingsScreen
 	_pause_settings.language = _settings.language
+	_pause_settings.reduce_motion = _settings.reduce_motion
 	_pause_settings.return_to_pause = true
 	_surface.add_child(_pause_settings)
 	_pause_settings.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_pause_settings.language_selected.connect(_on_language_selected)
+	_pause_settings.motion_selected.connect(_on_motion_selected)
 	_pause_settings.home_requested.connect(_close_pause_settings)
 
 

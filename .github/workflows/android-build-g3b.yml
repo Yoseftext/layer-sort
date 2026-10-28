@@ -6,9 +6,9 @@ name: android-build-g3b
 
 "on":
   push:
-    branches: ["feat/g3b-progression", "feat/g3b-remediation"]
+    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual"]
   pull_request:
-    branches: ["feat/g3a-navigation", "feat/g3b-progression"]
+    branches: ["feat/g3a-navigation", "feat/g3b-progression", "feat/g3b-remediation"]
   workflow_dispatch:
 
 concurrency:
@@ -325,6 +325,15 @@ jobs:
           if grep -Eq 'SCRIPT ERROR|G3B_REMEDIATION_FAIL' logs/g3b-remediation.log; then exit 1; fi
           python3 -m unittest tests/test_apk_report.py
 
+      - name: Verify gameplay presentation and capture desktop Godot renders
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/visual/gameplay_visual_test.gd 2>&1 | tee logs/visual-tests.log
+          grep -q 'VISUAL_TESTS status=PASS' logs/visual-tests.log
+          mkdir -p logs/screenshots
+          VISUAL_CAPTURE_DIR="$PWD/logs/screenshots" xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/visual/gameplay_visual_test.gd 2>&1 | tee logs/visual-render.log
+          grep -q 'VISUAL_TESTS status=PASS' logs/visual-render.log
+
       - name: Export Android G3-B debug APK
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD }}
@@ -408,5 +417,7 @@ jobs:
           path: |
             logs/*.txt
             logs/*.log
+            logs/*.json
+            logs/screenshots/*.png
           if-no-files-found: warn
           retention-days: 14

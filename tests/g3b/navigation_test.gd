@@ -23,9 +23,16 @@ func _run() -> void:
 	(level_map.find_child("level_001", true, false) as Button).pressed.emit()
 	check(navigation.current_screen() is ClassicGame, "unlocked level opens")
 	var game: ClassicGame = navigation.current_screen() as ClassicGame
+	var original_layers: Array[int] = game._views[0].logical_layers.duplicate()
 	game._on_tube_pressed(0)
 	game._on_tube_pressed(3)
 	check(game.has_unsaved_move(), "committed move")
+	check(game._views[0].logical_layers == original_layers, "drawing remains pre-pour until presentation completes")
+	var committed: String = game._session.snapshot().identity()
+	game._on_tube_pressed(1)
+	check(game._session.snapshot().identity() == committed, "pour input locked during presentation")
+	await create_timer(0.7).timeout
+	check(game._views[0].logical_layers != original_layers, "drawing catches up with committed board")
 	navigation.go_back()
 	var pause: PauseScreen = navigation.get("_pause_screen") as PauseScreen
 	check(pause != null, "Back opens Pause")
@@ -42,7 +49,9 @@ func _run() -> void:
 	for move: Vector2i in solution:
 		game._on_tube_pressed(move.x)
 		game._on_tube_pressed(move.y)
-		await create_timer(0.3).timeout
+		if move == solution.back():
+			check(navigation.get("_win_dialog") == null, "win dialog waits for pour presentation")
+		await create_timer(0.7).timeout
 	check(navigation.get("_win_dialog") != null, "valid win opens completion")
 	navigation.go_back()
 	check(navigation.current_screen() is LevelMapScreen, "Back from win returns Map")
