@@ -46,12 +46,22 @@ func _run() -> void:
 	(level_map.find_child("level_001", true, false) as Button).pressed.emit()
 	game = navigation.current_screen() as ClassicGame
 	var solution: Array[Vector2i] = [Vector2i(0, 3), Vector2i(2, 0), Vector2i(1, 2), Vector2i(1, 3), Vector2i(0, 1), Vector2i(2, 0), Vector2i(2, 3), Vector2i(1, 2), Vector2i(0, 1), Vector2i(0, 3)]
+	for index: int in range(solution.size()):
+		var move: Vector2i = solution[index]
+		game._on_tube_pressed(move.x)
+		game._on_tube_pressed(move.y)
+		if index == solution.size() - 1:
+			check(navigation.get("_win_dialog") == null, "win dialog waits for pour presentation")
+			navigation.go_back()
+		await create_timer(0.7).timeout
+	check(navigation.get("_win_dialog") == null, "Pause defers win dialog")
+	navigation._restart_game()
+	check(not game.has_unsaved_move() and navigation.get("_win_dialog") == null, "restart cancels deferred win presentation")
+	game.reduce_motion = true
 	for move: Vector2i in solution:
 		game._on_tube_pressed(move.x)
 		game._on_tube_pressed(move.y)
-		if move == solution.back():
-			check(navigation.get("_win_dialog") == null, "win dialog waits for pour presentation")
-		await create_timer(0.7).timeout
+		await create_timer(0.14).timeout
 	check(navigation.get("_win_dialog") != null, "valid win opens completion")
 	navigation.go_back()
 	check(navigation.current_screen() is LevelMapScreen, "Back from win returns Map")

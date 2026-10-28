@@ -24,7 +24,7 @@ The session commits exactly once before animation. Drawing retains the previous 
 
 ## Verification and evidence
 
-Local Godot 4.6.3 (environment tool, not a pin change): G2 1149, G3-A 53, G3-B navigation 20, progression/save 28, remediation 14, visual 14 assertions; Python APK report 2 tests. Commands: `godot --headless --path . --script res://tests/<suite>.gd`, each navigation suite with a fresh `XDG_DATA_HOME`; `python3 -m unittest tests/test_apk_report.py`; `git diff --check`. Pinned 4.7.2 CI is the authoritative export check. CI captures are actual Godot Compatibility desktop renders under Xvfb, not phone captures or mockups.
+Local Godot 4.6.3 (environment tool, not a pin change): G2 1149, G3-A 53, G3-B navigation 21, progression/save 28, remediation 14, visual 14 assertions; Python APK report 3 tests. Commands: `godot --headless --path . --script res://tests/<suite>.gd`, each navigation suite with a fresh `XDG_DATA_HOME`; `python3 -m unittest tests/test_apk_report.py`; `git diff --check`. Pinned 4.7.2 CI is the authoritative export check. CI captures are actual Godot Compatibility desktop renders under Xvfb, not phone captures or mockups.
 
 Earlier failed attempts are retained in execution logs: reused local save directory invalidated fresh-install test assumptions; isolated rerun passed. A small-window bounds assertion compared logical canvas coordinates against physical window pixels; it now compares the logical viewport. A new lifecycle test initially mistook a repeated move for the final move; indexed iteration fixes the test driver. No production assertion was weakened.
 
@@ -35,3 +35,7 @@ No external art/font/audio assets were introduced. All new glass/liquid graphics
 Phone checklist: verify CI commit/APK SHA and stable certificate; acquire existing lock; preserve installed saves; update install without clearing data; inspect EN/AR at OPPO resolution, safe areas, text and contrast; select/reject/pour, rapid taps, Undo/Restart, Pause/Settings/Resume and Android Back; background/foreground during final pour; confirm one win/unlock and Continue after process restart; collect screenshots/logcat and individual verdicts. Measure frame pacing/memory on the phone. Track B UNVERIFIED until this occurs.
 
 Rollback: close the visual PR or revert its commits on a new branch; retain PR #6 and saves. Do not downgrade a real installation without preserving save bytes and verifying schema compatibility. No PR merged, no protected branch changed, no G3-C started.
+
+## Integration findings repaired
+
+The first green CI artifact (24e13e9, run 40781345283) included generated screenshot textures because captures were written inside the project before export. It is rejected for acceptance despite the original green packaging check. Captures now go to runner temporary storage and are collected after export; logs/build are excluded and APK analysis has a regression test rejecting imported capture names. Raw failed-candidate comparison is preserved separately. Arabic title/footer reserve vertical space. A deferred win could survive Restart from Pause; Restart now cancels that presentation, covered by completing a real solution while paused, restarting, and winning again.

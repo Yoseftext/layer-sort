@@ -389,6 +389,7 @@ func _request_restart() -> void:
 
 
 func _restart_game() -> void:
+	_win_pending = false
 	var game: ClassicGame = _screen as ClassicGame
 	if game != null:
 		game.restart_attempt()
