@@ -75,14 +75,18 @@ func _build_ui() -> void:
 	header.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
 	var title: Label = _make_label(UiText.get_text("game_title", language), 30)
-	title.custom_minimum_size.y = 110
+	title.name = "GameTitle"
+	title.custom_minimum_size.y = 56
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
+	var header_space: Control = Control.new()
+	header_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(header_space)
 	var pause: Button = _make_button(UiText.get_text("pause", language))
 	pause.name = "PauseButton"
 	pause.custom_minimum_size = Vector2(112, 76)
 	header.add_child(pause)
 	pause.pressed.connect(func() -> void: pause_requested.emit())
+	layout.add_child(title)
 	_moves = _make_label(UiText.get_text("moves", language) % 0, 28)
 	layout.add_child(_moves)
 	_status = _make_label(UiText.get_text("choose", language), 25)
