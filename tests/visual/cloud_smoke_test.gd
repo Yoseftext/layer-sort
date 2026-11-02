@@ -50,6 +50,8 @@ func _run() -> void:
 	await click_named("AboutButton")
 	await capture("06-about-ar")
 	await click_named("HomeButton")
+	check((navigation.current_screen() as HomeScreen).primary_label == UiText.get_text("home_play_level", "ar") % "001", "Arabic Home names actual first level")
+	await capture("06-home-ar")
 	await click_named("SettingsButton")
 	await click_named("EnglishButton")
 	await click_named("HomeButton")
@@ -127,9 +129,14 @@ func _run() -> void:
 	await capture("19-win")
 	var win: AcceptDialog = navigation.get("_win_dialog") as AcceptDialog
 	check(win != null and win.visible, "completion dialog shown")
+	check(win.ok_button_text == UiText.get_text("next_level", "en") % "002", "win primary names unlocked next level")
 	if win != null:
 		await tap(win.get_ok_button())
-	check(navigation.current_screen() is LevelMapScreen, "win acknowledgment opens Map")
+	check((navigation.current_screen() as ClassicGame).committed_snapshot().level_id == "level_002", "win primary opens next level")
+	await capture("20-next-level")
+	await click_named("PauseButton")
+	await click_named("MapButton")
+	check(navigation.current_screen() is LevelMapScreen, "Pause Map opens unlocked Map")
 	await capture("20-unlocked-map")
 	await click_named("level_002")
 	game = navigation.current_screen() as ClassicGame
@@ -166,7 +173,27 @@ func _run() -> void:
 	await click_named("ArabicButton")
 	await click_named("HomeButton")
 	await click_named("ResumeButton")
+	check((navigation.current_screen() as ClassicGame).committed_snapshot().level_id == "level_002", "pause return retains next level")
 	# Isolated failure fixture starts from the certified level-001 solution.
+	var progress: Progression = navigation.get("_progression") as Progression
+	for number: int in range(2, 14):
+		progress.record_win("level_%03d" % number, 20)
+	navigation.open_level("level_014")
+	game = navigation.current_screen() as ClassicGame
+	game.reduce_motion = true
+	await create_timer(0.15).timeout
+	check(game._views[0].get_global_rect().get_center().x < 720.0, "last-level pointer targets settle inside viewport")
+	var all_solutions: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/campaign/solutions.json"))
+	for pair: Array in all_solutions["level_014"].solution:
+		await tap(game._views[int(pair[0])], 0.01)
+		await tap(game._views[int(pair[1])], 0.01)
+		await create_timer(0.14).timeout
+	win = navigation.get("_win_dialog") as AcceptDialog
+	check(win != null and win.visible and win.ok_button_text == UiText.get_text("level_map", "ar"), "final Classic level offers Map as primary")
+	await capture("24-last-level-win")
+	if win != null:
+		await tap(win.get_ok_button())
+	check(navigation.current_screen() is LevelMapScreen, "final result returns Map")
 	navigation.open_level("level_001")
 	await create_timer(0.2).timeout
 	game = navigation.current_screen() as ClassicGame

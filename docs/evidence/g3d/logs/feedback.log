@@ -1,0 +1,29 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+LAYER_SORT_G3_HOME_READY
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_010
+LAYER_SORT_G2_MOVE 0 4 1
+LAYER_SORT_G3_HOME_READY
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_010
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_012
+LAYER_SORT_G2_MOVE 0 5 1
+LAYER_SORT_G3_HOME_READY
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_012
+LAYER_SORT_G3_HOME_READY
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_012
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_001
+LAYER_SORT_G2_REJECT FULL_DESTINATION
+LAYER_SORT_G2_MOVE 0 3 1
+LAYER_SORT_G2_UNDO level_001|1|4|0|[0,1,2,0]|[1,2,0,1]|[2,0,1,2]|[]|[]
+LAYER_SORT_G3_HOME_READY
+FEEDBACK_TESTS PASS checks=23
+WARNING: 5 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

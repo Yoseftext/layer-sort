@@ -12,6 +12,7 @@ var language: String = "en"
 var play_enabled: bool = true
 var continue_enabled: bool = false
 var campaign_complete: bool = false
+var primary_label: String = ""
 var save_error: bool = false
 var save_status: String = ""
 
@@ -33,7 +34,7 @@ func _ready() -> void:
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size.y = 70
 	column.add_child(spacer)
-	var play: Button = ScreenWidgets.button(UiText.get_text("play", language), true)
+	var play: Button = ScreenWidgets.button(primary_label if not primary_label.is_empty() else UiText.get_text("play", language), true)
 	play.name = "PlayButton"
 	play.disabled = not play_enabled
 	column.add_child(play)

@@ -1,0 +1,5 @@
+G3-D makes Home state its actual primary destination: exact saved attempt, first unlocked unfinished Classic level, or replay map after level 14. Win now offers Next as the primary action where an unlocked next level exists, with Replay and Map alternatives; the final Classic level offers Map as primary. Stale Home/Map/Win actions cannot trigger a second transition.
+
+Base: `feat/g3c-player-ux` at `1f6289a00d0998597d90cc467d0d023953e92db3`. Scope: G3-D player flow only. Classic rules, save schema, level data, package identity, renderer and signing configuration are unchanged. G15-QA-001 remains OPEN.
+
+Local validation: pinned Godot 4.7.2 headless G2/G3-A/G3-B/G3-C/G4/G3-D suites passed 1,543 checks; Python APK/audio tests passed 5 tests; graphical X11 smoke passed 185 checks and captured 28 actual 720×1600 states. Evidence, including failed and interrupted attempts, is in `docs/evidence/g3d/`. CI, final signed APK and OPPO Track B remain blocked/unverified until GitHub authentication and the phone-side environment are available. No device PASS is claimed.
