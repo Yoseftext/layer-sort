@@ -33,13 +33,13 @@ Pinned Godot 4.7.2 Standard binary: `/tmp/layersort-cloud/Godot_v4.7.2-stable_li
 | G4 presentation/audio | PASS, 17 checks |
 | Feedback | PASS, 23 checks |
 | Campaign | PASS, 197 checks |
-| G3-D player flow | PASS, 26 checks |
+| G3-D player flow | PASS, 24 checks |
 | Python APK/audio tests | PASS, 5 tests |
 | Feedback graphical | PASS, 8 checks |
 | Campaign graphical | PASS, 12 renders |
 | Cloud graphical smoke | PASS, 185 checks, 28 screenshots, Xorg dummy 720×1600, Compatibility renderer |
 
-Total headless Godot checks: **1,543**. `python3 tools/content/verify_campaign.py` completed and wrote the per-level solver report. `git diff --check` passed. Existing Godot suites emitted ObjectDB/resource-at-exit warnings despite passing assertions; those warnings remain an investigation item and are not a clean-runtime claim.
+Total headless Godot checks: **1,541**. `python3 tools/content/verify_campaign.py` completed and wrote the per-level solver report. `git diff --check` passed. Existing Godot suites emitted ObjectDB/resource-at-exit warnings despite passing assertions; those warnings remain an investigation item and are not a clean-runtime claim.
 
 The first unisolated G3-B progression run failed three checks because its existing fixed `user://g3b_test` directory contained a future-schema fixture from a previous run. The failed log is retained. A fresh `XDG_DATA_HOME=/tmp/g3d-g3b-isolated-data-1` run passed 28/28 without altering the test or save code. The first graphical attempt failed two checks because the level-14 pointer test fired before layout settled; its screenshots and log are retained. A later attempt failed to initialize X11 after the display server stopped; that log is also retained. The final graphical attempt passed 185/185 after waiting for layout and asserting target bounds. See `docs/evidence/g3d/attempts/` and `docs/evidence/g3d/logs/`.
 
@@ -52,3 +52,7 @@ Track A is **LOCAL PASS / CI AND FINAL APK BLOCKED**. GitHub REST/GraphQL return
 Track B is **UNVERIFIED**. On the OPPO, install the exact future G3-D CI APK under the phone lock, verify commit/hash/certificate, and check fresh Home EN/AR, exact Continue after background/restart, Win Next, Replay, Map, final-level fallback, fast double taps, Back, safe areas, screenshots and logcat. Preserve the installed save; use isolated failure fixtures for destructive cases.
 
 Known limits: catalog currently ends at Classic level 14; G3-D does not create Circuit level 15 or additional content. Settings remain session-only. Native Android hit targets and dialogs require Track B. No PR was merged and no protected branch was changed. Roll back this slice by reverting its single G3-D commit on a new branch or closing the stacked PR; do not reset saves or earlier branches.
+
+## Final evidence review
+
+Implementation commit: `4102d971a849ac466a843023c97c10757d068099`. The primary agent independently reviewed the code diff and the final English Win / Arabic final-level renders. A report-only follow-up corrects the G3-D count to the recorded **24** and total to **1,541**; raw logs and historical attempts remain unchanged. No source changed after the recorded tests. CI at the final head remains blocked; local results must not be represented as a CI run.
