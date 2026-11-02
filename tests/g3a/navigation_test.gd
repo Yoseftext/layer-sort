@@ -13,7 +13,11 @@ func _run() -> void:
 	_test_settings()
 	_test_routes()
 	var root_scene: PackedScene = load("res://scenes/navigation/root.tscn")
+	var test_saves: SaveRepository = SaveRepository.new()
+	test_saves.directory = "user://navigation_isolated_%d_%d" % [OS.get_process_id(), Time.get_ticks_usec()]
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(test_saves.directory))
 	var navigation: NavigationCoordinator = root_scene.instantiate()
+	navigation.set("_saves", test_saves)
 	root.add_child(navigation)
 	await create_timer(0.65).timeout
 	_expect(navigation.current_route() == NavigationState.Route.HOME, "splash reaches Home")

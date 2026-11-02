@@ -10,7 +10,11 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var scene: PackedScene = load("res://scenes/navigation/root.tscn")
+	var test_saves: SaveRepository = SaveRepository.new()
+	test_saves.directory = "user://navigation_isolated_%d_%d" % [OS.get_process_id(), Time.get_ticks_usec()]
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(test_saves.directory))
 	var navigation: NavigationCoordinator = scene.instantiate()
+	navigation.set("_saves", test_saves)
 	root.add_child(navigation)
 	await create_timer(0.65).timeout
 	var home: HomeScreen = navigation.current_screen() as HomeScreen
@@ -75,11 +79,12 @@ func _run() -> void:
 	navigation.queue_free()
 	await process_frame
 	var restarted: NavigationCoordinator = scene.instantiate()
+	restarted.set("_saves", test_saves)
 	root.add_child(restarted)
 	await create_timer(0.65).timeout
 	home = restarted.current_screen() as HomeScreen
 	check(home.continue_enabled, "restarted app offers saved Continue")
-	(home.find_child("ContinueButton", true, false) as Button).pressed.emit()
+	(home.find_child("PlayButton", true, false) as Button).pressed.emit()
 	check((restarted.current_screen() as ClassicGame).has_unsaved_move(), "Continue restores committed board")
 	restarted.queue_free()
 	print("G3B_NAV_TESTS status=%s checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])

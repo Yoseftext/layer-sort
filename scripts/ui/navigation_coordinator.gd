@@ -77,8 +77,6 @@ func go_home() -> void:
 	if _leave_dialog != null and is_instance_valid(_leave_dialog):
 		_leave_dialog.hide()
 	_close_pause()
-	if _state.route == NavigationState.Route.GAME:
-		_clear_active_attempt()
 	_state.open_home()
 	_show(HOME_SCENE)
 
@@ -92,6 +90,7 @@ func show_map() -> void:
 	level_map.language = _settings.language
 	level_map.catalog = _catalog
 	level_map.progression = _progression
+	level_map.selected_level = String(_active.get("level_id", ""))
 	_replace_screen(level_map)
 	level_map.level_requested.connect(open_level)
 	level_map.home_requested.connect(go_home)
@@ -199,6 +198,7 @@ func _show(scene: PackedScene) -> void:
 		(next as SettingsScreen).sound_enabled = _settings.sound_enabled
 		(next as SettingsScreen).rich_effects = _settings.rich_effects
 	if next is HomeScreen:
+		(next as HomeScreen).campaign_complete = _catalog != null and _progression.completed.size() == _catalog.available_level_ids.size()
 		(next as HomeScreen).play_enabled = _catalog != null and not _save_blocked
 		(next as HomeScreen).continue_enabled = not _active.is_empty() and not _save_blocked
 		(next as HomeScreen).save_error = _save_blocked or _save_failed or _save_status == "RECOVERED"
@@ -327,8 +327,20 @@ func _resume_deferred_win() -> void:
 
 
 func _on_play() -> void:
-	if _catalog != null and not open_level(_catalog.entry_level_id):
-		push_error("G3_ENTRY_LEVEL_UNAVAILABLE")
+	if _catalog == null or _save_blocked:
+		return
+	if not _active.is_empty() and _saves._valid_active(_active, _catalog):
+		var loaded: Dictionary = LevelLoader.read_file(_catalog.path_for(String(_active.level_id)))
+		var session: GameSession = GameSession.new(loaded.state)
+		session.restore_committed(_active)
+		if not WinRules.is_won(session.snapshot()):
+			open_level(String(_active.level_id), true)
+			return
+	for id: String in _catalog.available_level_ids:
+		if _progression.is_unlocked(id) and not _progression.completed.has(id):
+			open_level(id)
+			return
+	show_map()
 
 
 func _on_language_selected(code: String) -> void:
@@ -377,6 +389,7 @@ func _open_pause() -> void:
 		return
 	_audio.stop_all()
 	_audio.play("ui")
+	game.clear_pending_input()
 	game.set_process_input(false)
 	_pause_screen = PAUSE_SCENE.instantiate() as PauseScreen
 	_pause_screen.language = _settings.language
@@ -431,6 +444,8 @@ func _close_pause_settings() -> void:
 
 func _request_restart() -> void:
 	var game: ClassicGame = _screen as ClassicGame
+	if game != null:
+		game.clear_pending_input()
 	if game == null:
 		return
 	if not game.has_unsaved_move():
@@ -467,7 +482,6 @@ func request_map() -> void:
 
 func _finish_leave() -> void:
 	if _leave_to_map:
-		_clear_active_attempt()
 		show_map()
 	else:
 		go_home()
@@ -475,6 +489,8 @@ func _finish_leave() -> void:
 
 func _request_leave() -> void:
 	var game: ClassicGame = _screen as ClassicGame
+	if game != null:
+		game.clear_pending_input()
 	if game == null or not game.has_unsaved_move():
 		_finish_leave()
 		return

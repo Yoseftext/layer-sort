@@ -21,6 +21,7 @@ var audio: GameAudio
 var _session: GameSession
 var _selected_source: int = -1
 var _animation_token: int = 0
+var _pending_tap: int = -1
 var _pending_win: bool = false
 var _views: Array[TubeView] = []
 var _trail: PourTrail
@@ -163,6 +164,7 @@ func _build_ui() -> void:
 	_trail = PourTrail.new()
 	_trail.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_trail)
+	_trail.flow_started.connect(_cue.bind("pour"))
 	resized.connect(_update_tube_layout)
 	_update_tube_layout()
 
@@ -232,8 +234,7 @@ func _on_tube_pressed(index: int) -> void:
 	if _session == null or _suspended or _conflicting_touch:
 		return
 	if _session.animation_locked:
-		# Retain the committed result; a transient rejected tap must not leave
-		# a stale "in progress" message after the lock expires.
+		_pending_tap = index
 		return
 	var state: GameState = _session.snapshot()
 	if WinRules.is_won(state):
@@ -262,14 +263,19 @@ func _on_tube_pressed(index: int) -> void:
 		_cue("invalid")
 		_status.text = UiText.get_text("reject_" + String(result.reason).to_lower(), language)
 		_views[index].flash_invalid()
+		if not state.tubes[index].layers.is_empty():
+			_selected_source = index
+			_status.text = UiText.get_text("choose_destination", language) % (index + 1)
+			_refresh()
 		print("LAYER_SORT_G2_REJECT %s" % result.reason)
 		return
 	_selected_source = -1
 	_pending_win = bool(result.won)
 	_status.text = UiText.get_text("pouring", language)
 	state_committed.emit(_session.snapshot(), result.won)
-	_cue("pour")
-	var duration: float = 0.1 if reduce_motion else 0.62
+	var duration: float = 0.1 if reduce_motion else 0.48
+	if reduce_motion:
+		_cue("pour")
 	if not reduce_motion:
 		_trail.play(_views[source], _views[index], int(result.moved), moved_colour, duration)
 	print("%s %d %d %d" % [MOVE_MARKER, source, index, result.moved])
@@ -287,7 +293,11 @@ func _unlock_after_delay(token: int, duration: float, won: bool, moved: int) -> 
 		_refresh(true)
 		_trail.clear()
 		_pending_win = false
+		var next_tap: int = _pending_tap
+		_pending_tap = -1
 		presentation_complete.emit(won)
+		if not won and next_tap >= 0 and not _suspended:
+			_on_tube_pressed(next_tap)
 
 
 func _on_undo() -> void:
@@ -296,6 +306,7 @@ func _on_undo() -> void:
 	if audio != null:
 		audio.stop_all()
 	_cue("ui")
+	_pending_tap = -1
 	_animation_token += 1
 	_pending_win = false
 	if _trail != null:
@@ -317,6 +328,7 @@ func _on_restart() -> void:
 	if audio != null:
 		audio.stop_all()
 	_cue("ui")
+	_pending_tap = -1
 	_animation_token += 1
 	_pending_win = false
 	if _trail != null:
@@ -337,6 +349,7 @@ func _input(event: InputEvent) -> void:
 		elif not touch.pressed:
 			_contacts.erase(touch.index)
 		if _contacts.size() > 1:
+			_pending_tap = -1
 			_conflicting_touch = true
 			_selected_source = -1
 			if _session != null:
@@ -350,6 +363,7 @@ func _input(event: InputEvent) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
+		_pending_tap = -1
 		_suspended = true
 		_contacts.clear()
 		_conflicting_touch = false
@@ -366,3 +380,11 @@ func _notification(what: int) -> void:
 		if _pending_win and _session != null and WinRules.is_won(_session.snapshot()):
 			_pending_win = false
 			presentation_complete.emit(true)
+
+
+func clear_pending_input() -> void:
+	_pending_tap = -1
+
+func _exit_tree() -> void:
+	_pending_tap = -1
+	_animation_token += 1

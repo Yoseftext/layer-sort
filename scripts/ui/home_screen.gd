@@ -11,6 +11,7 @@ signal about_requested
 var language: String = "en"
 var play_enabled: bool = true
 var continue_enabled: bool = false
+var campaign_complete: bool = false
 var save_error: bool = false
 var save_status: String = ""
 
@@ -27,6 +28,8 @@ func _ready() -> void:
 			var retry: Button = ScreenWidgets.button(UiText.get_text("retry_save", language))
 			column.add_child(retry)
 			retry.pressed.connect(func() -> void: retry_save_requested.emit())
+	if campaign_complete:
+		column.add_child(ScreenWidgets.label("اكتملت الحملة! اختر مستوى لإعادته." if language == "ar" else "Campaign complete! Choose a level to replay.", 24, true))
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size.y = 70
 	column.add_child(spacer)
@@ -35,11 +38,6 @@ func _ready() -> void:
 	play.disabled = not play_enabled
 	column.add_child(play)
 	play.pressed.connect(func() -> void: play_requested.emit())
-	var continue_button: Button = ScreenWidgets.button(UiText.get_text("continue", language))
-	continue_button.name = "ContinueButton"
-	continue_button.disabled = not continue_enabled
-	column.add_child(continue_button)
-	continue_button.pressed.connect(func() -> void: continue_requested.emit())
 	var map_button: Button = ScreenWidgets.button(UiText.get_text("level_map", language))
 	map_button.name = "MapButton"
 	column.add_child(map_button)

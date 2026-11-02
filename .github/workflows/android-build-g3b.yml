@@ -6,7 +6,7 @@ name: android-build-g3b
 
 "on":
   push:
-    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa", "feat/g4-visual-production", "feat/g3c-classic-campaign"]
+    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa", "feat/g4-visual-production", "feat/g3c-classic-campaign", "feat/g3c-player-ux"]
   pull_request:
     branches: ["feat/g3a-navigation", "feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa"]
   workflow_dispatch:
@@ -334,6 +334,10 @@ jobs:
           grep -q 'G4_PRODUCTION_TESTS status=PASS' logs/g4-production.log
           if grep -Eq 'SCRIPT ERROR|G4_PRODUCTION_FAIL' logs/g4-production.log; then exit 1; fi
           python3 -m unittest tests/test_audio_assets.py
+          timeout 60s godot --headless --audio-driver Dummy --path . --script res://tests/feedback/feedback_test.gd 2>&1 | tee logs/feedback.log
+          grep -q "FEEDBACK_TESTS PASS" logs/feedback.log
+          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-feedback-captures" timeout 90s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/feedback/feedback_visual_test.gd 2>&1 | tee logs/feedback-visual.log
+          grep -q "FEEDBACK_VISUAL PASS" logs/feedback-visual.log
           python3 tools/content/verify_campaign.py > logs/campaign-solver.json
           timeout 120s godot --headless --path . --script res://tests/campaign/campaign_test.gd 2>&1 | tee logs/campaign.log
           grep -q "CAMPAIGN_TESTS PASS" logs/campaign.log
@@ -415,6 +419,8 @@ jobs:
 
       - name: Collect rendered evidence after export
         run: |
+          mkdir -p logs/feedback-screenshots
+          cp "$RUNNER_TEMP/layersort-feedback-captures/"*.png logs/feedback-screenshots/
           mkdir -p logs/campaign-screenshots
           cp "$RUNNER_TEMP/layersort-campaign-captures/"*.png logs/campaign-screenshots/
           mkdir -p logs/screenshots
@@ -440,6 +446,7 @@ jobs:
             logs/*.txt
             logs/*.log
             logs/*.json
+            logs/feedback-screenshots/*.png
             logs/campaign-screenshots/*.png
             logs/screenshots/*.png
             logs/cloud-screenshots/*.png
