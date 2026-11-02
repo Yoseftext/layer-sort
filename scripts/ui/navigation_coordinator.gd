@@ -217,6 +217,7 @@ func _show(scene: PackedScene) -> void:
 		(next as SettingsScreen).sound_selected.connect(_on_sound_selected)
 		(next as SettingsScreen).effects_selected.connect(_on_effects_selected)
 		(next as SettingsScreen).home_requested.connect(go_home)
+		(next as SettingsScreen).tutorials_requested.connect(func() -> void: open_level("level_001"))
 	elif next is AboutScreen:
 		(next as AboutScreen).home_requested.connect(go_home)
 

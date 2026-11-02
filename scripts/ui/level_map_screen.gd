@@ -14,6 +14,13 @@ func _ready() -> void:
 	ScreenWidgets.background(self)
 	var column: VBoxContainer = ScreenWidgets.stack(self)
 	column.add_child(ScreenWidgets.label(UiText.get_text("level_map", language), 46))
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(scroll)
+	var levels: VBoxContainer = VBoxContainer.new()
+	levels.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	levels.add_theme_constant_override("separation", 12)
+	scroll.add_child(levels)
 	for id: String in catalog.available_level_ids:
 		var status: String = "completed" if progression.completed.has(id) else ("unlocked" if progression.is_unlocked(id) else "locked")
 		var label: String = id.replace("level_", "") + " · " + UiText.get_text(status, language)
@@ -22,7 +29,7 @@ func _ready() -> void:
 		var button: Button = ScreenWidgets.button(label)
 		button.name = id
 		button.disabled = not progression.is_unlocked(id)
-		column.add_child(button)
+		levels.add_child(button)
 		button.pressed.connect(func() -> void: level_requested.emit(id))
 	var home: Button = ScreenWidgets.button(UiText.get_text("home", language))
 	column.add_child(home)

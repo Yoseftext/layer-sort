@@ -5,6 +5,7 @@ signal language_selected(code: String)
 signal motion_selected(value: bool)
 signal sound_selected(value: bool)
 signal effects_selected(value: bool)
+signal tutorials_requested
 signal home_requested
 
 var language: String = "en"
@@ -44,6 +45,11 @@ func _ready() -> void:
 	motion.toggled.connect(func(value: bool) -> void: motion_selected.emit(value))
 	_add_toggle(column, "sound", "SoundToggle", sound_enabled, sound_selected)
 	_add_toggle(column, "rich_effects", "EffectsToggle", rich_effects, effects_selected)
+	if not return_to_pause:
+		var tutorials: Button = ScreenWidgets.button("إعادة الدروس" if language == "ar" else "Replay Tutorials")
+		tutorials.name = "ReplayTutorials"
+		column.add_child(tutorials)
+		tutorials.pressed.connect(func() -> void: tutorials_requested.emit())
 	var home: Button = ScreenWidgets.button(UiText.get_text("back", language) if return_to_pause else UiText.get_text("home", language))
 	home.name = "HomeButton"
 	column.add_child(home)
