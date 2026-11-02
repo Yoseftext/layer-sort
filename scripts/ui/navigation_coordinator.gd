@@ -33,6 +33,7 @@ var _leave_dialog: ConfirmationDialog
 
 
 func _ready() -> void:
+	ScreenWidgets.background(self)
 	var loaded: Dictionary = LevelCatalog.load_catalog()
 	if loaded.ok:
 		_catalog = loaded.catalog
@@ -134,6 +135,7 @@ func open_level(level_id: String, restore: bool = false) -> bool:
 	_replace_screen(game)
 	game.home_requested.connect(request_home)
 	game.pause_requested.connect(_open_pause)
+	game.restart_requested.connect(_request_restart)
 	game.state_committed.connect(_on_game_commit)
 	game.presentation_complete.connect(_on_game_presentation_complete)
 	print("LAYER_SORT_G3_GAME_READY " + level_id)
@@ -143,6 +145,7 @@ func open_level(level_id: String, restore: bool = false) -> bool:
 func go_back() -> void:
 	if _save_dialog != null and _save_dialog.visible:
 		_save_dialog.hide()
+		_resume_deferred_win()
 		return
 	if _win_dialog != null and _win_dialog.visible:
 		_win_dialog.hide()
@@ -247,6 +250,8 @@ func _persist() -> bool:
 
 func _retry_save() -> void:
 	var succeeded: bool = _persist()
+	if succeeded:
+		_resume_deferred_win()
 	if succeeded and _state.route == NavigationState.Route.HOME:
 		_show(HOME_SCENE)
 
@@ -256,6 +261,7 @@ func _show_save_warning() -> void:
 		_save_dialog = ConfirmationDialog.new()
 		add_child(_save_dialog)
 		_save_dialog.confirmed.connect(_retry_save)
+		_save_dialog.canceled.connect(_resume_deferred_win, CONNECT_DEFERRED)
 	_save_dialog.title = UiText.get_text("save_warning_title", _settings.language)
 	_save_dialog.dialog_text = UiText.get_text("save_write_error", _settings.language)
 	_save_dialog.ok_button_text = UiText.get_text("retry_save", _settings.language)
@@ -273,7 +279,7 @@ func _on_game_commit(state: GameState, won: bool) -> void:
 
 func _on_game_presentation_complete(won: bool) -> void:
 	if won and _state.route == NavigationState.Route.GAME:
-		if _pause_screen != null:
+		if _pause_screen != null or (_save_dialog != null and _save_dialog.visible):
 			_win_pending = true
 			return
 		_show_win_dialog()
@@ -290,6 +296,11 @@ func _show_win_dialog() -> void:
 	ScreenWidgets.show_dialog(_win_dialog)
 
 
+func _resume_deferred_win() -> void:
+	if _win_pending and _state.route == NavigationState.Route.GAME and _pause_screen == null and (_save_dialog == null or not _save_dialog.visible):
+		_show_win_dialog()
+
+
 func _on_play() -> void:
 	if _catalog != null and not open_level(_catalog.entry_level_id):
 		push_error("G3_ENTRY_LEVEL_UNAVAILABLE")
@@ -297,14 +308,17 @@ func _on_play() -> void:
 
 func _on_language_selected(code: String) -> void:
 	if _settings.set_language(code):
+		var game: ClassicGame = _screen as ClassicGame
+		if game != null:
+			game.apply_language(code)
 		if _pause_settings != null:
 			_close_pause_settings()
+			_pause_screen.queue_free()
+			_pause_screen = null
+			_open_pause()
 			_open_pause_settings()
 		else:
 			_show(SETTINGS_SCENE)
-		var game: ClassicGame = _screen as ClassicGame
-		if game != null:
-			game.reduce_motion = _settings.reduce_motion
 
 
 func _on_motion_selected(value: bool) -> void:
@@ -343,8 +357,7 @@ func _close_pause() -> void:
 	var game: ClassicGame = _screen as ClassicGame
 	if game != null:
 		game.set_process_input(true)
-		if _win_pending and _state.route == NavigationState.Route.GAME:
-			_show_win_dialog()
+		_resume_deferred_win()
 
 
 func _open_pause_settings() -> void:
