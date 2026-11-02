@@ -1,0 +1,11 @@
+Layer Sort original procedural sound effects (select, pour, invalid, complete, win, ui).
+Created from original mathematical synthesis by OpenAI Codex for the Layer Sort project.
+No recordings, sampled works, downloaded assets or model-generated audio were used.
+
+To the extent possible under law, the creator has waived all copyright and related
+or neighboring rights to these generated WAV assets under CC0 1.0 Universal.
+No attribution is required. No warranty is provided.
+https://creativecommons.org/publicdomain/zero/1.0/
+
+This dedication covers only the six WAV assets, not unrelated project source code.
+Reproducible source: tools/assets/generate_ui_audio.py
