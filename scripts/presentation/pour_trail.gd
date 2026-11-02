@@ -1,6 +1,9 @@
 class_name PourTrail
 extends Control
 
+signal flow_started
+var _flow_began: bool = false
+
 ## A disposable visual snapshot. It cannot commit or undo game state.
 var _source: TubeView
 var _destination: TubeView
@@ -20,6 +23,7 @@ func _ready() -> void:
 
 func play(source: TubeView, destination: TubeView, moved: int, colour: int, duration: float) -> void:
 	clear()
+	_flow_began = false
 	_source = source
 	_destination = destination
 	_layers = source.logical_layers.duplicate()
@@ -52,8 +56,15 @@ func _exit_tree() -> void:
 
 func _set_progress(value: float) -> void:
 	_progress = value
+	if is_instance_valid(_source):
+		_origin = _source.mouth_position() - global_position
 	if is_instance_valid(_destination):
-		_destination.visual_delta = float(_moved) * clampf((value - 0.25) / 0.5, 0.0, 1.0)
+		_target = _destination.mouth_position() - global_position
+	if value >= 0.25 and not _flow_began:
+		_flow_began = true
+		flow_started.emit()
+	if is_instance_valid(_destination):
+		_destination.visual_delta = float(_moved) * transfer_progress(value)
 	queue_redraw()
 
 func _draw() -> void:
@@ -66,11 +77,16 @@ func _draw() -> void:
 	var reach: float = raised.x - 40.0 if direction > 0 else size.x - raised.x - 40.0
 	var tilt: float = minf(1.12, asin(clampf(reach / _body_size.y, 0.0, 1.0)))
 	var rotation_angle: float = direction * tilt * travel
-	var amount: float = clampf((_progress - 0.25) / 0.5, 0.0, 1.0)
-	if _progress >= 0.25 and _progress < 0.78:
-		draw_line(mouth, _target + Vector2(0, 9), Color(TubePainter.COLOURS[_colour], 0.18), 13.0, true)
-		draw_line(mouth, _target + Vector2(0, 9), TubePainter.COLOURS[_colour], 5.0, true)
+	var amount: float = transfer_progress(_progress)
+	var lip: Vector2 = mouth + Vector2(direction * _body_size.x * 0.42, 0).rotated(rotation_angle)
+	if _progress >= 0.25 and _progress < 0.75:
+		draw_line(lip, _target + Vector2(0, 9), Color(TubePainter.COLOURS[_colour], 0.18), 13.0, true)
+		draw_line(lip, _target + Vector2(0, 9), TubePainter.COLOURS[_colour], 5.0, true)
 	# Rotate around the lip so the liquid bridge joins the mouth, not the tube wall.
 	draw_set_transform(mouth, rotation_angle)
 	_painter.paint(self, Rect2(Vector2(-_body_size.x * 0.5, 0), _body_size), _layers, _capacity, false, -float(_moved) * amount, _colour)
 	draw_set_transform(Vector2.ZERO)
+
+
+static func transfer_progress(value: float) -> float:
+	return smoothstep(0.25, 0.75, value)

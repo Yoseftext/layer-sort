@@ -19,7 +19,12 @@ func _ready() -> void:
 		_dismissed = not _dismissed
 		_idle = 0.0)
 	var help: Label = game.find_child("GameHelp", true, false) as Label
-	help.get_parent().add_child(_toggle)
+	# Reserve this slot when the hint disappears; never shift a pouring board.
+	var slot: Control = Control.new()
+	slot.custom_minimum_size.y = 64
+	help.get_parent().add_child(slot)
+	slot.add_child(_toggle)
+	_toggle.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 func _process(delta: float) -> void:
 	_idle += delta

@@ -10,7 +10,7 @@ import wave
 from pathlib import Path
 
 RATE = 22050
-CUES = {"select": (0.10, (660, 990)), "pour": (0.54, (240, 360)),
+CUES = {"select": (0.10, (660, 990)), "pour": (0.27, (240, 360)),
         "invalid": (0.12, (190, 155)), "complete": (0.34, (660, 880, 1320)),
         "win": (0.78, (523.25, 659.25, 783.99, 1046.5)), "ui": (0.07, (440, 660))}
 
@@ -19,6 +19,7 @@ def render(name, duration, notes):
     rng = random.Random(1407)
     pcm = []
     phase = 0.0
+    previous_noise = 0.0
     for index in range(int(RATE * duration)):
         t = index / RATE
         note = notes[min(int(t / duration * len(notes)), len(notes) - 1)]
@@ -28,8 +29,16 @@ def render(name, duration, notes):
         value = math.sin(phase) * 0.12
         value += math.sin(phase * 2) * 0.025
         if name == "pour":
-            value = (math.sin(math.tau * (260 * t + 110 * t * t)) * 0.035
-                     + rng.uniform(-1, 1) * 0.022) * (0.65 + 0.35 * math.sin(42 * t)**2)
+            # Low-pass turbulence plus decaying, downward-swept bubble resonances.
+            noise = rng.uniform(-1, 1)
+            previous_noise = 0.78 * previous_noise + 0.22 * noise
+            flow = 0.075 * previous_noise
+            for onset, pitch in [(0.015, 980), (0.063, 760), (0.11, 1150), (0.16, 680), (0.205, 920)]:
+                age = t - onset
+                if age >= 0:
+                    flow += 0.035 * math.exp(-age * 65) * math.sin(math.tau * pitch * (age - age * age * 2))
+            value = flow
+
         pcm.append(round(max(-0.22, min(0.22, value * envelope)) * 32767))
     path = Path("content/audio") / (name + ".wav")
     with wave.open(str(path), "wb") as output:

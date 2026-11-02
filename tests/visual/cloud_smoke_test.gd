@@ -158,7 +158,7 @@ func _run() -> void:
 	root.add_child(navigation)
 	await create_timer(0.65).timeout
 	await capture("22-continue-home")
-	await click_named("ContinueButton")
+	await click_named("PlayButton")
 	check((navigation.current_screen() as ClassicGame).has_unsaved_move(), "new coordinator restores saved Continue")
 	await capture("23-continued-board")
 	await click_named("PauseButton")

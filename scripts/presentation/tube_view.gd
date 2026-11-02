@@ -82,6 +82,11 @@ func _set_completion_flash(value: float) -> void:
 func _draw() -> void:
 	var body: Rect2 = Rect2(Vector2(15, 20 - _lift), Vector2(size.x - 30, size.y - 54))
 	_painter.paint(self, body, logical_layers, capacity, selected or has_focus(), visual_delta, transfer_colour, rich_effects)
+	if visual_delta > 0.0 and not reduce_motion:
+		var height: float = body.size.y - 12.0
+		var surface: float = body.end.y - 6.0 - height * (float(logical_layers.size()) + visual_delta) / float(capacity)
+		var radius: float = 4.0 + 7.0 * sin(visual_delta * PI)
+		draw_arc(Vector2(body.get_center().x, surface), radius, PI, TAU, 12, Color(1, 1, 1, 0.3), 1.2, true)
 	if _invalid_flash > 0.0:
 		draw_line(body.position + Vector2(8, 10), body.position + Vector2(body.size.x - 8, 10), Color("ef8292", _invalid_flash), 4.0, true)
 	if is_complete():
