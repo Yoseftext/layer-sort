@@ -2,11 +2,13 @@ extends SceneTree
 var nav: NavigationCoordinator
 var out: String = OS.get_environment("VISUAL_CAPTURE_DIR")
 var checks: int = 0
+var failures: int = 0
 func _initialize() -> void:
 	call_deferred("run")
 func check(value: bool, label: String) -> void:
 	checks += 1
 	if not value:
+		failures += 1
 		push_error("FEEDBACK_VISUAL_FAIL " + label)
 		quit(1)
 func capture(name: String) -> void:
@@ -111,7 +113,7 @@ func run() -> void:
 	nav.show_map()
 	await create_timer(0.2).timeout
 	await capture("09-grid-ar")
-	print("FEEDBACK_VISUAL PASS checks=", checks)
+	print("FEEDBACK_VISUAL %s checks=%d" % ["PASS" if failures == 0 else "FAIL", checks])
 	nav.queue_free()
 	await process_frame
-	quit()
+	quit(0 if failures == 0 else 1)

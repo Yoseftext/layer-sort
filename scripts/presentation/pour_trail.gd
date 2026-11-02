@@ -56,6 +56,10 @@ func _exit_tree() -> void:
 
 func _set_progress(value: float) -> void:
 	_progress = value
+	if is_instance_valid(_source):
+		_origin = _source.mouth_position() - global_position
+	if is_instance_valid(_destination):
+		_target = _destination.mouth_position() - global_position
 	if value >= 0.25 and not _flow_began:
 		_flow_began = true
 		flow_started.emit()

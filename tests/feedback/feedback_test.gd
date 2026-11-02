@@ -1,8 +1,10 @@
 extends SceneTree
 var checks: int = 0
+var failures: int = 0
 func expect(value: bool, message: String) -> void:
 	checks += 1
 	if not value:
+		failures += 1
 		push_error("FEEDBACK_FAIL " + message)
 		quit(1)
 func _initialize() -> void:
@@ -65,11 +67,14 @@ func run() -> void:
 	expect(game.committed_snapshot().identity() == before, "selection does not mutate")
 	game.call("_on_tube_pressed", 1)
 	expect(game.get("_selected_source") == -1, "same tap deselects")
+	await create_timer(0.1).timeout
+	var mouth_before: Vector2 = game.get("_views")[3].mouth_position()
 	game.call("_on_tube_pressed", 0)
 	game.call("_on_tube_pressed", 3)
 	game.call("_on_tube_pressed", 1)
 	game.call("_on_tube_pressed", 2)
 	await create_timer(0.55).timeout
+	expect(game.get("_views")[3].mouth_position().is_equal_approx(mouth_before), "tutorial dismissal preserves board geometry")
 	expect(game.get("_selected_source") == 2, "latest intent only after transfer")
 	expect(game.committed_snapshot().move_count == 1, "no duplicate commit")
 	game.call("_on_undo")
@@ -82,6 +87,7 @@ func run() -> void:
 	for t: float in [0.25, 0.4, 0.6, 0.75]:
 		trail.play(game.get("_views")[0], game.get("_views")[3], 1, 0, 10.0)
 		trail.call("_set_progress", t)
+		expect((trail.get("_target") as Vector2).is_equal_approx(game.get("_views")[3].mouth_position() - trail.global_position), "stream endpoint follows visible mouth")
 		expect(is_equal_approx(game.get("_views")[3].visual_delta, PourTrail.transfer_progress(t)), "shared normalized transfer")
 		trail.clear()
 	nav.go_home()
@@ -91,7 +97,7 @@ func run() -> void:
 		progress.record_win("level_%03d" % number, 20)
 	nav.call("_on_play")
 	expect(nav.current_screen() is LevelMapScreen, "complete campaign opens explicit replay map")
-	print("FEEDBACK_TESTS PASS checks=", checks)
+	print("FEEDBACK_TESTS %s checks=%d" % ["PASS" if failures == 0 else "FAIL", checks])
 	nav.queue_free()
 	await process_frame
-	quit()
+	quit(0 if failures == 0 else 1)
