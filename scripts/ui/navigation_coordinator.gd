@@ -22,6 +22,7 @@ var _save_dialog: ConfirmationDialog
 var _active: Dictionary = {}
 var _win_dialog: AcceptDialog
 var _win_pending: bool = false
+var _win_action_taken: bool = false
 var _surface: MarginContainer
 var _screen: Control
 var _exit_dialog: ConfirmationDialog
@@ -92,7 +93,9 @@ func show_map() -> void:
 	level_map.progression = _progression
 	level_map.selected_level = String(_active.get("level_id", ""))
 	_replace_screen(level_map)
-	level_map.level_requested.connect(open_level)
+	level_map.level_requested.connect(func(level_id: String) -> void:
+		if _screen == level_map:
+			open_level(level_id))
 	level_map.home_requested.connect(go_home)
 
 
@@ -157,6 +160,7 @@ func go_back() -> void:
 		return
 	if _win_dialog != null and _win_dialog.visible:
 		_win_dialog.hide()
+		_win_action_taken = true
 		show_map()
 		return
 	if _leave_dialog != null and is_instance_valid(_leave_dialog) and _leave_dialog.visible:
@@ -198,6 +202,9 @@ func _show(scene: PackedScene) -> void:
 		(next as SettingsScreen).sound_enabled = _settings.sound_enabled
 		(next as SettingsScreen).rich_effects = _settings.rich_effects
 	if next is HomeScreen:
+		var target: Dictionary = _home_target()
+		var label_key: String = "home_choose_level" if target.mode == "map" else ("home_resume_level" if target.mode == "resume" else ("home_play_level" if target.mode == "play" else "play"))
+		(next as HomeScreen).primary_label = UiText.get_text(label_key, _settings.language) % String(target.id).trim_prefix("level_") if target.mode == "resume" or target.mode == "play" else UiText.get_text(label_key, _settings.language)
 		(next as HomeScreen).campaign_complete = _catalog != null and _progression.completed.size() == _catalog.available_level_ids.size()
 		(next as HomeScreen).play_enabled = _catalog != null and not _save_blocked
 		(next as HomeScreen).continue_enabled = not _active.is_empty() and not _save_blocked
@@ -205,7 +212,9 @@ func _show(scene: PackedScene) -> void:
 		(next as HomeScreen).save_status = _save_status
 	_replace_screen(next)
 	if next is HomeScreen:
-		(next as HomeScreen).play_requested.connect(_on_play)
+		(next as HomeScreen).play_requested.connect(func() -> void:
+			if _screen == next:
+				_on_play())
 		(next as HomeScreen).map_requested.connect(show_map)
 		(next as HomeScreen).continue_requested.connect(continue_game)
 		(next as HomeScreen).retry_save_requested.connect(_retry_save)
@@ -311,13 +320,17 @@ func _show_win_dialog() -> void:
 	if _win_dialog == null:
 		_win_dialog = WinDialog.new()
 		add_child(_win_dialog)
-		_win_dialog.confirmed.connect(show_map)
+		_win_dialog.confirmed.connect(_on_win_primary)
+		(_win_dialog as WinDialog).replay_requested.connect(_on_win_replay)
+		(_win_dialog as WinDialog).map_requested.connect(_on_win_map)
 		_win_dialog.get_ok_button().pressed.connect(_audio.play.bind("ui"))
 	var game: ClassicGame = _screen as ClassicGame
 	if game != null:
+		_win_action_taken = false
 		var snapshot: GameState = game.committed_snapshot()
 		var stars: int = int(_progression.completed[snapshot.level_id].stars)
-		(_win_dialog as WinDialog).present(_settings.language, snapshot.level_id, snapshot.move_count, _save_failed, _settings.reduce_motion, stars)
+		var next_id: String = _next_level_id(snapshot.level_id)
+		(_win_dialog as WinDialog).present(_settings.language, snapshot.level_id, snapshot.move_count, _save_failed, _settings.reduce_motion, stars, next_id)
 		_audio.play("win")
 
 
@@ -327,20 +340,71 @@ func _resume_deferred_win() -> void:
 
 
 func _on_play() -> void:
+	var target: Dictionary = _home_target()
+	if target.mode == "resume" or target.mode == "play":
+		open_level(String(target.id), target.mode == "resume")
+	elif target.mode == "map":
+		show_map()
+
+
+func _home_target() -> Dictionary:
 	if _catalog == null or _save_blocked:
-		return
+		return {"mode": "disabled", "id": ""}
 	if not _active.is_empty() and _saves._valid_active(_active, _catalog):
-		var loaded: Dictionary = LevelLoader.read_file(_catalog.path_for(String(_active.level_id)))
-		var session: GameSession = GameSession.new(loaded.state)
-		session.restore_committed(_active)
-		if not WinRules.is_won(session.snapshot()):
-			open_level(String(_active.level_id), true)
-			return
+		var path: String = _catalog.path_for(String(_active.level_id))
+		var loaded: Dictionary = LevelLoader.read_file(path)
+		if loaded.ok:
+			var session: GameSession = GameSession.new(loaded.state)
+			session.restore_committed(_active)
+			if not WinRules.is_won(session.snapshot()):
+				return {"mode": "resume", "id": String(_active.level_id)}
 	for id: String in _catalog.available_level_ids:
 		if _progression.is_unlocked(id) and not _progression.completed.has(id):
-			open_level(id)
-			return
-	show_map()
+			return {"mode": "play", "id": id}
+	return {"mode": "map", "id": ""}
+
+
+func _next_level_id(level_id: String) -> String:
+	if _catalog == null:
+		return ""
+	var index: int = _catalog.available_level_ids.find(level_id)
+	if index < 0 or index + 1 >= _catalog.available_level_ids.size():
+		return ""
+	var next_id: String = _catalog.available_level_ids[index + 1]
+	return next_id if _progression.is_unlocked(next_id) else ""
+
+
+func _on_win_primary() -> void:
+	var game: ClassicGame = _screen as ClassicGame
+	if game == null or _win_action_taken or _state.route != NavigationState.Route.GAME:
+		return
+	var next_id: String = _next_level_id(game.committed_snapshot().level_id)
+	_finish_win_action(next_id if not next_id.is_empty() else "map")
+
+
+func _on_win_replay() -> void:
+	_finish_win_action("replay")
+
+
+func _on_win_map() -> void:
+	_finish_win_action("map")
+
+
+func _finish_win_action(action: String) -> void:
+	var game: ClassicGame = _screen as ClassicGame
+	if game == null or _win_action_taken or _state.route != NavigationState.Route.GAME:
+		return
+	_win_action_taken = true
+	if _win_dialog != null:
+		_win_dialog.hide()
+	var level_id: String = game.committed_snapshot().level_id
+	if action == "map":
+		show_map()
+	elif action == "replay":
+		if not open_level(level_id):
+			show_map()
+	elif not open_level(action):
+		show_map()
 
 
 func _on_language_selected(code: String) -> void:

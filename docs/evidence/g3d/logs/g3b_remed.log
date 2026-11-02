@@ -1,0 +1,16 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+LAYER_SORT_G3_HOME_READY
+LAYER_SORT_G3_HOME_READY
+LAYER_SORT_G3_HOME_READY
+ERROR: G3B_SAVE_WRITE_FAILED
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _persist (res://scripts/ui/navigation_coordinator.gd:276)
+       [1] open_level (res://scripts/ui/navigation_coordinator.gd:141)
+       [2] _run (res://tests/g3b/remediation_test.gd:38)
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_001
+LAYER_SORT_G3_HOME_READY
+LAYER_SORT_G3_HOME_READY
+G3B_REMEDIATION_TESTS status=PASS checks=14 failures=0

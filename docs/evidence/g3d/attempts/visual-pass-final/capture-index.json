@@ -1,0 +1,275 @@
+{
+	"captures": [
+		{
+			"height": 1600,
+			"name": "01-splash",
+			"pour_progress": -1.0,
+			"route": 0,
+			"sha256": "95016a66b2313a6803af6ff7560d10fab40bba5ab4a5f8b2776be963b5efe63c",
+			"time_ms": 777,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "02-home",
+			"pour_progress": -1.0,
+			"route": 1,
+			"sha256": "b404d42cdd9fc662be5a92853555b43cc03ce509a422c63586d09a67b3733d1d",
+			"time_ms": 1296,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "03-map",
+			"pour_progress": -1.0,
+			"route": 4,
+			"sha256": "d014931aa1f64d6e1aee05c8fcf3b526e36576c0213c929f98a00c78583d6001",
+			"time_ms": 1543,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "04-settings-en",
+			"pour_progress": -1.0,
+			"route": 2,
+			"sha256": "9ac815268fef6e466b7f2d009d33066ab5122be4d806f024b1ec9795a8d2e37d",
+			"time_ms": 1973,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "05-settings-ar",
+			"pour_progress": -1.0,
+			"route": 2,
+			"sha256": "817ff1c84cc567199fc1eb3d187ba5118a42de1131cb91eb9c1e71c9d0b7ec9d",
+			"time_ms": 2905,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "06-about-ar",
+			"pour_progress": -1.0,
+			"route": 3,
+			"sha256": "ae4691278a87ce403d15cc784828839244cf4d9e99dc96b1742409844ac35835",
+			"time_ms": 3278,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "06-home-ar",
+			"pour_progress": -1.0,
+			"route": 1,
+			"sha256": "a1d2e93a3dce312c7a605c517b9167fc3224c21504152c5c263b4ae3095ca2dd",
+			"time_ms": 3503,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "07-classic",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "522d10e71fe7f8d13319f5b21bfd062f1f5fdaa9b78db224fce476e26dca5015",
+			"time_ms": 4266,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "08-selected",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "70e9e1e60f8ce3b3c52cdba0e7e778570f34e947713571c17a7cc4ed0aac491f",
+			"time_ms": 4547,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "09-invalid",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "bdb731de2dbedbaa041101c2f6908d5f43faaf0c3d58d4b23b115e41118b817b",
+			"time_ms": 4779,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "10-pour-early",
+			"pour_progress": 0.296243071556091,
+			"route": 5,
+			"sha256": "5917e31d9e8cced7ddd4cba9ae2f8b5a35c7c7571da8e0bb74a4e637ebd18596",
+			"time_ms": 5034,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "11-pour-middle",
+			"pour_progress": 0.590277791023254,
+			"route": 5,
+			"sha256": "e1454c0f30ec6cf24f649d93ce008d04f820379f475c53b91b03c5ad90ecf077",
+			"time_ms": 5159,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "12-pour-settled",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "c178fd7e1ef64abfae807b13941df950c706531fd4016b826acbfa2bb0dbe547",
+			"time_ms": 5590,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "13-toolbar-restart",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "646c8e452381d79b915b7b45e889316ffe350df33fff9cd2fb048896879e3686",
+			"time_ms": 7202,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "14-pause",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "b2a2ee1bb51177aa7719be779b53b92ee3be2000ae6f75d5be0fdff9e2e0155c",
+			"time_ms": 7659,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "15-paused-settings-ar",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "85d376fae7dc249ce5cf487e36128b1603ddea0ccfbd81f1485dbe78cee76607",
+			"time_ms": 8145,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "16-resumed-ar",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "b4d5a45ed1528bd36bca6e3e6f0cac907d46427f344a258d9dcf726c38131767",
+			"time_ms": 8657,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "17-restart-confirm",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "2b20778cd7c63c4bfeb237ab19664fc50646415c4ce84ec852aeda3d89ee9c55",
+			"time_ms": 9098,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "18-completed-tube-reduced-motion",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "62e72198b415d62eeb8647fc10022e73c569fcd591b51f7802647bed0865dab4",
+			"time_ms": 13461,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "19-win",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "cda54e06e0200dfe97a51c0e5594f1d47c3083306078b045b289e71eb8031364",
+			"time_ms": 14231,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "20-next-level",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "4c763a9df73bd0a64cd2630988d5285978dc8797daa77307b9d3d0b5e7692352",
+			"time_ms": 14498,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "20-unlocked-map",
+			"pour_progress": -1.0,
+			"route": 4,
+			"sha256": "b595dccb7f7d94fec183e9f554f24e03b3b4f5a1b0c9419c6e72f74c98382527",
+			"time_ms": 14974,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "21-exit-confirm",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "526dc93c4b32659e4004f6594df1b023ee335db409cf92fd149f79c585ee38c7",
+			"time_ms": 16554,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "22-continue-home",
+			"pour_progress": -1.0,
+			"route": 1,
+			"sha256": "b11bcd432d159cb33010f57d2f54fa5d609f82bf513f7ecae397a6b56bb4f302",
+			"time_ms": 17447,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "23-continued-board",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "c05cade97ecce7f6fa4800623cb5737297f2450533b1d3d0ab7c4b9f45d589b6",
+			"time_ms": 17699,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "24-last-level-win",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "51cfbc05a4f20939fa47798be55b41687fa202175a369fd316e2825cab4a9c7d",
+			"time_ms": 24010,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "24-win-save-warning",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "192ba63b1cf93ff0112d6758e81a674fae851a6ae79291567ead12b2438dc207",
+			"time_ms": 28265,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "25-win-after-save-warning",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "fcc2098d7810e604a70f8b4eabcf7c2d3d52c8f970be3cf4170ff80630b18b24",
+			"time_ms": 28535,
+			"width": 720
+		}
+	],
+	"checks": 185,
+	"display": "X11",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"failures": 0,
+	"source_commit": "precommit",
+	"viewport": [
+		720,
+		1600
+	]
+}
