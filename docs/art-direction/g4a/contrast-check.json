@@ -1,0 +1,23 @@
+{
+  "scope": "Solid token pairs only; not gradients, font rasterization or full accessibility certification",
+  "results": [
+    {
+      "concept": "A",
+      "ink_on_panel": 11.98,
+      "primary_label_on_accent": 5.23,
+      "muted_on_panel": 5.37
+    },
+    {
+      "concept": "B",
+      "ink_on_panel": 13.08,
+      "primary_label_on_accent": 12.9,
+      "muted_on_panel": 5.81
+    },
+    {
+      "concept": "C",
+      "ink_on_panel": 9.06,
+      "primary_label_on_accent": 5.15,
+      "muted_on_panel": 4.98
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "noto-arabic",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosansarabic/OFL.txt",
+    "bytes": 4382,
+    "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96",
+    "status": "retrieved"
+  },
+  {
+    "id": "manrope",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt",
+    "bytes": 4387,
+    "sha256": "58172e0c0fac2cda8a37b348164bb55e44b0e69051e557e92b1d3f6910141f7b",
+    "status": "retrieved"
+  },
+  {
+    "id": "phosphor",
+    "url": "https://raw.githubusercontent.com/phosphor-icons/core/main/LICENSE",
+    "bytes": 1071,
+    "sha256": "b5b1f1da112d18ea2147decfd48ddc1bf2b5aeb6c265381579340e95b15a2bb2",
+    "status": "retrieved"
+  },
+  {
+    "id": "polyhaven",
+    "url": "https://polyhaven.com/license",
+    "status": "HTTP Error 403: Forbidden"
+  },
+  {
+    "id": "ambientcg",
+    "url": "https://docs.ambientcg.com/license/",
+    "bytes": 34349,
+    "sha256": "86d690c1384e979c84fcb607c66dcd4802ff75f917a2fbef1658add632d1b11b",
+    "status": "retrieved"
+  },
+  {
+    "id": "kenney-audio",
+    "url": "https://kenney.nl/assets/interface-sounds",
+    "bytes": 18711,
+    "sha256": "e17a961288c2f81572457f82592977b12a03600f17f18a7b83779852aad9b839",
+    "status": "retrieved"
+  }
+]
