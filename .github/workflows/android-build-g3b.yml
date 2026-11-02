@@ -6,9 +6,9 @@ name: android-build-g3b
 
 "on":
   push:
-    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual"]
+    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa"]
   pull_request:
-    branches: ["feat/g3a-navigation", "feat/g3b-progression", "feat/g3b-remediation"]
+    branches: ["feat/g3a-navigation", "feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual"]
   workflow_dispatch:
 
 concurrency:
@@ -332,6 +332,9 @@ jobs:
           grep -q 'VISUAL_TESTS status=PASS' logs/visual-tests.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-visual-captures" xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/visual/gameplay_visual_test.gd 2>&1 | tee logs/visual-render.log
           grep -q 'VISUAL_TESTS status=PASS' logs/visual-render.log
+          QA_SOURCE_COMMIT="$GITHUB_SHA" VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-cloud-captures" timeout 120s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/visual/cloud_smoke_test.gd 2>&1 | tee logs/cloud-visual-smoke.log
+          grep -q 'CLOUD_VISUAL_TESTS status=PASS' logs/cloud-visual-smoke.log
+          if grep -Eq 'SCRIPT ERROR|CLOUD_VISUAL_FAIL' logs/cloud-visual-smoke.log; then exit 1; fi
 
       - name: Export Android G3-B debug APK
         env:
@@ -404,6 +407,9 @@ jobs:
         run: |
           mkdir -p logs/screenshots
           cp "$RUNNER_TEMP/layersort-visual-captures/"*.png logs/screenshots/
+          mkdir -p logs/cloud-screenshots
+          cp "$RUNNER_TEMP/layersort-cloud-captures/"*.png logs/cloud-screenshots/
+          cp "$RUNNER_TEMP/layersort-cloud-captures/capture-index.json" logs/cloud-capture-index.json
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -423,5 +429,6 @@ jobs:
             logs/*.log
             logs/*.json
             logs/screenshots/*.png
+            logs/cloud-screenshots/*.png
           if-no-files-found: warn
           retention-days: 14

@@ -3,6 +3,7 @@ extends Control
 
 signal home_requested
 signal pause_requested
+signal restart_requested
 signal state_committed(state: GameState, won: bool)
 signal presentation_complete(won: bool)
 var restored_state: Dictionary = {}
@@ -123,12 +124,19 @@ func _build_ui() -> void:
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	layout.add_child(buttons)
 	var undo: Button = _make_button(UiText.get_text("undo", language))
+	undo.name = "UndoButton"
 	buttons.add_child(undo)
 	undo.pressed.connect(_on_undo)
 	var restart: Button = _make_button(UiText.get_text("restart", language))
+	restart.name = "RestartButton"
 	buttons.add_child(restart)
-	restart.pressed.connect(_on_restart)
+	restart.pressed.connect(func() -> void:
+		if restart_requested.has_connections():
+			restart_requested.emit()
+		else:
+			_on_restart())
 	var help: Label = _make_label(UiText.get_text("game_help", language), 21)
+	help.name = "GameHelp"
 	help.custom_minimum_size.y = 72
 	layout.add_child(help)
 	_trail = PourTrail.new()
@@ -145,6 +153,22 @@ func _make_label(value: String, font_size: int) -> Label:
 	label.add_theme_font_size_override("font_size", font_size)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	return label
+
+
+func apply_language(value: String) -> void:
+	language = value
+	layout_direction = Control.LAYOUT_DIRECTION_RTL if value == "ar" else Control.LAYOUT_DIRECTION_LTR
+	for node_name: String in ["HomeButton", "PauseButton", "UndoButton", "RestartButton"]:
+		var button: Button = find_child(node_name, true, false) as Button
+		var key: String = node_name.trim_suffix("Button").to_lower()
+		button.text = UiText.get_text(key, value)
+		button.accessibility_name = button.text
+	(find_child("GameTitle", true, false) as Label).text = UiText.get_text("game_title", value)
+	(find_child("GameHelp", true, false) as Label).text = UiText.get_text("game_help", value)
+	_status.text = UiText.get_text("choose_destination", value) % (_selected_source + 1) if _selected_source >= 0 else UiText.get_text("choose", value)
+	for index: int in range(_views.size()):
+		_views[index].accessibility_name = UiText.get_text("tube", value) % (index + 1)
+	_refresh()
 
 
 func _make_button(value: String) -> Button:

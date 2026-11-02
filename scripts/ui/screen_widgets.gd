@@ -17,16 +17,15 @@ static func background(parent: Control) -> void:
 
 
 static func stack(parent: Control) -> VBoxContainer:
-	var center: CenterContainer = CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.offset_left = 16
-	center.offset_right = -16
-	parent.add_child(center)
 	var column: VBoxContainer = VBoxContainer.new()
-	column.custom_minimum_size = Vector2(0, 360)
-	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	column.offset_left = 24
+	column.offset_right = -24
+	column.offset_top = 24
+	column.offset_bottom = -24
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
 	column.add_theme_constant_override("separation", 24)
-	center.add_child(column)
+	parent.add_child(column)
 	return column
 
 
@@ -44,10 +43,16 @@ static func label(value: String, size: int, muted: bool = false) -> Label:
 static func button(value: String, primary: bool = false) -> Button:
 	var node: Button = Button.new()
 	node.text = value
-	node.accessibility_name = value
+	style_button(node, primary)
+	return node
+
+
+static func style_button(node: Button, primary: bool = false) -> void:
+	node.accessibility_name = node.text
 	node.custom_minimum_size = Vector2(0, 96)
 	node.add_theme_font_size_override("font_size", 28)
-	node.add_theme_color_override("font_color", INK if primary else TEXT)
+	for state: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		node.add_theme_color_override(state, INK if primary else TEXT)
 	var normal: StyleBoxFlat = StyleBoxFlat.new()
 	normal.bg_color = ACCENT if primary else CARD
 	normal.set_corner_radius_all(24)
@@ -62,7 +67,6 @@ static func button(value: String, primary: bool = false) -> Button:
 	focus.border_color = ACCENT
 	focus.set_border_width_all(4)
 	node.add_theme_stylebox_override("focus", focus)
-	return node
 
 
 static func show_dialog(dialog: AcceptDialog) -> void:
@@ -76,6 +80,21 @@ static func show_dialog(dialog: AcceptDialog) -> void:
 	theme.set_stylebox("panel", "AcceptDialog", panel)
 	theme.set_stylebox("panel", "ConfirmationDialog", panel)
 	theme.set_color("font_color", "Label", TEXT)
+	theme.default_font_size = 26
+	theme.set_color("title_color", "Window", TEXT)
+	theme.set_font_size("title_font_size", "Window", 26)
+	var border: StyleBoxFlat = panel.duplicate()
+	border.expand_margin_top = 42
+	border.expand_margin_left = 6
+	border.expand_margin_right = 6
+	border.expand_margin_bottom = 6
+	theme.set_stylebox("embedded_border", "Window", border)
+	theme.set_stylebox("embedded_unfocused_border", "Window", border)
+	theme.set_constant("title_height", "Window", 40)
 	dialog.theme = theme
+	dialog.dialog_autowrap = true
+	style_button(dialog.get_ok_button(), true)
+	if dialog is ConfirmationDialog:
+		style_button((dialog as ConfirmationDialog).get_cancel_button())
 	dialog.min_size = Vector2i(520, 240)
 	dialog.popup_centered(Vector2i(600, 300))

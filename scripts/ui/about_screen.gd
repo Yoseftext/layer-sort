@@ -12,7 +12,11 @@ func _ready() -> void:
 	var column: VBoxContainer = ScreenWidgets.stack(self)
 	column.add_child(ScreenWidgets.label(UiText.get_text("about", language), 46))
 	column.add_child(ScreenWidgets.label(UiText.get_text("about_intro", language), 25))
-	column.add_child(ScreenWidgets.label(UiText.get_text("version", language), 23, true))
+	var build_version: String = String(ProjectSettings.get_setting("application/config/version", ""))
+	var version_text: String = UiText.get_text("version", language)
+	if not build_version.is_empty():
+		version_text = version_text.replace(build_version, "\u2066" + build_version + "\u2069")
+	column.add_child(ScreenWidgets.label(version_text, 23, true))
 	column.add_child(ScreenWidgets.label(UiText.get_text("about_credits", language), 30))
 	for entry: Dictionary in AttributionCatalog.entries():
 		column.add_child(ScreenWidgets.label("%s · %s" % [entry.name, entry.license], 23))

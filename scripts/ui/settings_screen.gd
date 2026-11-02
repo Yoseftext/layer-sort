@@ -33,6 +33,8 @@ func _ready() -> void:
 	motion.text = UiText.get_text("reduce_motion", language)
 	motion.accessibility_name = motion.text
 	motion.custom_minimum_size = Vector2(0, 96)
+	motion.add_theme_font_size_override("font_size", 28)
+	motion.add_theme_color_override("font_color", ScreenWidgets.TEXT)
 	motion.button_pressed = reduce_motion
 	column.add_child(motion)
 	motion.toggled.connect(func(value: bool) -> void: motion_selected.emit(value))
