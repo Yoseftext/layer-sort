@@ -54,6 +54,11 @@ func _ready() -> void:
 		_session.restore_committed(restored_state)
 	_build_ui()
 	_refresh()
+	var level_number: int = _session.snapshot().level_id.trim_prefix("level_").to_int()
+	if level_number >= 1 and level_number <= 5:
+		var guide: TutorialGuide = TutorialGuide.new()
+		guide.game = self
+		add_child(guide)
 	print(READY_MARKER)
 
 

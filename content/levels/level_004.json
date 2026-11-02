@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "level_id": "level_004",
+  "content_version": 1,
+  "capacity": 4,
+  "palette": [
+    "coral",
+    "teal"
+  ],
+  "tubes_bottom_to_top": [
+    [
+      0,
+      1,
+      1,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      1
+    ],
+    []
+  ],
+  "mechanics": []
+}
