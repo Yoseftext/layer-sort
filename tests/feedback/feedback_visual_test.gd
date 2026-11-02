@@ -33,11 +33,18 @@ func run() -> void:
 	nav.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	await create_timer(0.6).timeout
 	await capture("01-home")
+	var progress: Progression = nav.get("_progression")
+	for number: int in range(1, 10):
+		progress.record_win("level_%03d" % number, 20)
+	var level: Dictionary = LevelLoader.read_file("res://content/levels/level_010.json")
+	nav.set("_active", nav.call("_snapshot_data", level.state))
 	nav.show_map()
 	await create_timer(0.2).timeout
 	await capture("02-grid-en")
 	var map: LevelMapScreen = nav.current_screen() as LevelMapScreen
 	check((map.get("_grid") as GridContainer).columns == 3, "standard three columns")
+	check((map.find_child("level_001", true, false) as Button).text.contains("★"), "completion star readable")
+	check((map.find_child("level_010", true, false) as Button).text.contains("Current"), "selected attempt shown")
 	# Exercise actual scrolling with a bounded future-size catalog; 14 tiles can fit.
 	for number: int in range(15, 61):
 		map.catalog.available_level_ids.append("level_%03d" % number)

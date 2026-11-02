@@ -338,6 +338,7 @@ jobs:
           grep -q "FEEDBACK_TESTS PASS" logs/feedback.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-feedback-captures" timeout 90s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/feedback/feedback_visual_test.gd 2>&1 | tee logs/feedback-visual.log
           grep -q "FEEDBACK_VISUAL PASS" logs/feedback-visual.log
+          if grep -Eq "SCRIPT ERROR|FEEDBACK_FAIL|FEEDBACK_VISUAL_FAIL" logs/feedback*.log; then exit 1; fi
           python3 tools/content/verify_campaign.py > logs/campaign-solver.json
           timeout 120s godot --headless --path . --script res://tests/campaign/campaign_test.gd 2>&1 | tee logs/campaign.log
           grep -q "CAMPAIGN_TESTS PASS" logs/campaign.log
