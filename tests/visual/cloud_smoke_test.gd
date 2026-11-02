@@ -133,6 +133,9 @@ func _run() -> void:
 	await capture("21-exit-confirm")
 	var leave: ConfirmationDialog = navigation.get("_leave_dialog") as ConfirmationDialog
 	check(leave != null and leave.visible, "exit confirms attempt")
+	check(leave.position.x >= 0 and leave.position.x + leave.size.x <= 720, "long exit dialog stays inside viewport")
+	check(leave.get_label().size.x <= float(leave.size.x) - 48.0, "exit message wraps inside panel")
+	check(leave.get_ok_button().size.y >= 96.0, "dialog action has an actual large touch target")
 	var protected: String = game._session.snapshot().identity()
 	var selected: int = game._selected_source
 	await tap(game._views[0])

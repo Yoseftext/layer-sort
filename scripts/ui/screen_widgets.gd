@@ -70,6 +70,9 @@ static func style_button(node: Button, primary: bool = false) -> void:
 
 
 static func show_dialog(dialog: AcceptDialog) -> void:
+	# Reset text before sizing: AcceptDialog otherwise retains its unwrapped width.
+	var message: String = dialog.dialog_text
+	dialog.dialog_text = ""
 	var theme: Theme = Theme.new()
 	var panel: StyleBoxFlat = StyleBoxFlat.new()
 	panel.bg_color = CARD
@@ -94,7 +97,17 @@ static func show_dialog(dialog: AcceptDialog) -> void:
 	dialog.theme = theme
 	dialog.dialog_autowrap = true
 	style_button(dialog.get_ok_button(), true)
+	var actions: Array[Button] = [dialog.get_ok_button()]
 	if dialog is ConfirmationDialog:
 		style_button((dialog as ConfirmationDialog).get_cancel_button())
+		actions.append((dialog as ConfirmationDialog).get_cancel_button())
+	# AcceptDialog lays out button minimums without custom_minimum_size.
+	for action: Button in actions:
+		for state: String in ["normal", "pressed", "hover", "focus"]:
+			var style: StyleBoxFlat = action.get_theme_stylebox(state) as StyleBoxFlat
+			style.content_margin_top = 32
+			style.content_margin_bottom = 32
 	dialog.min_size = Vector2i(520, 240)
-	dialog.popup_centered(Vector2i(600, 300))
+	dialog.wrap_controls = false
+	dialog.popup_centered(Vector2i(600, 340))
+	dialog.dialog_text = message
