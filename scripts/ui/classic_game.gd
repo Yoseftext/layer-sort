@@ -16,6 +16,8 @@ const READY_MARKER: String = "LAYER_SORT_G2_READY"
 var level_path: String = LEVEL_PATH
 var language: String = "en"
 var reduce_motion: bool = false
+var rich_effects: bool = false
+var audio: GameAudio
 var _session: GameSession
 var _selected_source: int = -1
 var _animation_token: int = 0
@@ -32,6 +34,10 @@ var _conflicting_touch: bool = false
 
 func has_unsaved_move() -> bool:
 	return _session != null and _session.snapshot().move_count > 0
+
+
+func committed_snapshot() -> GameState:
+	return _session.snapshot()
 
 
 func _ready() -> void:
@@ -61,11 +67,11 @@ func _build_ui() -> void:
 	margins.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side: String in ["left", "right"]:
 		margins.add_theme_constant_override("margin_" + side, 24)
-	margins.add_theme_constant_override("margin_top", 40)
-	margins.add_theme_constant_override("margin_bottom", 40)
+	margins.add_theme_constant_override("margin_top", 24)
+	margins.add_theme_constant_override("margin_bottom", 24)
 	add_child(margins)
 	var layout: VBoxContainer = VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 24)
+	layout.add_theme_constant_override("separation", 14)
 	margins.add_child(layout)
 	var header: HBoxContainer = HBoxContainer.new()
 	header.add_theme_constant_override("separation", 14)
@@ -75,9 +81,9 @@ func _build_ui() -> void:
 	home.custom_minimum_size = Vector2(112, 76)
 	header.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
-	var title: Label = _make_label(UiText.get_text("game_title", language), 30)
+	var title: Label = _make_label(UiText.get_text("game_title", language), 25)
 	title.name = "GameTitle"
-	title.custom_minimum_size.y = 56
+	title.custom_minimum_size.y = 38
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var header_space: Control = Control.new()
 	header_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -88,8 +94,17 @@ func _build_ui() -> void:
 	header.add_child(pause)
 	pause.pressed.connect(func() -> void: pause_requested.emit())
 	layout.add_child(title)
-	_moves = _make_label(UiText.get_text("moves", language) % 0, 28)
-	layout.add_child(_moves)
+	var info: HBoxContainer = HBoxContainer.new()
+	info.add_theme_constant_override("separation", 20)
+	layout.add_child(info)
+	var level: Label = _make_label(UiText.get_text("level_number", language) % _session.snapshot().level_id.trim_prefix("level_"), 23)
+	level.name = "LevelBadge"
+	level.add_theme_color_override("font_color", ScreenWidgets.ACCENT)
+	level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_child(level)
+	_moves = _make_label(UiText.get_text("moves", language) % 0, 25)
+	_moves.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_child(_moves)
 	_status = _make_label(UiText.get_text("choose", language), 25)
 	layout.add_child(_status)
 	var board: PanelContainer = PanelContainer.new()
@@ -119,6 +134,7 @@ func _build_ui() -> void:
 		tube.accessibility_name = UiText.get_text("tube", language) % (index + 1)
 		tube.pressed.connect(_on_tube_pressed.bind(index))
 		_views.append(tube)
+		tube.completed.connect(_on_tube_completed)
 	var buttons: HBoxContainer = HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 20)
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -165,6 +181,7 @@ func apply_language(value: String) -> void:
 		button.accessibility_name = button.text
 	(find_child("GameTitle", true, false) as Label).text = UiText.get_text("game_title", value)
 	(find_child("GameHelp", true, false) as Label).text = UiText.get_text("game_help", value)
+	(find_child("LevelBadge", true, false) as Label).text = UiText.get_text("level_number", value) % _session.snapshot().level_id.trim_prefix("level_")
 	_status.text = UiText.get_text("choose_destination", value) % (_selected_source + 1) if _selected_source >= 0 else UiText.get_text("choose", value)
 	for index: int in range(_views.size()):
 		_views[index].accessibility_name = UiText.get_text("tube", value) % (index + 1)
@@ -188,11 +205,22 @@ func _update_tube_layout() -> void:
 		tube.custom_minimum_size = Vector2(width, height)
 
 
-func _refresh() -> void:
+func _refresh(celebrate: bool = false) -> void:
 	var state: GameState = _session.snapshot()
 	_moves.text = UiText.get_text("moves", language) % state.move_count
 	for index: int in range(_views.size()):
-		_views[index].show_tube(state.tubes[index], state.capacity, index == _selected_source)
+		_views[index].reduce_motion = reduce_motion
+		_views[index].rich_effects = rich_effects
+		_views[index].show_tube(state.tubes[index], state.capacity, index == _selected_source, celebrate)
+
+
+func _cue(value: String) -> void:
+	if audio != null:
+		audio.play(value)
+
+
+func _on_tube_completed() -> void:
+	_cue("complete")
 
 
 func _on_tube_pressed(index: int) -> void:
@@ -208,10 +236,12 @@ func _on_tube_pressed(index: int) -> void:
 		return
 	if _selected_source < 0:
 		if state.tubes[index].layers.is_empty():
+			_cue("invalid")
 			_status.text = UiText.get_text("empty", language)
 			print("LAYER_SORT_G2_REJECT EMPTY_SOURCE")
 			return
 		_selected_source = index
+		_cue("select")
 		_status.text = UiText.get_text("choose_destination", language) % (index + 1)
 		_refresh()
 		return
@@ -224,6 +254,7 @@ func _on_tube_pressed(index: int) -> void:
 	var moved_colour: int = state.tubes[source].layers.back()
 	var result: Dictionary = _session.submit(source, index)
 	if not result.ok:
+		_cue("invalid")
 		_status.text = UiText.get_text("reject_" + String(result.reason).to_lower(), language)
 		_views[index].flash_invalid()
 		print("LAYER_SORT_G2_REJECT %s" % result.reason)
@@ -232,11 +263,10 @@ func _on_tube_pressed(index: int) -> void:
 	_pending_win = bool(result.won)
 	_status.text = UiText.get_text("pouring", language)
 	state_committed.emit(_session.snapshot(), result.won)
+	_cue("pour")
 	var duration: float = 0.1 if reduce_motion else 0.62
 	if not reduce_motion:
-		var from: Vector2 = _views[source].global_position + _views[source].size * Vector2(0.5, 0.25) - global_position
-		var to: Vector2 = _views[index].global_position + _views[index].size * Vector2(0.5, 0.30) - global_position
-		_trail.play(from, to, TubeView.COLOURS[moved_colour], duration)
+		_trail.play(_views[source], _views[index], int(result.moved), moved_colour, duration)
 	print("%s %d %d %d" % [MOVE_MARKER, source, index, result.moved])
 	if result.won:
 		print("LAYER_SORT_G2_WIN")
@@ -249,7 +279,8 @@ func _unlock_after_delay(token: int, duration: float, won: bool, moved: int) -> 
 	if token == _animation_token and _session != null:
 		_session.finish_animation()
 		_status.text = UiText.get_text("won", language) if won else UiText.get_text("moved", language) % moved
-		_refresh()
+		_refresh(true)
+		_trail.clear()
 		_pending_win = false
 		presentation_complete.emit(won)
 
@@ -257,6 +288,9 @@ func _unlock_after_delay(token: int, duration: float, won: bool, moved: int) -> 
 func _on_undo() -> void:
 	if _session == null or _suspended or _conflicting_touch:
 		return
+	if audio != null:
+		audio.stop_all()
+	_cue("ui")
 	_animation_token += 1
 	_pending_win = false
 	if _trail != null:
@@ -275,6 +309,9 @@ func restart_attempt() -> void:
 func _on_restart() -> void:
 	if _session == null or _suspended or _conflicting_touch:
 		return
+	if audio != null:
+		audio.stop_all()
+	_cue("ui")
 	_animation_token += 1
 	_pending_win = false
 	if _trail != null:

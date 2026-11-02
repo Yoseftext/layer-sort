@@ -37,6 +37,13 @@ func _run() -> void:
 	await click_text(UiText.get_text("home", "en"))
 	await click_named("SettingsButton")
 	await capture("04-settings-en")
+	await click_named("SoundToggle")
+	check(not (navigation.get("_audio") as GameAudio).enabled, "sound preference mutes live audio")
+	await click_named("SoundToggle")
+	check((navigation.get("_audio") as GameAudio).enabled, "sound preference restores future cues")
+	await click_named("EffectsToggle")
+	check((navigation.get("_settings") as AppSettings).rich_effects, "reflection preference selected")
+	await click_named("EffectsToggle")
 	await click_named("ArabicButton")
 	await capture("05-settings-ar")
 	await click_named("HomeButton")
@@ -154,6 +161,11 @@ func _run() -> void:
 	await click_named("ContinueButton")
 	check((navigation.current_screen() as ClassicGame).has_unsaved_move(), "new coordinator restores saved Continue")
 	await capture("23-continued-board")
+	await click_named("PauseButton")
+	await click_named("SettingsButton")
+	await click_named("ArabicButton")
+	await click_named("HomeButton")
+	await click_named("ResumeButton")
 	# Isolated failure fixture starts from the certified level-001 solution.
 	navigation.open_level("level_001")
 	await create_timer(0.2).timeout
@@ -180,6 +192,8 @@ func _run() -> void:
 		file.store_string(JSON.stringify({"source_commit": OS.get_environment("QA_SOURCE_COMMIT"), "engine": Engine.get_version_info(), "display": DisplayServer.get_name(), "viewport": [720,1600], "checks": checks, "failures": failures, "captures": captures}, "\t"))
 	navigation.queue_free()
 	await process_frame
+	# Let the native mixer retire stopped playback voices before engine shutdown.
+	await create_timer(0.15).timeout
 	print("CLOUD_VISUAL_TESTS status=%s checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])
 	quit(0 if failures == 0 else 1)
 

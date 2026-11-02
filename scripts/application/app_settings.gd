@@ -3,6 +3,8 @@ extends RefCounted
 
 var language: String = "en"
 var reduce_motion: bool = false
+var sound_enabled: bool = true
+var rich_effects: bool = false
 
 
 func _init() -> void:

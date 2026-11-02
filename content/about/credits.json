@@ -6,6 +6,12 @@
       "role": "Game engine",
       "license": "MIT",
       "url": "https://godotengine.org/license/"
+    },
+    {
+      "name": "Layer Sort original synthesis",
+      "role": "Procedural sound effects",
+      "license": "CC0-1.0",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/"
     }
   ]
 }

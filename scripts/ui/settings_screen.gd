@@ -3,11 +3,15 @@ extends Control
 
 signal language_selected(code: String)
 signal motion_selected(value: bool)
+signal sound_selected(value: bool)
+signal effects_selected(value: bool)
 signal home_requested
 
 var language: String = "en"
 var return_to_pause: bool = false
 var reduce_motion: bool = false
+var sound_enabled: bool = true
+var rich_effects: bool = false
 
 
 func _ready() -> void:
@@ -38,7 +42,21 @@ func _ready() -> void:
 	motion.button_pressed = reduce_motion
 	column.add_child(motion)
 	motion.toggled.connect(func(value: bool) -> void: motion_selected.emit(value))
+	_add_toggle(column, "sound", "SoundToggle", sound_enabled, sound_selected)
+	_add_toggle(column, "rich_effects", "EffectsToggle", rich_effects, effects_selected)
 	var home: Button = ScreenWidgets.button(UiText.get_text("back", language) if return_to_pause else UiText.get_text("home", language))
 	home.name = "HomeButton"
 	column.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
+
+
+func _add_toggle(column: VBoxContainer, key: String, node_name: String, value: bool, action: Signal) -> void:
+	var toggle: CheckButton = CheckButton.new()
+	toggle.name = node_name
+	toggle.text = UiText.get_text(key, language)
+	toggle.accessibility_name = toggle.text
+	toggle.custom_minimum_size.y = 96
+	toggle.add_theme_font_size_override("font_size", 28)
+	toggle.button_pressed = value
+	column.add_child(toggle)
+	toggle.toggled.connect(func(selected: bool) -> void: action.emit(selected))

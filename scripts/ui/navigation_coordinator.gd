@@ -30,10 +30,13 @@ var _pause_screen: PauseScreen
 var _pause_settings: SettingsScreen
 var _leave_to_map: bool = false
 var _leave_dialog: ConfirmationDialog
+var _audio: GameAudio
 
 
 func _ready() -> void:
 	ScreenWidgets.background(self)
+	_audio = GameAudio.new()
+	add_child(_audio)
 	var loaded: Dictionary = LevelCatalog.load_catalog()
 	if loaded.ok:
 		_catalog = loaded.catalog
@@ -127,15 +130,21 @@ func open_level(level_id: String, restore: bool = false) -> bool:
 	game.level_path = path
 	game.language = _settings.language
 	game.reduce_motion = _settings.reduce_motion
+	game.rich_effects = _settings.rich_effects
+	game.audio = _audio
 	if restore and _active.get("level_id") == level_id:
 		game.restored_state = _active.duplicate(true)
 	else:
 		_active = _snapshot_data(loaded.state)
 		_persist()
 	_replace_screen(game)
-	game.home_requested.connect(request_home)
+	game.home_requested.connect(func() -> void:
+		_audio.play("ui")
+		request_home())
 	game.pause_requested.connect(_open_pause)
-	game.restart_requested.connect(_request_restart)
+	game.restart_requested.connect(func() -> void:
+		_audio.play("ui")
+		_request_restart())
 	game.state_committed.connect(_on_game_commit)
 	game.presentation_complete.connect(_on_game_presentation_complete)
 	print("LAYER_SORT_G3_GAME_READY " + level_id)
@@ -187,6 +196,8 @@ func _show(scene: PackedScene) -> void:
 	next.set("language", _settings.language)
 	if next is SettingsScreen:
 		(next as SettingsScreen).reduce_motion = _settings.reduce_motion
+		(next as SettingsScreen).sound_enabled = _settings.sound_enabled
+		(next as SettingsScreen).rich_effects = _settings.rich_effects
 	if next is HomeScreen:
 		(next as HomeScreen).play_enabled = _catalog != null and not _save_blocked
 		(next as HomeScreen).continue_enabled = not _active.is_empty() and not _save_blocked
@@ -203,6 +214,8 @@ func _show(scene: PackedScene) -> void:
 	elif next is SettingsScreen:
 		(next as SettingsScreen).language_selected.connect(_on_language_selected)
 		(next as SettingsScreen).motion_selected.connect(_on_motion_selected)
+		(next as SettingsScreen).sound_selected.connect(_on_sound_selected)
+		(next as SettingsScreen).effects_selected.connect(_on_effects_selected)
 		(next as SettingsScreen).home_requested.connect(go_home)
 	elif next is AboutScreen:
 		(next as AboutScreen).home_requested.connect(go_home)
@@ -216,6 +229,13 @@ func _replace_screen(next: Control) -> void:
 	_screen = next
 	_surface.add_child(next)
 	next.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if not next is ClassicGame:
+		_wire_ui_sounds(next)
+
+
+func _wire_ui_sounds(surface: Node) -> void:
+	for child: Node in surface.find_children("*", "BaseButton", true, false):
+		(child as BaseButton).pressed.connect(_audio.play.bind("ui"))
 
 
 func _snapshot_data(state: GameState) -> Dictionary:
@@ -288,12 +308,16 @@ func _on_game_presentation_complete(won: bool) -> void:
 func _show_win_dialog() -> void:
 	_win_pending = false
 	if _win_dialog == null:
-		_win_dialog = AcceptDialog.new()
+		_win_dialog = WinDialog.new()
 		add_child(_win_dialog)
 		_win_dialog.confirmed.connect(show_map)
-	_win_dialog.title = UiText.get_text("completed", _settings.language)
-	_win_dialog.dialog_text = UiText.get_text("completed", _settings.language) + ("\n" + UiText.get_text("save_write_error", _settings.language) if _save_failed else "")
-	ScreenWidgets.show_dialog(_win_dialog)
+		_win_dialog.get_ok_button().pressed.connect(_audio.play.bind("ui"))
+	var game: ClassicGame = _screen as ClassicGame
+	if game != null:
+		var snapshot: GameState = game.committed_snapshot()
+		var stars: int = int(_progression.completed[snapshot.level_id].stars)
+		(_win_dialog as WinDialog).present(_settings.language, snapshot.level_id, snapshot.move_count, _save_failed, _settings.reduce_motion, stars)
+		_audio.play("win")
 
 
 func _resume_deferred_win() -> void:
@@ -333,10 +357,25 @@ func _on_motion_selected(value: bool) -> void:
 		_show(SETTINGS_SCENE)
 
 
+func _on_sound_selected(value: bool) -> void:
+	_settings.sound_enabled = value
+	_audio.enabled = value
+
+
+func _on_effects_selected(value: bool) -> void:
+	_settings.rich_effects = value
+	var game: ClassicGame = _screen as ClassicGame
+	if game != null:
+		game.rich_effects = value
+		game._refresh()
+
+
 func _open_pause() -> void:
 	var game: ClassicGame = _screen as ClassicGame
 	if game == null or _pause_screen != null:
 		return
+	_audio.stop_all()
+	_audio.play("ui")
 	game.set_process_input(false)
 	_pause_screen = PAUSE_SCENE.instantiate() as PauseScreen
 	_pause_screen.language = _settings.language
@@ -347,6 +386,7 @@ func _open_pause() -> void:
 	_pause_screen.settings_requested.connect(_open_pause_settings)
 	_pause_screen.home_requested.connect(request_home)
 	_pause_screen.map_requested.connect(request_map)
+	_wire_ui_sounds(_pause_screen)
 
 
 func _close_pause() -> void:
@@ -367,12 +407,17 @@ func _open_pause_settings() -> void:
 	_pause_settings = SETTINGS_SCENE.instantiate() as SettingsScreen
 	_pause_settings.language = _settings.language
 	_pause_settings.reduce_motion = _settings.reduce_motion
+	_pause_settings.sound_enabled = _settings.sound_enabled
+	_pause_settings.rich_effects = _settings.rich_effects
 	_pause_settings.return_to_pause = true
 	_surface.add_child(_pause_settings)
 	_pause_settings.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_pause_settings.language_selected.connect(_on_language_selected)
 	_pause_settings.motion_selected.connect(_on_motion_selected)
+	_pause_settings.sound_selected.connect(_on_sound_selected)
+	_pause_settings.effects_selected.connect(_on_effects_selected)
 	_pause_settings.home_requested.connect(_close_pause_settings)
+	_wire_ui_sounds(_pause_settings)
 
 
 func _close_pause_settings() -> void:
