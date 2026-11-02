@@ -64,8 +64,8 @@ func _ready() -> void:
 
 
 func _build_ui() -> void:
-	var backdrop: ColorRect = ColorRect.new()
-	backdrop.color = Color("111b2c")
+	theme = OpticalTheme.create()
+	var backdrop: OpticalBackdrop = OpticalBackdrop.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(backdrop)
@@ -87,7 +87,7 @@ func _build_ui() -> void:
 	home.custom_minimum_size = Vector2(112, 76)
 	header.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
-	var title: Label = _make_label(UiText.get_text("game_title", language), 25)
+	var title: Label = _make_label(UiText.get_text("game_title", language), 22)
 	title.name = "GameTitle"
 	title.custom_minimum_size.y = 38
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -111,14 +111,15 @@ func _build_ui() -> void:
 	_moves = _make_label(UiText.get_text("moves", language) % 0, 25)
 	_moves.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_child(_moves)
-	_status = _make_label(UiText.get_text("choose", language), 25)
+	_status = _make_label(UiText.get_text("choose", language), 23)
+	_status.add_theme_color_override("font_color", OpticalTheme.MUTED)
 	layout.add_child(_status)
 	var board: PanelContainer = PanelContainer.new()
 	board.name = "BoardPanel"
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var panel: StyleBoxFlat = StyleBoxFlat.new()
-	panel.bg_color = Color("1b2a40")
-	panel.border_color = Color("3b5d73")
+	panel.bg_color = Color.TRANSPARENT
+	panel.border_color = Color.TRANSPARENT
 	panel.set_border_width_all(2)
 	panel.set_corner_radius_all(28)
 	panel.set_content_margin_all(20)
@@ -198,7 +199,8 @@ func apply_language(value: String) -> void:
 func _make_button(value: String) -> Button:
 	var button: Button = ScreenWidgets.button(value)
 	button.custom_minimum_size = Vector2(170, 92)
-	button.add_theme_font_size_override("font_size", 30)
+	button.add_theme_font_size_override("font_size", 27)
+	OpticalTheme.style_button(button)
 	return button
 
 
@@ -206,7 +208,7 @@ func _update_tube_layout() -> void:
 	if _board_row == null or _views.is_empty():
 		return
 	var available: float = size.x - 48.0 - 40.0 - 12.0 * float(_views.size() - 1)
-	var width: float = clampf(available / float(_views.size()), 64.0, 100.0)
+	var width: float = clampf(available / float(_views.size()), 64.0, 116.0)
 	var height: float = clampf(size.y * 0.29, 200.0, 400.0)
 	for tube: TubeView in _views:
 		tube.custom_minimum_size = Vector2(width, height)

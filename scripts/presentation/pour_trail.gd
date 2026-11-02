@@ -84,7 +84,7 @@ func _draw() -> void:
 		draw_line(lip, _target + Vector2(0, 9), TubePainter.COLOURS[_colour], 5.0, true)
 	# Rotate around the lip so the liquid bridge joins the mouth, not the tube wall.
 	draw_set_transform(mouth, rotation_angle)
-	_painter.paint(self, Rect2(Vector2(-_body_size.x * 0.5, 0), _body_size), _layers, _capacity, false, -float(_moved) * amount, _colour)
+	_painter.paint(self, Rect2(Vector2(-_body_size.x * 0.5, 0), _body_size), _layers, _capacity, false, -float(_moved) * amount, _colour, false, false)
 	draw_set_transform(Vector2.ZERO)
 
 

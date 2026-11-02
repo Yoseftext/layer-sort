@@ -170,3 +170,7 @@ Firebase unavailable → No blocking screen; offline gameplay continues
 ## 8. UX Gate للتسليم
 
 لا ينتقل Screen إلى `Done` إلا بعد وجود Wireframe + Mockup + Scene Godot + A11y labels + AR/EN + Dark/Light إن مشمولة + Screenshot Golden + قياس على OPPO + اختبارات Tap/Back/Rotate/Safe Area + فحص نصوص + فصل المنطق عن الرسم + مصدر الأصول. الموافقة البصرية للمالك مطلوبة قبل تثبيت Hero Screens والهوية النهائية.
+
+## Optical Clarity — approved gameplay refinement
+
+Owner selection, ADR-0004: navy atmosphere, controlled luminous glass edges and optical depth with clean composition, precision details and readable typography. UX11 palette remains controlling; the proposed B lime palette is not adopted. Phase 1 changes gameplay only. Actual rendering specification and editable tokens: `docs/G4B_OPTICAL_CLARITY.md`, `scripts/presentation/optical_theme.gd`. Broader screen rollout awaits owner visual acceptance.

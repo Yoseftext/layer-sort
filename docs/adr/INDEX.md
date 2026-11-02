@@ -8,3 +8,5 @@
 
 An ADR is accepted only after the owner approves it; proposals do not silently
 change `docs/current/` or `AGENTS.md`.
+
+- [ADR-0004 — Optical Clarity gameplay art direction](ADR-0004-optical-clarity.md): owner-approved one-screen production slice; wider rollout awaits review.
