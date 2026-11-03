@@ -13,3 +13,5 @@
 Archive decision: no numbered active contract was wholly obsolete. Retained the eight active specifications and reconciled historical scope with ADR0006. Preserved rootG1README and obsolete G0 production sections7–8 (only the terminal blank line of the extracted G0 section normalized after diff-check flagged it) beneath SUPERSEDED — NOT AUTHORITATIVE headers in indexed archive. Historical implementation reports and failed evidence were retained at their existing paths. No game saves, original workspace files or shared branches were modified.
 
 Raw PR15 acceptance comment and latest owner task are the source of the owner-reported physical QA statement. This validation did not acquire device logs or measure Android performance and does not close G15-QA-001.
+
+Final publication evidence supplied by parent: automatic push41661341370 and pull_request41661356285 both SUCCESS at CI-only head28eebd0005147c97b673fde66b485d8ef2750f48. Original workspace preservation PASS: c961972 HEAD/status and all530 files/76 untracked paths unchanged; main6c13a076 unchanged.
