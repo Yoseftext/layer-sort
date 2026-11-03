@@ -3,12 +3,12 @@
 **Document:** `docs/current/04-AGENT-OPERATIONS.md`  
 **Identifier:** `LS-AGENT-OPS-1.4`  
 **Status:** Active operating policy originating in G1.5; original gate authorization statements are historical scope, not current execution instructions.
-**Current scope:** G4 documentation consistency review only, under [ADR-0006](../adr/ADR-0006-g4-checkpoint-acceptance.md) and the owner's PR17 remediation instruction. **Historical G1.5 scope:** orchestration/tool inventory/QA and optional Shizuku; G2 was then awaiting separate authorization, subsequently recorded in ADR-0003.
+**Current scope:** G4 documentation consistency review only, under ADR-0006 checkpoint acceptance and [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md) governance; no individual merge is authorized by the current documentation instruction. **Historical G1.5 scope:** orchestration/tool inventory/QA and optional Shizuku; G2 was then awaiting separate authorization, subsequently recorded in ADR-0003.
 
 ## 1. Scope and source-of-truth
 
 1. Preserve all existing design decisions: Godot 4 Standard / typed GDScript / Android portrait / offline-first / Firebase Spark only, with Firebase integration later.
-2. AGENTS defines agent operating constraints; [00-START-HERE.md](00-START-HERE.md) is the active project entry point. Approved, later owner-authorized ADRs control decisions within scope; other active specifications conform. Never resolve a conflict silently: record it and request an explicit owner decision if authority is unclear. This policy cannot override the prohibition on modifying main.
+2. AGENTS defines agent operating constraints; [00-START-HERE.md](00-START-HERE.md) is the active project entry point. Approved, later owner-authorized ADRs control decisions within scope; other active specifications conform. Never resolve a conflict silently: record it and request an explicit owner decision if authority is unclear. Protected-main integration follows ADR-0007; no direct push or merge without exact owner authorization is permitted.
 3. **Historical G1 scope:** its PR required owner approval; this is not a current G1 execution instruction. Protect `main`, `spike/godot-csharp-android`, git history, existing CI, and Termux/ADB/Appium infrastructure.
 4. Treat the prior device report and screenshots as **G1 evidence**, not proof of game mechanics, UI beauty, or G2 readiness.
 5. Never open the GPLv3 reference implementation, import its assets, or copy its code. Never contact paid APIs or enable billing.
@@ -19,7 +19,7 @@ Create **project-scoped** agent definitions under `.opencode/agents/`, after dis
 
 | Role | Purpose | Authority | Required output |
 |---|---|---|---|
-| `orchestrator` (primary or existing Build coordinator) | Decompose requests into small tasks; route to agents; track statuses and dependencies | Project-file edits/scripts/CI under review; delegate within approved roles; cannot merge/publish/spend/alter phone services | Task board, links to subagent evidence, final synthesis |
+| `orchestrator` (primary or existing Build coordinator) | Decompose requests into small tasks; route to agents; track statuses and dependencies | Project-file edits/scripts/CI under review; delegate within approved roles; merge execution only under ADR-0007 exact owner authorization; no unapproved release/spend/phone-service changes | Task board, links to subagent evidence, final synthesis |
 | `repo-auditor` | Discover repository, branches, toolchain, licenses, assumptions | Read-only Git and file inspection | Inventory, discrepancies, reproducible versions |
 | `device-qa` | Run Android smoke/runtime/touch/recovery tests via device lock/queue | Existing test commands; safe read-only diagnostics; no global settings or service modification | Screenshots, logcat, package/build hash, report |
 | `bug-hunter` | Find/minimize bugs and design regression tests | Read/test and edit test-only files in its isolated worktree/task | Repro steps, expected vs actual, severity, failing-then-passing test |
@@ -44,7 +44,7 @@ Create **project-scoped** agent definitions under `.opencode/agents/`, after dis
 - Permanent global Termux/Debian packages, major upgrades, modifying `agentctl`/Supervisor/ADB/Appium/runit, or replacing a known working test tool.
 - Enabling Shizuku privileges for the first time, changing Android system settings or developer options, force-stopping **non-project** applications, altering permissions, or adding a persistent privileged bridge.
 - Installing unreviewed OpenCode plugins/MCPs/skills, connecting third-party accounts, cloud services, paid models, or downloading executable scripts with `curl|sh`.
-- Branch merge, rewriting history, deleting substantial files, changing application ID / engine pin, editing protected branches, production credentials, cloud spending, Firebase billing, Play/IAP/ads/signing.
+- PR merge requires the exact ADR-0007 authorization contract below. History rewriting/force pushes remain forbidden. Branch deletion, substantial file deletion, application ID/engine pin changes, protected-branch policy changes, production credentials, cloud spending, Firebase billing and Play/IAP/ads/signing require their own explicit authorization.
 
 ### Never do
 - Treat a request as permission to root the phone or bypass Android security, disable locks, scrape personal information, touch another app's private data, or silently grant accessibility/notification permissions.
@@ -97,3 +97,11 @@ A report is acceptable only when it has: inspected OpenCode version/schema; pers
 ## Current gate reconciliation — ADR-0006
 
 See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. No agent is authorized to modify Termux, Debian, ADB, Appium or Shizuku services in this task.
+
+## Owner-authorized merge execution — ADR-0007
+
+ChatGPT provides architecture guidance, independent change/risk review, evidence assessment and a recommendation. The owner makes final decisions and authorizes each exact merge. Codex implements/tests/opens PRs and executes only an authorized merge.
+
+Before merging, require the owner's PR number, exact full head SHA, target branch and confirmation that the reviewed changes are intended. Re-fetch and compare immediately before execution; any changed approval value requires renewed authorization. Required CI must pass and no unresolved blocking review comments may remain. All integration is through reviewed PRs: no direct main pushes, force pushes, unauthorized branch deletion or protection changes/bypass. General authorization is insufficient; multiple PRs require explicit coverage of each exact merge.
+
+Afterward verify the resulting merge commit, intended target and CI on the integrated result, report outcome/regressions or blockers, then stop before the next PR pending its applicable authorization. No actual merge is authorized in this documentation task.

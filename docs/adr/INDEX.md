@@ -14,3 +14,5 @@ change `docs/current/` or `AGENTS.md`.
 - [ADR-0005 — Real Game UI refinement](ADR-0005-real-game-ui.md): owner-approved bounded presentation and About-return update above PR #14.
 
 - [ADR-0006 — G4 accepted checkpoint and integration boundary](ADR-0006-g4-checkpoint-acceptance.md): owner-reported 10/10 physical groups; PR15 accepted with deferred polish, no merge/G5 authorization.
+
+- [ADR-0007](ADR-0007-protected-main-owner-authorized-agent-merge.md): owner-approved protected-main policy; Codex executes only exact owner-authorized PR merges after checks/review prerequisites, then verifies integrated CI. No merge authorized by the documentation instruction.
