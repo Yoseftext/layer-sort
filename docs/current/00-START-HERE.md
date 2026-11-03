@@ -5,9 +5,11 @@
 > **بادئة المعرّفات عند الإشارة من ملف آخر:** `START-` (مثال: عند ذكر Q01 من هذا الملف اكتب `START-Q01`) لتجنب تكرار المعرّفات بين الملفات.
 > **ملفات `docs/current/`:** `00-START-HERE.md` (قرارات مركزية) · `01-UX-ART.md` (واجهة وفن وصوت) · `02-ENGINEERING.md` (هندسة وFirebase ومخاطر) · `03-PRODUCTION.md` (بوابات وخطة وتسليم) · `04-AGENT-OPERATIONS.md` (وكلاء وQA وحدود الأتمتة) · `05-QA-TEST-CATALOG.md` (كتالوج اختبارات ومعايير تقارير) · `06-SHIZUKU-TERMUX.md` (Shizuku اختياري وغير جذري)
 
-**المعرف:** LS-MASTER-1.3 | **تاريخ:** 24 أكتوبر 2026 | **الحالة:** قرارات تصميم معتمدة / التنفيذ لم يبدأ لهذه النسخة | **اللغة:** العربية (مصطلحات التنفيذ بالإنجليزية)
+**المعرف:** LS-MASTER-1.3 | **تاريخ:** 24 أكتوبر 2026 | **الحالة:** قرارات معتمدة؛ حالة التنفيذ الحالية أدناه وفق ADR-0006 | **اللغة:** العربية (مصطلحات التنفيذ بالإنجليزية)
 
 > **حكم الوثيقة:** الوثائق داخل هذه الحزمة هي المصدر الوحيد النشط للقرارات الجديدة. أي ملف سابق يحمل Landscape أو C# بوصفهما الاختيار النهائي، أو يفترض خدمات Firebase مدفوعة أو توقيع نشر فوري، أصبح ملغى. المستندات القديمة والنسخة التجريبية C# مراجع تاريخية لا تُنسخ منها قواعد اللعب. الموافقة على التصميم لا تثبت تنفيذًا أو نجاح اختبار، ولا تمنح الوكيل حق الإنفاق أو النشر أو دمج main.
+>
+> **سجل تفويض تاريخي، وليس نطاق العمل الحالي:** القيود الزمنية في الفقرات التالية تُقرأ مع ADR-0003..0006 والتفويض الحالي أدناه.
 >
 > **بوابة G1.5 (تفويض المالك — 24 أكتوبر 2026):** بوابة تشغيل مؤقتة بين G1 وG2 لأتمتة الوكلاء وQA والأدوات وفحص Shizuku الاختياري، منظمة في `04-AGENT-OPERATIONS.md` و`05-QA-TEST-CATALOG.md` و`06-SHIZUKU-TERMUX.md` و`docs/adr/ADR-0001`. لا تغيّر القرارات B01–B15، ولا تسمح ببدء G2 أو Firebase أو التوقيع أو أي خدمة مدفوعة. Shizuku اختياري ولا يمنح root، ولا يُنشأ جسر دائم أو صلاحيات موسعة دون موافقة منفصلة من المالك.
 >
@@ -125,3 +127,13 @@ G4-B Phase 1 owner selection is recorded in `docs/adr/ADR-0004-optical-clarity.m
 ## Current owner authorization — Real Game UI
 
 ADR-0005 records the bounded Home/gameplay/Win presentation and Settings→About navigation refinement based on PR #14. Earlier dated gate statements describe authorization at their dates; they do not supersede this explicit later scope. Classic rules, save architecture and all prior evidence remain unchanged. G5/G6 and merging remain outside scope.
+
+## Current accepted checkpoint — 2026-11-03
+
+The single active entry point is [00-START-HERE.md](00-START-HERE.md). ADR-0006 records the owner's current acceptance; older dated scope restrictions describe their original gates and do not revoke later explicit authorizations.
+
+PR #15 (`feat/real-game-ui`) at `c961972365258baa34cae279dfc10ab46edce2f7` is **ACCEPTED WITH MINOR NON-BLOCKING POLISH DEFERRED**. It remains Open / Draft against `feat/g4b-optical-clarity`; no merge or release is approved. The owner reports **10/10 physical-device test groups passed** on OPPO CPH1937 / Android 11. This is owner-run evidence, not a new agent-run phone test, instrumented performance benchmark or closure of G15-QA-001. Source: [owner-reported acceptance comment](https://github.com/Yoseftext/layer-sort/pull/15#issuecomment-6606381017) and the explicit G4 Exit Gate instruction. Raw phone logs were not independently collected in this task.
+
+Pinned baseline: Godot **4.7.2 Standard**, typed GDScript, Android-only, Portrait-only, Compatibility renderer, offline-first. CI [41626811037](https://github.com/Yoseftext/layer-sort/actions/runs/41626811037) succeeded via **workflow_dispatch**; that event alone does not establish push/PR triggers. Accepted APK: 29,093,281 bytes, SHA-256 `f2c631b3bd1479706abe969427869dd044f083679d992bdcd86f6995db9ec0a7`.
+
+**Current work is repository/CI/documentation and merge-readiness only.** Do not reopen accepted gameplay or implement deferred polish. G5 implementation is not authorized: its future scope is automatic Layer Circuit proof and levels 15–20. ADR-0002 remains controlling: Classic 1–14, first Circuit 15, Circuit development interspersed with ordinary Classic 16–20, Core MVP = 20 total levels. G6 is also unauthorized. Firebase remains future optional Spark-only, with no SDK/billing changes. Shizuku remains optional. The detailed rules contract remains Draft; production signing/store release are not authorized. `main` and all existing PR relationships remain unchanged. [Merge-readiness audit](MERGE-READINESS.md) is a review aid, not merge approval.

@@ -93,3 +93,7 @@ Termux native environment is the supported location for the exported `rish`/DEX.
 ## 8. Owner review / acceptance for G1.5
 
 A report is acceptable only when it has: inspected OpenCode version/schema; persisted project-scoped agent files; an auditable permissions matrix; tool inventory; at least two demonstrated workflows; deliberate negative-test evidence; a screenshot review report for the G1 scene (not a claim about the final UI); bounded device-lock behavior; Shizuku capability state/permissions and actual `rish id` proof **if enabled**; PR and rollback instructions. Do **not** claim a bridge, vision model or tool existed if it was not directly tested. G2 remains blocked until owner authorizes it separately.
+
+## Current gate reconciliation — ADR-0006
+
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. No agent is authorized to modify Termux, Debian, ADB, Appium or Shizuku services in this task.

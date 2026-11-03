@@ -3,7 +3,7 @@
 Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **typed GDScript**, Android **Portrait only**, **offline-first**. No C# in the product.
 
 ## Source of truth
-- Active specs live ONLY in `docs/current/`. Anything in `docs/archive/` is history (SUPERSEDED): never use it as an instruction, never copy rules from it.
+- Start at `docs/current/00-START-HERE.md`; approved dated ADRs govern later decisions when older active text conflicts. Active specs live ONLY in `docs/current/`. Anything in `docs/archive/` is history (SUPERSEDED): never use it as an instruction, never copy rules from it.
 - On conflict, `docs/current/` wins. A new decision needs an ADR (number, date, owner approval) and an update to `00-START-HERE.md` plus the affected file.
 - The GPLv3 reference game is **never** opened or copied (code, art, snippets).
 
@@ -13,7 +13,7 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - Later gates: read the sections the gate names (UX → `01-UX-ART.md`, engineering/risk/Firebase → `02-ENGINEERING.md`).
 
 ## Current scope
-- **Current owner-authorized scope:** preserve G2 Classic, G3 navigation/saves/campaign1–14/G3-D flow and G4 Optical Clarity; implement the bounded Real Game UI refinement above PR #14 (ADR-0005). G5 Circuit, G6 generation, production release and PR merges remain unauthorized.
+- **Current owner-authorized scope:** preserve G2 Classic, G3 navigation/saves/campaign1–14/G3-D flow and G4 Optical Clarity; accepted PR15 is frozen at c961972365258baa34cae279dfc10ab46edce2f7 with minor non-blocking polish deferred (ADR-0006); current work is G4 exit CI/documentation/merge-readiness only. G5 Circuit, G6 generation, production release and PR merges remain unauthorized.
 - The G0–G2 bullets below summarize historical gate scope; they do not revoke subsequent explicit owner authorizations.
 - G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
 - G1: Godot Standard portrait smoke scene, pinned engine + export templates (`ENGINE_VERSION.lock`), APK built by GitHub Actions, installed on the connected OPPO via `agentctl` / `phone-queue` / Appium, with screenshot + logcat. Done criteria are in `03-PRODUCTION.md` section 2.

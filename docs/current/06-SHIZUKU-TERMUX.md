@@ -45,3 +45,7 @@ The primary agent must inspect the existing Debian ↔ Termux integration and pr
 - Shizuku rish implementation: https://github.com/RikkaApps/Shizuku/blob/master/manager/src/main/assets/rish
 - Shizuku-API rish help: https://github.com/RikkaApps/Shizuku-API/blob/master/rish/README.md
 - Shizuku project: https://github.com/RikkaApps/Shizuku
+
+## Current gate reconciliation — ADR-0006
+
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. Shizuku is optional; the bootstrap commands above are reference material, not authorization to alter services or enable a bridge.

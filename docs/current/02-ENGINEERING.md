@@ -154,3 +154,7 @@ P0 Lost progress/boot blocked/forced crash → Stop release, reproduce via seede
 - Firebase project/account يحتاج مالك المستخدم يهيئه أو يوافق على الربط؛ CI لا يحتوي credential مفبركة ولا Admin Secrets ولا يقفز لحساب مدفوع.
 - لا وصول الوكيل إلى الموبايل مباشرة إلا عبر البيئة المصرح بها؛ أدوات Device تستخدم lock، ولا تعطيل Termux services أو إعادة اكتشاف منافذ عبر آلاف محاولات غير آمنة.
 - قياس المتعة والقبول القانوني والتراخيص يتطلبان مراجعة بشرية عند كل Release Gate، حتى لو أتم الوكيل آلاف اختبارات Unit.
+
+## Current gate reconciliation — ADR-0006
+
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. Godot 4.7.2 Standard / Compatibility remains pinned. Firebase is future optional Spark-only; no SDK/billing/signing changes. No new agent-run runtime or durability claim.
