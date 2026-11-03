@@ -117,3 +117,7 @@ LayerSort/
 **لكل تسليم:** commit وbranch واسم الإصدار؛ Test report لكل قاعدة تمسها الميزة؛ Android APK مثبت بالفعل؛ Screenshot/Video للأحداث المرئية؛ FPS/Memory Baseline للأصول/المؤثرات؛ فحص لملفات الترخيص؛ أثر التحديث على الحفظ؛ وصف المخاطر ووسيلة رجوع؛ لا أسرار أو SDK مدفوع. عبارة PASS بلا تقرير ليست اعتمادًا.
 
 **مصادر رسمية للحالة المتغيرة:** Firebase https://firebase.google.com/pricing ؛ Godot renderers https://docs.godotengine.org/en/stable/tutorials/rendering/renderers.html ؛ Android export https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html ؛ Firebase Spark https://firebase.google.com/docs/projects/billing/firebase-pricing-plans .
+
+## Owner-authorized Optical Clarity slice
+
+G4-B Phase 1 owner selection is recorded in `docs/adr/ADR-0004-optical-clarity.md`: one gameplay screen combines navy optical depth with precision/readability, subject to visual review before expansion. Existing gameplay and Android contracts remain authoritative.

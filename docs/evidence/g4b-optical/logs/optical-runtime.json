@@ -1,0 +1,10 @@
+{
+  "sample_count": 1,
+  "scenario": "full cloud graphical smoke, includes screenshot readbacks and timers",
+  "renderer": "Xorg dummy llvmpipe software Compatibility",
+  "wall_seconds": 35.29371556499973,
+  "user_cpu_seconds": 65.388625,
+  "system_cpu_seconds": 1.513561,
+  "max_rss_kib": 273088,
+  "exit": 0
+}

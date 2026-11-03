@@ -346,6 +346,9 @@ jobs:
           timeout 60s godot --headless --path . --script res://tests/g3d/player_flow_test.gd 2>&1 | tee logs/g3d-player-flow.log
           grep -q 'G3D_FLOW_TESTS status=PASS' logs/g3d-player-flow.log
           if grep -Eq 'SCRIPT ERROR|G3D_FLOW_FAIL' logs/g3d-player-flow.log; then exit 1; fi
+          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-optical-captures" timeout 120s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/visual/optical_clarity_test.gd 2>&1 | tee logs/optical-visual.log
+          grep -q "OPTICAL_VISUAL PASS" logs/optical-visual.log
+          if grep -Eq "SCRIPT ERROR|Assertion failed" logs/optical-visual.log; then exit 1; fi
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-campaign-captures" timeout 120s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/campaign/campaign_visual_test.gd 2>&1 | tee logs/campaign-visual.log
           grep -q "CAMPAIGN_VISUAL PASS" logs/campaign-visual.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-visual-captures" xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/visual/gameplay_visual_test.gd 2>&1 | tee logs/visual-render.log
@@ -423,6 +426,8 @@ jobs:
 
       - name: Collect rendered evidence after export
         run: |
+          mkdir -p logs/optical-screenshots
+          cp "$RUNNER_TEMP/layersort-optical-captures/"*.png logs/optical-screenshots/
           mkdir -p logs/feedback-screenshots
           cp "$RUNNER_TEMP/layersort-feedback-captures/"*.png logs/feedback-screenshots/
           mkdir -p logs/campaign-screenshots
@@ -450,6 +455,7 @@ jobs:
             logs/*.txt
             logs/*.log
             logs/*.json
+            logs/optical-screenshots/*.png
             logs/feedback-screenshots/*.png
             logs/campaign-screenshots/*.png
             logs/screenshots/*.png
