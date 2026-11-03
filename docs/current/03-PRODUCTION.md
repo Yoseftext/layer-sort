@@ -17,6 +17,8 @@
 
 **قاعدة المراحل:** 8 ساعات/أسبوع افتراضية للتخطيط وليست موعد تسليم، 3–15 ساعة ممكنة؛ المرحلة تُقفل بالوظيفة+جودة+اختبارات، لا بانتهاء أسبوع. لا تذكرة تتجاوز جلسة مراجعة كبيرة إلا بتقسيمها إلى مخرجات واضحة.
 
+> **Historical authorization scope:** G1/G1.5/G2 permission and startup statements below describe their original dated gates, not current authorization. Later owner-authorized ADRs (including [ADR-0006](../adr/ADR-0006-g4-checkpoint-acceptance.md)) control subsequent project decisions. AGENTS operating constraints remain in force. The entry point is [00-START-HERE.md](00-START-HERE.md). No historical gate text restarts implementation or grants merging permission.
+
 ## 2. بوابات التنفيذ المعتمدة
 
 | Gate | العمل المطلوب | شروط اكتمال محددة |
@@ -92,23 +94,9 @@ Approved Art Brief / Visual Bible
 
 **Playtest:** 3–5 أشخاص خارجيين على الأقل في أول جولة فهم، ثم جولات أكبر حسب القدرة قبل Beta؛ لا يدّعي حجم عينة إحصائي كافٍ بمجرد نجاح عدد قليل. نسجل أين فشل الفهم أو ازداد الاستخدام غير المرغوب للتلميح، ونعدل onboarding/levels بدل إضافة صعوبة بلا تحليل.
 
-## 7. القائمة الأساسية قبل بدء التطوير — Final Start Checklist
+## 7. Current gate execution
 
-- [x] Android + Portrait + Godot GDScript متفق عليها تصميميًا.
-- [x] مراحل الميكانيكيات وتجربة Offline وR11 موثقة.
-- [x] Firebase Spark فقط وتوقيع نشر مؤجل موثقان.
-- [x] UX Art/Audio target specs وRisk Register وطرق الرصد موثقة.
-- [ ] أول محرك Godot Standard وExport Templates مثبتان برقم إصدار فعلي بعد smoke.
-- [ ] فرع GDScript جديد وCI Android يعملان.
-- [x] G1.5 — وكلاء/QA/أدوات **مقبولة من المالك بقيود موثقة** (2026-10-25؛ ليست جميع الاختبارات PASS). G2 ما زالت تحتاج تفويضًا منفصلًا.
-- [ ] UI/Glass/Sound assets موجودة فعلًا ومراجعة من المالك.
-- [ ] Firebase project Spark وخدماته موصولة ومختبرة لاحقًا، بعد الموافقة.
-- [ ] اختبارات محتوى/حلّال/حفظ/Android/RTL حقيقية ومصحوبة بأدلة.
-- [ ] حساب متجر/Signing رسمي — **غير مطلوب الآن إطلاقًا**.
-
-## 8. رسالة جاهزة إلى OpenCode (لا تُشغّل دون إرفاق كل الملفات الحالية)
-
-> Read every file under `docs/current/` beginning with `00-START-HERE.md`; this v1.3 replaces earlier Landscape/C# proposals. Implement Godot 4 Standard + Typed GDScript for Android Portrait only, offline-first, with Firebase Spark-only as a later optional native adapter. Do not create billing, production signing, stores, ads or paid APIs. Do not modify protected main. Keep the historical C# spike in Git history but develop the production app on a clean GDScript branch. Start with G0/G1 only: inspect repo, record baseline, create new branch, pin Godot standard/export templates, build APK with Actions, install and test on the already connected phone via agentctl/phone-queue/Appium, capture screenshot and logcat, then deliver commit, PR, build link, device evidence, exact unresolved blockers. Do not claim tests passed unless tool logs prove them. Never touch GPLv3 reference code during implementation.
+The obsolete G0 checklist and one-time bootstrap prompt were moved to [the indexed archive](../archive/G0-START-INSTRUCTIONS.md). Current acceptance and limits are defined in [00-START-HERE.md](00-START-HERE.md) and ADR-0006. Do not restart G0 or treat old unchecked start tasks as current blockers.
 
 ## 9. ما زال يحتاج إثباتًا، وليس سؤال تصميم جديدًا
 
@@ -120,3 +108,9 @@ Approved Art Brief / Visual Bible
 6. ملاءمة التدرج الفكري بعد جولات Playtesting، وليس بمجرد وجود Solver.
 
 هذه **بوابات تحقق تشغيلية** وليست مبررًا لتأخير بدء GDScript Core؛ الخطة تعتمد المبدأ وتترك الأرقام لتجربة موثقة.
+
+## Current gate reconciliation — ADR-0006
+
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. G4 checkpoint acceptance is not integration completion or 20-level MVP acceptance. Future G5 remains the Circuit proof and content 15–20 under ADR-0002.
+
+**Protected-main integration:** the previous blanket main-policy decision gate is superseded by [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md). No direct main pushes. Reviewed PRs, passing required CI, no unresolved blocking comments and explicit owner authorization for each PR/head SHA/target/intended changes are prerequisites for agent merge execution. No actual merge is authorized by this production plan or the current documentation task.

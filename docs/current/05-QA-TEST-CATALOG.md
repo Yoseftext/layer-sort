@@ -42,3 +42,7 @@ Every bug ticket includes: expected/actual, steps, screen/seed, installed APK ha
 4. Negative fixture: deliberately obscured or off-app before frame must be classified as external interruption and rejected; unobstructed frame with genuine TAP logcat/visible response may PASS. Preserve existing Chrome and incoming-call failure artifacts. Owner reviews outcomes before closing the issue.
 
 No new agent, privileged bridge, or infrastructure installation is scheduled.
+
+## Current gate reconciliation — ADR-0006
+
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. Owner-run groups are not an independently repeated device matrix. G15-QA-001 remains **OPEN** until its own recorded acceptance criteria are satisfied.

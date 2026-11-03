@@ -5,13 +5,15 @@
 > **بادئة المعرّفات عند الإشارة من ملف آخر:** `START-` (مثال: عند ذكر Q01 من هذا الملف اكتب `START-Q01`) لتجنب تكرار المعرّفات بين الملفات.
 > **ملفات `docs/current/`:** `00-START-HERE.md` (قرارات مركزية) · `01-UX-ART.md` (واجهة وفن وصوت) · `02-ENGINEERING.md` (هندسة وFirebase ومخاطر) · `03-PRODUCTION.md` (بوابات وخطة وتسليم) · `04-AGENT-OPERATIONS.md` (وكلاء وQA وحدود الأتمتة) · `05-QA-TEST-CATALOG.md` (كتالوج اختبارات ومعايير تقارير) · `06-SHIZUKU-TERMUX.md` (Shizuku اختياري وغير جذري)
 
-**المعرف:** LS-MASTER-1.3 | **تاريخ:** 24 أكتوبر 2026 | **الحالة:** قرارات تصميم معتمدة / التنفيذ لم يبدأ لهذه النسخة | **اللغة:** العربية (مصطلحات التنفيذ بالإنجليزية)
+**المعرف:** LS-MASTER-1.3 | **تاريخ:** 24 أكتوبر 2026 | **الحالة:** قرارات معتمدة؛ حالة التنفيذ الحالية أدناه وفق ADR-0006 | **اللغة:** العربية (مصطلحات التنفيذ بالإنجليزية)
 
-> **حكم الوثيقة:** الوثائق داخل هذه الحزمة هي المصدر الوحيد النشط للقرارات الجديدة. أي ملف سابق يحمل Landscape أو C# بوصفهما الاختيار النهائي، أو يفترض خدمات Firebase مدفوعة أو توقيع نشر فوري، أصبح ملغى. المستندات القديمة والنسخة التجريبية C# مراجع تاريخية لا تُنسخ منها قواعد اللعب. الموافقة على التصميم لا تثبت تنفيذًا أو نجاح اختبار، ولا تمنح الوكيل حق الإنفاق أو النشر أو دمج main.
+> **حكم الوثيقة:** هذا الملف هو مدخل المشروع النشط؛ القيود التشغيلية في AGENTS.md نافذة، والقرارات يحكمها أحدث ADR معتمد من المالك ضمن نطاقه، وتلتزم به بقية المواصفات النشطة. أي ملف سابق يحمل Landscape أو C# بوصفهما الاختيار النهائي، أو يفترض خدمات Firebase مدفوعة أو توقيع نشر فوري، أصبح ملغى. المستندات القديمة والنسخة التجريبية C# مراجع تاريخية لا تُنسخ منها قواعد اللعب. الموافقة على التصميم لا تثبت تنفيذًا أو نجاح اختبار، ولا تمنح الوكيل حق الإنفاق أو النشر أو دمج main.
+>
+> **Historical authorization record — سجل تفويض تاريخي، وليس نطاق العمل الحالي:** القيود الزمنية في الفقرات التالية تُقرأ مع ADR-0003..0006 والتفويض الحالي أدناه.
 >
 > **بوابة G1.5 (تفويض المالك — 24 أكتوبر 2026):** بوابة تشغيل مؤقتة بين G1 وG2 لأتمتة الوكلاء وQA والأدوات وفحص Shizuku الاختياري، منظمة في `04-AGENT-OPERATIONS.md` و`05-QA-TEST-CATALOG.md` و`06-SHIZUKU-TERMUX.md` و`docs/adr/ADR-0001`. لا تغيّر القرارات B01–B15، ولا تسمح ببدء G2 أو Firebase أو التوقيع أو أي خدمة مدفوعة. Shizuku اختياري ولا يمنح root، ولا يُنشأ جسر دائم أو صلاحيات موسعة دون موافقة منفصلة من المالك.
 >
-> **قرار المالك G1.5 (25 أكتوبر 2026): ACCEPTED WITH KNOWN LIMITATIONS.** قبول الأساس التشغيلي لا يعني نجاح جميع الاختبارات: `G15-QA-001` ما زالت OPEN (تراكب مكالمة خارجية على لقطة اللمس؛ ليست دليل عيب لعب). Shizuku موثق **بإفادة المالك** في Termux الأصلي `uid=2000(shell)` فقط؛ جسر Debian ودمجه في QA غير متحققين ولا يُنشآن ضمن هذه المرحلة. سياسات أوامر OpenCode لا تحل محل حماية Git وموافقة المالك. PR #1 وPR #2 بلا دمج؛ ترتيب دمجهما ومراجعة الفروق والأسرار وCI يحتاج موافقة صريحة. **G2 غير مفوضة بعد.** تفاصيل المتابعة في `05-QA-TEST-CATALOG.md` و`docs/G15_QA_REPORT.md`، وقرار المرحلة في `docs/adr/ADR-0001`.
+> **قرار المالك G1.5 (25 أكتوبر 2026): ACCEPTED WITH KNOWN LIMITATIONS.** قبول الأساس التشغيلي لا يعني نجاح جميع الاختبارات: `G15-QA-001` ما زالت OPEN (تراكب مكالمة خارجية على لقطة اللمس؛ ليست دليل عيب لعب). Shizuku موثق **بإفادة المالك** في Termux الأصلي `uid=2000(shell)` فقط؛ جسر Debian ودمجه في QA غير متحققين ولا يُنشآن ضمن هذه المرحلة. سياسات أوامر OpenCode لا تحل محل حماية Git وموافقة المالك. PR #1 وPR #2 بلا دمج؛ ترتيب دمجهما ومراجعة الفروق والأسرار وCI يحتاج موافقة صريحة. **نطاق تاريخي بتاريخ 25 أكتوبر: كانت G2 غير مفوضة حينها؛ التفويض اللاحق مسجل في ADR-0003.** تفاصيل المتابعة في `05-QA-TEST-CATALOG.md` و`docs/G15_QA_REPORT.md`، وقرار المرحلة في `docs/adr/ADR-0001`.
 >
 > **قرار المالك لمسار المستويات (25 أكتوبر 2026، `docs/adr/ADR-0002`):** المستويات 1–5 فقط دروس Classic تفاعلية؛ 6–10 Classic سهلة بلا إرشاد إلزامي؛ 11–14 Classic أصعب تدريجيًا؛ 15 أول Layer Circuit تلقائية؛ 16–29 تطوير Circuit بالتناوب مع Classic عادية؛ 30 أول Frozen؛ 45 أول Layer Shift؛ 60 أول Connected Tubes؛ وبعدها مزج تدريجي مع استمرار Classic. ميكانيكية جديدة واحدة في كل مرة ودروس بسيطة قبل التركيبات المعقدة. لا تفويض بتنفيذ G2 أو دمج PRs بهذا القرار.
 >
@@ -40,7 +42,7 @@
 ## 2. إجابات حاسمة على الفجوات المكتشفة — سؤال وجواب
 
 ### Q01 — ما الوثيقة الحاكمة عند التعارض؟
-**الجواب المعتمد:** هذه الحزمة `v1.3` مقدَّمة على كل نص سابق. أي قرار جديد يمر عبر ADR برقم وتاريخ وصاحب اعتماد، ويحدث `00-START-HERE.md` وملف النظام المتأثر معًا. ممنوع للوكيل اختيار الأقدم بناءً على ترتيب فتح الملفات. **تحقق:** بحث CI عن Landscape/C#/Blaze في ملفات المتطلبات النشطة ورفض تناقض السياق.
+**الجواب المعتمد:** AGENTS.md يحدد قيود تشغيل الوكيل؛ هذا الملف هو المدخل النشط؛ أحدث ADR معتمد من المالك يحكم القرارات ضمن نطاقه ويسود على القرار الأقدم؛ وتلتزم به بقية المواصفات. المسودات لا تمنح صلاحية. عند التعارض يوثق الوكيل الخلاف والقرار الحاكم، ولا يحسمه بصمت؛ وعند غموض الصلاحية أو تعارض قيد تشغيلي يلزم قرار صريح من المالك قبل التنفيذ. أي قرار جديد يحدّث ADR وهذا المدخل والمواصفات المتأثرة. **تحقق:** بحث CI عن Landscape/C#/Blaze في ملفات المتطلبات النشطة ورفض تناقض السياق.
 
 ### Q02 — هل نمسح مشروع C# القديم فورًا؟
 **الجواب المعتمد:** **نبدأ مشروع اللعبة المنتج من الصفر داخل فرع GDScript جديد ونلغي استخدام C# كأساس**؛ لكن لا نحذف تاريخ Git ولا Branch التجربة الناجحة ولا إعدادات الاختبار. أولًا تُحفَظ نقطة مرجعية بالـCommit الحالي والـAPK، ثم ينشأ فرع `feat/gdscript-foundation` من قاعدة آمنة، وتُزال ملفات Godot .NET غير المطلوبة **من الفرع الجديد فقط** بعد التأكد من الملفات المراد حذفها، مع تقرير diff. لا force-push أو حذف main أو branch تجريبي إلا بموافقة منفصلة. **تحقق:** نجاح APK GDScript مستقل وCI، وإمكانية الوصول لتجربة C# تاريخيًا.
@@ -125,3 +127,21 @@ G4-B Phase 1 owner selection is recorded in `docs/adr/ADR-0004-optical-clarity.m
 ## Current owner authorization — Real Game UI
 
 ADR-0005 records the bounded Home/gameplay/Win presentation and Settings→About navigation refinement based on PR #14. Earlier dated gate statements describe authorization at their dates; they do not supersede this explicit later scope. Classic rules, save architecture and all prior evidence remain unchanged. G5/G6 and merging remain outside scope.
+
+## Current accepted checkpoint — 2026-11-03
+
+The single active entry point is [00-START-HERE.md](00-START-HERE.md). ADR-0006 records the owner's current acceptance; older dated scope restrictions describe their original gates and do not revoke later explicit authorizations.
+
+PR #15 (`feat/real-game-ui`) at `c961972365258baa34cae279dfc10ab46edce2f7` is **ACCEPTED WITH MINOR NON-BLOCKING POLISH DEFERRED**. It remains Open / Draft against `feat/g4b-optical-clarity`; no merge or release is approved. The owner reports **10/10 physical-device test groups passed** on OPPO CPH1937 / Android 11. This is owner-run evidence, not a new agent-run phone test, instrumented performance benchmark or closure of G15-QA-001. Source: [owner-reported acceptance comment](https://github.com/Yoseftext/layer-sort/pull/15#issuecomment-6606381017) and the explicit G4 Exit Gate instruction. Raw phone logs were not independently collected in this task.
+
+Pinned baseline: Godot **4.7.2 Standard**, typed GDScript, Android-only, Portrait-only, Compatibility renderer, offline-first. CI [41626811037](https://github.com/Yoseftext/layer-sort/actions/runs/41626811037) succeeded via **workflow_dispatch**; that event alone does not establish push/PR triggers. Accepted APK: 29,093,281 bytes, SHA-256 `f2c631b3bd1479706abe969427869dd044f083679d992bdcd86f6995db9ec0a7`.
+
+**Current work is repository/CI/documentation and merge-readiness only.** Do not reopen accepted gameplay or implement deferred polish. G5 implementation is not authorized: its future scope is automatic Layer Circuit proof and levels 15–20. ADR-0002 remains controlling: Classic 1–14, first Circuit 15, Circuit development interspersed with ordinary Classic 16–20, Core MVP = 20 total levels. G6 is also unauthorized. Firebase remains future optional Spark-only, with no SDK/billing changes. Shizuku remains optional. The detailed rules contract remains Draft; production signing/store release are not authorized. `main` and all existing PR relationships remain unchanged. [Merge-readiness audit](MERGE-READINESS.md) is a review aid, not merge approval.
+
+## Documentation authority and integration decision gate
+
+[AGENTS.md](../../AGENTS.md) defines agent operating constraints; this document is the active entry point. Approved, later owner-authorized ADRs control project decisions within their scope; all other active specifications must conform. Drafts do not override approved decisions. Record conflicts explicitly and seek an owner decision when authority is unclear.
+
+**Main-policy decision resolved by [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md):** no direct pushes to main; integration uses reviewed PRs with required CI passing, no unresolved blocking review comments and unchanged protections. Codex may execute only a merge explicitly authorized by the owner for the PR number, exact full head SHA and target branch, with confirmation that the reviewed changes are intended. Any changed approval value requires renewed authorization. General project approval is insufficient. After each authorized merge, verify the resulting commit, intended target and integrated CI, report the outcome/regressions, and stop before the next PR pending its applicable approval. The dependency order is not merge authorization. This documentation task authorizes no actual merge or main change.
+
+ChatGPT guides architecture and independently reviews changes, risk and test evidence; the owner retains final decisions and exact merge authorization; Codex implements, tests, creates PRs and executes only the authorized exact merge. No bypass or enabling of GitHub protections is authorized.

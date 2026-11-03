@@ -2,10 +2,13 @@
 
 Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **typed GDScript**, Android **Portrait only**, **offline-first**. No C# in the product.
 
-## Source of truth
-- Active specs live ONLY in `docs/current/`. Anything in `docs/archive/` is history (SUPERSEDED): never use it as an instruction, never copy rules from it.
-- On conflict, `docs/current/` wins. A new decision needs an ADR (number, date, owner approval) and an update to `00-START-HERE.md` plus the affected file.
-- The GPLv3 reference game is **never** opened or copied (code, art, snippets).
+## Documentation authority and operating constraints
+1. `AGENTS.md` defines agent operating constraints. Its protected-main merge contract follows ADR-0007; a project plan or acceptance report is not exact merge authorization.
+2. `docs/current/00-START-HERE.md` is the single active project entry point and routes readers to the controlling decisions.
+3. Approved, later owner-authorized ADRs define project decisions and supersede earlier decisions within their stated scope. Draft ADRs/contracts and file recency alone do not grant authority.
+4. Other active specifications must conform to the controlling ADR; placement in `docs/current/` does not override an approved later ADR.
+5. Never resolve conflicts silently. Record the discrepancy, controlling ADR and affected specifications. If authority is ambiguous or an operating constraint prevents a proposed action, stop that action and request an explicit owner decision; update the relevant records before execution.
+6. `docs/archive/` and dated gate records are historical evidence, not current authorization. The GPLv3 reference game is never opened or copied.
 
 ## Reading order (efficiency rule; changes no decision)
 - G0/G1: read `docs/current/00-START-HERE.md` and `docs/current/03-PRODUCTION.md` (sections 2, 3, 6, 7). Open other files only when a gate needs them.
@@ -13,7 +16,7 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - Later gates: read the sections the gate names (UX → `01-UX-ART.md`, engineering/risk/Firebase → `02-ENGINEERING.md`).
 
 ## Current scope
-- **Current owner-authorized scope:** preserve G2 Classic, G3 navigation/saves/campaign1–14/G3-D flow and G4 Optical Clarity; implement the bounded Real Game UI refinement above PR #14 (ADR-0005). G5 Circuit, G6 generation, production release and PR merges remain unauthorized.
+- **Current owner-authorized scope:** preserve G2 Classic, G3 navigation/saves/campaign1–14/G3-D flow and G4 Optical Clarity; accepted PR15 is frozen at c961972365258baa34cae279dfc10ab46edce2f7 with minor non-blocking polish deferred (ADR-0006); current work is G4 exit CI/documentation/merge-readiness only. G5 Circuit, G6 generation, production release and PR merges remain unauthorized.
 - The G0–G2 bullets below summarize historical gate scope; they do not revoke subsequent explicit owner authorizations.
 - G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
 - G1: Godot Standard portrait smoke scene, pinned engine + export templates (`ENGINE_VERSION.lock`), APK built by GitHub Actions, installed on the connected OPPO via `agentctl` / `phone-queue` / Appium, with screenshot + logcat. Done criteria are in `03-PRODUCTION.md` section 2.
@@ -21,7 +24,9 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - G2: Classic domain, minimal playable portrait scene, individually versioned fixture levels, unit tests and **separate** CI versus locked real-device evidence; G15-QA-001 remains OPEN.
 
 ## Hard rules
-- Never merge to or modify `main`. Never force-push, rewrite history, delete branches/tags, or run `rm -rf` on the repo or phone. Keep branch `spike/godot-csharp-android` and its history.
+- No direct pushes to `main`. No force pushes or history rewrites. No branch/tag deletion without explicit owner authorization; never run `rm -rf` on the repo or phone. Preserve `spike/godot-csharp-android`. Integration must use reviewed PRs with required CI passing and no unresolved blocking review comments. Do not change or bypass GitHub protections without explicit owner authorization.
+- Codex may execute a merge only after explicit owner approval identifies the PR number, exact full head SHA, target branch, and confirms the reviewed changes are intended. Re-fetch and verify immediately before merging; any changed approval value requires renewed authorization. General project approval is insufficient; never merge multiple PRs under one approval unless each exact merge is explicitly covered.
+- After an authorized merge, verify the resulting merge commit, intended target branch and CI on the exact integrated result; report outcomes/regressions and stop before the next PR pending its applicable authorization. See [ADR-0007](docs/adr/ADR-0007-protected-main-owner-authorized-agent-merge.md).
 - No billing, Firebase/Play accounts, production signing, ads, IAP, paid APIs, or new credentials. No secrets in Git.
 - Do not change phone services (Termux, ADB, Appium, supervisor) without owner approval. Use the device lock/queue.
 - Never claim "PASS / works / fixed" without tool logs. Report what was verified, what was not, and why.
@@ -38,3 +43,7 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 
 ## Output of each session
 Commit hash, branch, PR link, build link, device evidence, exact blockers. Nothing else is "done".
+
+## Governance roles — ADR-0007
+
+ChatGPT supplies architecture guidance, independent change/risk review, test-evidence assessment and a merge-readiness recommendation. The repository owner retains final decisions, scope/priorities and exact per-merge authorization. Codex implements/tests/opens PRs and executes only an explicitly authorized exact merge. This documentation task itself authorizes no merge, main modification or protection change.

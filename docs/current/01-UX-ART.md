@@ -179,3 +179,7 @@ Owner selection, ADR-0004: navy atmosphere, controlled luminous glass edges and 
 ## Real Game UI — bounded owner refinement
 
 ADR-0005 authorizes compact original vector Home/Pause/Undo/Restart controls, Home hero and compact Map/Settings, About inside Settings, and a borderless Win card without an X. Next names the actual next available level; Replay/Map are secondary icons, last-level fallback stays Map. Android Back routing remains explicit. Icons retain localized accessible names, focus states and 96 reference-pixel targets; tube order and non-directional glyph geometry are not blindly mirrored.
+
+## Current gate reconciliation — ADR-0006
+
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. The owner accepted PR15 with minor non-blocking polish deferred; do not implement that polish in this task.

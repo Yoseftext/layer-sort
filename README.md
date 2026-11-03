@@ -1,36 +1,7 @@
 # Layer Sort
 
-Android puzzle game (colored layers in glass tubes), built with **Godot 4
-Standard + typed GDScript**. Portrait only, offline-first. The product does not
-use C#.
+Android portrait puzzle game built with Godot 4.7.2 Standard and typed GDScript, Compatibility renderer, offline-first.
 
-## Current gate
+Start with [the authoritative current project entry](docs/current/00-START-HERE.md). It records accepted PR15, owner-reported device QA, gate boundaries and approved ADRs. [Merge readiness](docs/current/MERGE-READINESS.md) records the live PR dependency audit and integration conditions. Historical reports and [archive](docs/archive/INDEX.md) are evidence, not competing active instructions.
 
-**G0/G1 — Native Android smoke.** The active branch is
-`feat/gdscript-foundation`. `main` is not modified. G1 proves a pinned Godot
-Standard portrait scene builds in GitHub Actions, installs on the OPPO phone,
-starts, renders, responds to a real touch, and leaves clean logcat evidence.
-
-- Debug applicationId: `com.yoseftext.layersort.dev`
-- Historical C# spike (retained, not the product): branch
-  `spike/godot-csharp-android`, app id `com.yoseftext.layersort`
-- Engine pin: `ENGINE_VERSION.lock` (Godot `4.7.2-stable`, Standard)
-- Build: `.github/workflows/android-build-g1.yml`
-- Device tests: `tools/device-tests/` via `agentctl smoke|touch|runtime`
-
-## Source of truth
-
-Active specifications are only in `docs/current/`. `docs/archive/` is
-historical and must not be used as an instruction. The GPLv3 reference game is
-never opened or copied.
-
-## Local checks
-
-```bash
-bash -n tools/device-tests/game-test.sh
-python3 -m py_compile tools/device-tests/*.py
-```
-
-Heavy builds run on GitHub Actions, never on the phone. Device checks use the
-shared phone reservation (`agentctl` / `phone-queue`) and must preserve
-screenshots and logcat in the run directory.
+Current accepted gameplay remains on `feat/real-game-ui` at `c961972365258baa34cae279dfc10ab46edce2f7`, PR #15 Open / Draft. Minor polish is deferred; no merge, G5 implementation, production signing or store release is authorized. Builds and tests are in `.github/workflows/`; phone actions require their separate authorization and lock. This reconciliation performs no device operation.
