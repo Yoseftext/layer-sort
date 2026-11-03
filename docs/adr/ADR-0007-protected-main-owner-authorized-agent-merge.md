@@ -10,7 +10,18 @@ Replace the prior owner-manual-only/blanket agent-main-merge prohibition with pr
 
 Read-only REST observation during this correction: `GET /repos/Yoseftext/layer-sort/branches?per_page=100` returned 19 branches, all with `protected: false`, including `main`. `GET /repos/Yoseftext/layer-sort/rulesets` returned HTTP 403; repository rulesets could not be independently verified. The 403 does not establish that rulesets are absent or enforced. Branch-protection enforcement remains **UNVERIFIED**; documented review/CI/owner-approval requirements must not be presented as proven GitHub enforcement.
 
-Before integration, verify applicable technical protection and ruleset status with authorized read access and record evidence. If verification is unavailable, stop integration and report that gate as unresolved; do not enable, disable, modify or bypass settings as a workaround. The exact owner-authorized merge contract below is unchanged. This correction grants no merge authorization.
+## Target-specific technical verification gates
+
+### A. PRs targeting main
+
+Before any PR is merged into `main`, use authorized read-only access to verify effective branch protection and applicable rulesets, PR-only integration requirements, required CI checks and blocking review status. Record the technical enforcement evidence separately from documented policy. Require exact owner authorization under ADR-0007. If protection enforcement cannot be verified, **block integration into main**. A `protected: false` branch response or inaccessible rulesets is not proof of enforced PR-only integration.
+
+### B. PRs targeting intermediate feature branches
+
+For a stacked PR targeting an intermediate feature branch, require exact owner authorization, a reviewed PR, applicable CI checks passing and no unresolved blocking review comments. Verify any applicable protection or ruleset on the **actual target branch**, using authorized read-only access, and follow the full ADR-0007 authorization contract. If verification required for that target is unavailable, report that target-specific gate as unresolved and stop that merge. An unrelated inability to verify main's protections is **not a global blocker** for an intermediate feature-branch integration; never substitute main's status for checking the actual target.
+
+In both cases the owner's approval must identify PR number, exact head SHA, target branch and confirmation of the intended reviewed changes. Any changed approval value requires renewed authorization. This scope clarification does not waive reviews, CI, applicable target protections, blocking-comment checks or exact owner approval. It grants no merge authorization and permits no changes to GitHub protection settings.
+
 
 ## Roles
 

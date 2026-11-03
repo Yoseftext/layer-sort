@@ -14,7 +14,17 @@ After each authorized merge verify the resulting commit, intended target branch 
 
 Direct pushes to main are prohibited by repository governance, independently of GitHub's technical enforcement. Read-only branches API observation returned **19 branches with `protected: false`, including main**. Repository rulesets API returned **HTTP 403** and rulesets were **not independently verified**. Do not infer ruleset absence or enforcement from that error. Technical branch-protection enforcement is **UNVERIFIED**, not confirmed enabled. No settings were changed.
 
-**Gate before any integration:** obtain authorized read-only verification of applicable branch protections/rulesets and record their actual enforcement status alongside required-check and review evidence. Until that verification is available, technical protection verification remains unresolved and integration must stop. Do not enable/disable/modify protections or change repository visibility/plan to resolve it under this task. See [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md). The PR/head SHA/target/intended-changes authorization contract remains unchanged and still requires a separate exact owner approval.
+### A. PRs targeting main
+
+Before any PR is merged into `main`, use authorized read-only access to verify effective branch protection and applicable rulesets, PR-only integration requirements, required CI checks and blocking review status. Record the technical enforcement evidence separately from documented policy. Require exact owner authorization under ADR-0007. If protection enforcement cannot be verified, **block integration into main**. A `protected: false` branch response or inaccessible rulesets is not proof of enforced PR-only integration.
+
+### B. PRs targeting intermediate feature branches
+
+For a stacked PR targeting an intermediate feature branch, require exact owner authorization, a reviewed PR, applicable CI checks passing and no unresolved blocking review comments. Verify any applicable protection or ruleset on the **actual target branch**, using authorized read-only access, and follow the full ADR-0007 authorization contract. If verification required for that target is unavailable, report that target-specific gate as unresolved and stop that merge. An unrelated inability to verify main's protections is **not a global blocker** for an intermediate feature-branch integration; never substitute main's status for checking the actual target.
+
+In both cases the owner's approval must identify PR number, exact head SHA, target branch and confirmation of the intended reviewed changes. Any changed approval value requires renewed authorization. This scope clarification does not waive reviews, CI, applicable target protections, blocking-comment checks or exact owner approval. It grants no merge authorization and permits no changes to GitHub protection settings.
+
+See [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md). Historical API observations above remain UNVERIFIED enforcement evidence; the required verification gate is scoped to the actual integration target.
 
 ## Dependency graph and topological order
 
