@@ -10,6 +10,12 @@ ChatGPT provides independent review/evidence assessment and a recommendation; th
 
 After each authorized merge verify the resulting commit, intended target branch and CI on the exact integrated result. Report outcomes/regressions and stop before the next PR pending its applicable authorization. No merge is authorized by this documentation task, including PR15/16/17.
 
+## Pre-integration gate: verify technical protections
+
+Direct pushes to main are prohibited by repository governance, independently of GitHub's technical enforcement. Read-only branches API observation returned **19 branches with `protected: false`, including main**. Repository rulesets API returned **HTTP 403** and rulesets were **not independently verified**. Do not infer ruleset absence or enforcement from that error. Technical branch-protection enforcement is **UNVERIFIED**, not confirmed enabled. No settings were changed.
+
+**Gate before any integration:** obtain authorized read-only verification of applicable branch protections/rulesets and record their actual enforcement status alongside required-check and review evidence. Until that verification is available, technical protection verification remains unresolved and integration must stop. Do not enable/disable/modify protections or change repository visibility/plan to resolve it under this task. See [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md). The PR/head SHA/target/intended-changes authorization contract remains unchanged and still requires a separate exact owner approval.
+
 ## Dependency graph and topological order
 
 Edges are actual base/head branch relationships and verified Git ancestry, not assumptions from PR numbers. Every base→head ancestry check passed. All fifteen original PRs are OPEN and UNMERGED. PR1–3 are non-draft; PR4–15 are Draft. GitHub returned mergeable for all at the captured snapshot; this is not a guarantee after integrations.

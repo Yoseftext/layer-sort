@@ -4,7 +4,13 @@ Date: 2026-11-03. Owner: Layer Sort repository owner, explicit “Implement ADR-
 
 ## Decision and supersession
 
-Replace the prior owner-manual-only/blanket agent-main-merge prohibition with protected, owner-authorized agent execution through reviewed PRs. This supersedes the main-policy decision gate in ADR-0006 and the prior AGENTS prohibition only to the extent described here. Acceptance of PR15, its deferred minor polish and all non-governance scope remain unchanged. Main receives no direct pushes. No force pushes, protection bypass, or branch deletion without explicit owner authorization. Existing GitHub protections remain enabled and unchanged.
+Replace the prior owner-manual-only/blanket agent-main-merge prohibition with protected, owner-authorized agent execution through reviewed PRs. This supersedes the main-policy decision gate in ADR-0006 and the prior AGENTS prohibition only to the extent described here. Acceptance of PR15, its deferred minor polish and all non-governance scope remain unchanged. Main receives no direct pushes. No force pushes, protection bypass, or branch deletion without explicit owner authorization. Direct pushes to main are prohibited by repository governance. Technical branch-protection enforcement is **UNVERIFIED**; this policy does not assert that GitHub protections are enabled. No protection settings were changed.
+
+## Observed policy versus technical enforcement
+
+Read-only REST observation during this correction: `GET /repos/Yoseftext/layer-sort/branches?per_page=100` returned 19 branches, all with `protected: false`, including `main`. `GET /repos/Yoseftext/layer-sort/rulesets` returned HTTP 403; repository rulesets could not be independently verified. The 403 does not establish that rulesets are absent or enforced. Branch-protection enforcement remains **UNVERIFIED**; documented review/CI/owner-approval requirements must not be presented as proven GitHub enforcement.
+
+Before integration, verify applicable technical protection and ruleset status with authorized read access and record evidence. If verification is unavailable, stop integration and report that gate as unresolved; do not enable, disable, modify or bypass settings as a workaround. The exact owner-authorized merge contract below is unchanged. This correction grants no merge authorization.
 
 ## Roles
 
