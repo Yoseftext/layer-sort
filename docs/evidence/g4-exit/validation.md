@@ -10,6 +10,6 @@
 - Python gate assertions: rules contract contains DRAFT; QA catalog retains G15-QA-001 · OPEN; current entry records owner10/10. PASS.
 - Existing repository tools contain no dedicated documentation checker; no unrelated gameplay tests repeated. CI/workflow changes and their validation are a separate sibling PR, not included here.
 
-Archive decision: no numbered active contract was wholly obsolete. Retained the eight active specifications and reconciled historical scope with ADR0006. Preserved rootG1README and obsolete G0 production sections7–8 verbatim beneath SUPERSEDED — NOT AUTHORITATIVE headers in indexed archive. Historical implementation reports and failed evidence were retained at their existing paths. No game saves, original workspace files or shared branches were modified.
+Archive decision: no numbered active contract was wholly obsolete. Retained the eight active specifications and reconciled historical scope with ADR0006. Preserved rootG1README and obsolete G0 production sections7–8 (only the terminal blank line of the extracted G0 section normalized after diff-check flagged it) beneath SUPERSEDED — NOT AUTHORITATIVE headers in indexed archive. Historical implementation reports and failed evidence were retained at their existing paths. No game saves, original workspace files or shared branches were modified.
 
 Raw PR15 acceptance comment and latest owner task are the source of the owner-reported physical QA statement. This validation did not acquire device logs or measure Android performance and does not close G15-QA-001.
