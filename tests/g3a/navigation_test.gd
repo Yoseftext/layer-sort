@@ -39,12 +39,16 @@ func _run() -> void:
 	_expect(navigation.current_route() == NavigationState.Route.HOME, "Back to Home")
 	home = navigation.current_screen() as HomeScreen
 	_expect(home.language == "ar", "language survives screen changes")
-	var about_button: Button = home.find_child("AboutButton", true, false) as Button
+	_expect(home.find_child("AboutButton", true, false) == null, "Home keeps About inside Settings")
+	navigation.show_settings()
+	var about_button: Button = navigation.current_screen().find_child("AboutButton", true, false) as Button
 	_expect(about_button != null, "About button reachable")
 	about_button.pressed.emit()
 	_expect(navigation.current_screen() is AboutScreen, "About opens")
 	navigation.go_back()
-	_expect(navigation.current_route() == NavigationState.Route.HOME, "About Back returns Home")
+	_expect(navigation.current_route() == NavigationState.Route.SETTINGS, "About Back returns Settings")
+	navigation.go_back()
+	_expect(navigation.current_route() == NavigationState.Route.HOME, "Settings Back then returns Home")
 	_expect(not navigation.open_level("../other"), "unknown level rejected")
 	var catalog_result: Dictionary = LevelCatalog.load_catalog()
 	_expect(catalog_result.ok, "catalog loads")
@@ -70,6 +74,13 @@ func _run() -> void:
 		var settings_from_pause: Button = pause.find_child("SettingsButton", true, false) as Button
 		settings_from_pause.pressed.emit()
 		_expect(navigation.get("_pause_settings") is SettingsScreen, "Pause Settings opens")
+		var paused_settings: SettingsScreen = navigation.get("_pause_settings") as SettingsScreen
+		var committed: String = game.committed_snapshot().identity()
+		(paused_settings.find_child("AboutButton", true, false) as Button).pressed.emit()
+		_expect(navigation.get("_settings_about") is AboutScreen, "Pause Settings About opens overlay")
+		navigation.go_back()
+		_expect(navigation.get("_pause_settings") == paused_settings and paused_settings.visible, "About returns to same paused Settings")
+		_expect(game.committed_snapshot().identity() == committed, "About roundtrip preserves exact committed board")
 		navigation.go_back()
 		_expect(navigation.get("_pause_settings") == null and navigation.get("_pause_screen") != null, "Settings Back returns Pause")
 		var restart_from_pause: Button = pause.find_child("RestartButton", true, false) as Button

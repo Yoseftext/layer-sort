@@ -1,7 +1,7 @@
 class_name OpticalTheme
 extends RefCounted
 
-## Gameplay-only Optical Clarity tokens. No global theme mutation.
+## Optical Clarity tokens shared by approved Home, gameplay and Win surfaces.
 const NAVY: Color = Color("111b2c")
 const INK: Color = Color("f4f7fc")
 const MUTED: Color = Color("aabbd0")

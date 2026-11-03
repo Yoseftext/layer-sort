@@ -1,0 +1,284 @@
+{
+	"captures": [
+		{
+			"height": 1600,
+			"name": "01-splash",
+			"pour_progress": -1.0,
+			"route": 0,
+			"sha256": "95016a66b2313a6803af6ff7560d10fab40bba5ab4a5f8b2776be963b5efe63c",
+			"time_ms": 495,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "02-home",
+			"pour_progress": -1.0,
+			"route": 1,
+			"sha256": "9e382d9d3ceffa92c8c048686814c98a7bf5b7ad9f9432febad3f06be6111fd8",
+			"time_ms": 998,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "03-map",
+			"pour_progress": -1.0,
+			"route": 4,
+			"sha256": "d014931aa1f64d6e1aee05c8fcf3b526e36576c0213c929f98a00c78583d6001",
+			"time_ms": 1225,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "04-settings-en",
+			"pour_progress": -1.0,
+			"route": 2,
+			"sha256": "7f26c4d5a8802f476489f77c4ee0871e5cf1d2588e2850f650b819c2f3791cd8",
+			"time_ms": 1606,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "05-settings-ar",
+			"pour_progress": -1.0,
+			"route": 2,
+			"sha256": "043049c972fd14b13ae85c07f15690f5f985f6a4f8a9c39d24c83ca7e0d0a133",
+			"time_ms": 2475,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "06-about-ar",
+			"pour_progress": -1.0,
+			"route": 3,
+			"sha256": "3744bb3e8402051698a4255e28c6a592545e05dfa0ed833331c3436db1b8ae5e",
+			"time_ms": 2688,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "06-home-ar",
+			"pour_progress": -1.0,
+			"route": 1,
+			"sha256": "2afe91dc73193be6f107deaa784fab7e9e5977c2757d72d8619acc6252fd4fbb",
+			"time_ms": 3097,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "07-classic",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "f826f16d8e95d4a9bebd3fb686b9356c96b43ee490e2b5ac61c49707a549d1f4",
+			"time_ms": 3904,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "08-selected",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "34049f0280b309671ab75befe6cf19671bdda5922f3f4ea405fc428b77ccd8f6",
+			"time_ms": 4180,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "09-invalid",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "e48776c454936c8406df9dd08fffb74671358594f8c3040217b99b4ab111cb0e",
+			"time_ms": 4433,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "10-pour-early",
+			"pour_progress": 0.346159726381302,
+			"route": 5,
+			"sha256": "4e6ae6d58b321677852ea75d43639d19ef0f3c2657cf663259dc3a4d88aff9a0",
+			"time_ms": 4721,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "11-pour-middle",
+			"pour_progress": 0.693281233310699,
+			"route": 5,
+			"sha256": "e6393beae886727e9128d3a350d752e77944050a979c0d3f64e5bbc30b7c0677",
+			"time_ms": 4900,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "12-pour-settled",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "f0d196864572c2bc95a58633f8d02c93fc84085a37c99d5c5b38fe893c9ba6c1",
+			"time_ms": 5326,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "13-toolbar-restart",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "0f4d069ab92d44d95afa83c1e94307e261c06cf86e361e8bfbe0d1256b6e0707",
+			"time_ms": 7041,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "14-pause",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "b2a2ee1bb51177aa7719be779b53b92ee3be2000ae6f75d5be0fdff9e2e0155c",
+			"time_ms": 7528,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "15-paused-settings-ar",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "a16a8712daab6f04e21a0b17f7f4f365771ef7c475376c8641fe497e462e63b1",
+			"time_ms": 8094,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "15-paused-about-ar",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "3744bb3e8402051698a4255e28c6a592545e05dfa0ed833331c3436db1b8ae5e",
+			"time_ms": 8386,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "16-resumed-ar",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "37263d373416b04748ab0a1f33d627830724677844b0686f5047fd2c767b4d20",
+			"time_ms": 9180,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "17-restart-confirm",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "2b20778cd7c63c4bfeb237ab19664fc50646415c4ce84ec852aeda3d89ee9c55",
+			"time_ms": 9696,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "18-completed-tube-reduced-motion",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "76f03ef5a2b28004eb74e7992fb1c0889fe3ac8eac6b76fcfc1039a50b032ce6",
+			"time_ms": 14787,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "19-win",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "1d43e902e135cad39d9d6fb51f121a6114606b74cc9a310a8d9ec138bfb34267",
+			"time_ms": 15719,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "20-next-level",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "a18527cf086bf9531a6f76a4c5731f6fe71d5e9e2ef4c438dbc0ccefda4656f6",
+			"time_ms": 16000,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "20-unlocked-map",
+			"pour_progress": -1.0,
+			"route": 4,
+			"sha256": "b595dccb7f7d94fec183e9f554f24e03b3b4f5a1b0c9419c6e72f74c98382527",
+			"time_ms": 16483,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "21-exit-confirm",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "b5d379191cbb5f821c408b2fc037a5b9ef56c06fd1f46cdc73e65b7c54677eb2",
+			"time_ms": 18226,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "22-continue-home",
+			"pour_progress": -1.0,
+			"route": 1,
+			"sha256": "52d35bba8ba8ed608bee9e844aae2e7d11ac75116b2c98fda69f04d9f82a349a",
+			"time_ms": 19209,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "23-continued-board",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "b9887b2614c58fb4952beff32ef7d6f787f36c2b88818a6e3ba5cf18d5a3fe6a",
+			"time_ms": 19497,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "24-last-level-win",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "49c72a139181c80d3e4a9b1605960602bc7a7cb8f50ba8aa09ad762e77e83ba1",
+			"time_ms": 26805,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "24-win-save-warning",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "8a1fa9cb5baa487d7a83a83471b4485c88828d018c0854fccff7d6008f5bfc67",
+			"time_ms": 31766,
+			"width": 720
+		},
+		{
+			"height": 1600,
+			"name": "25-win-after-save-warning",
+			"pour_progress": 0.0,
+			"route": 5,
+			"sha256": "a37c2fb1590baa1b6a3c4ca81e8cf8269243663b0a60a300befdc838c165c916",
+			"time_ms": 32060,
+			"width": 720
+		}
+	],
+	"checks": 191,
+	"display": "X11",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"failures": 0,
+	"source_commit": "",
+	"viewport": [
+		720,
+		1600
+	]
+}

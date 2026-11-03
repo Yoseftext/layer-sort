@@ -14,11 +14,11 @@
 ```text
 Native Android Launch → Short Splash (first assets/health) → Local Initialization
   ├─ New User → Welcome/Play → Tutorial Level 1 → Game → Win → Next → ...
-  ├─ Returning User → Home → Continue (resume active state) → Game
+  ├─ Returning User → Home → primary Play/Continue with actual level (resume active state) → Game
   ├─ Home → Chapter Map → Level Grid → Game
   ├─ Home → Skins/Collection (when unlocked)
   ├─ Home → Settings → [Sound, Accessibility, Language, Graphics, Privacy, Data]
-  └─ Home → About → [Credits, Asset Attribution, OSS Licenses, Privacy, Diagnostics, Help]
+  └─ Home → Settings → About → [Credits, Asset Attribution, OSS Licenses, Privacy, Diagnostics, Help]
 Game ↔ Pause [Resume, Restart, Settings, Chapter Map, Exit to Home]
 Game → Win [Stars, Result, Next, Replay, Map] → Next/Game
 Game → Time Out (only in optional timed challenge) [Retry, Map, Home]
@@ -34,7 +34,8 @@ Firebase unavailable → No blocking screen; offline gameplay continues
 **القرار:** الخريطة أعلاه ملزمة؛ لكل شاشة حالات `loading/ready/empty/error/offline` بحسب وظيفتها. توجد شاشة Privacy وAbout/Credits وAsset Licenses وDiagnostics وHelp وData Reset. **اختبار:** E2E يبدأ من cold-start ويمر بكل مسار رجوع من غير روابط مقطوعة أو توقف لعب.
 
 ### UX02 — الرئيسية وزر Continue؟
-**القرار:** شعار Layer Sort بالأعلى، بطاقة فصل/مستوى آخر مع تقدم مختصر، زر **Continue** الأكبر وبصريًا الأساسي؛ أسفله `Chapters`, `Collection` عند الإتاحة، `Daily` فقط بعد تنفيذها فعلًا، ثم Settings وAbout بأيقونات واضحة؛ لا Banner داخل الصفحة الأولى في MVP. بعد أول تشغيل يتحول Continue إلى `Play Level 1`. لا زحمة أو Popups. **اختبار:** لاعب جديد يعرف بدء اللعبة بأقل من 3 ثوانٍ في اختبار فهم سريع.
+**القرار المحدّث بتفويض المالك ADR-0005:** عنوان Layer Sort وتكوين زجاجي أصلي؛ زر لعب/متابعة واحد رئيسي يعرض المستوى الفعلي ويستأنف المحاولة المحفوظة أو يفتح المستوى المتاح التالي. خريطة المستويات والإعدادات بأيقونات مدمجة مع أسماء وصول محلية؛ About داخل Settings. لا أزرار وهمية لمحتوى غير منفذ. **اختبار:** Play يستأنف الحالة الملتزمة بدقة؛ About يعود إلى Settings ثم إلى سياقها الأصلي (Home أو Pause).
+
 
 ### UX03 — Undo/Hint/Restart والإبهام؟
 **القرار:** شريط أفعال سفلي داخل Safe Area: Undo يسار، Hint في الوسط، Restart يمين في LTR؛ يخضع ترتيب الأزرار النصية لاتجاه اللغة عند الحاجة، و`left-handed mode` يعيد تخصيص الأولوية قرب الإبهام. Pause بالأعلى، رقم المستوى والمؤقت الاختياري والحركات بالأعلى دون ازدحام. لا زر يغطي أنبوبًا. **اختبار:** اختبارات يد واحدة على 720×1600 و18:9 و20:9.
@@ -173,4 +174,8 @@ Firebase unavailable → No blocking screen; offline gameplay continues
 
 ## Optical Clarity — approved gameplay refinement
 
-Owner selection, ADR-0004: navy atmosphere, controlled luminous glass edges and optical depth with clean composition, precision details and readable typography. UX11 palette remains controlling; the proposed B lime palette is not adopted. Phase 1 changes gameplay only. Actual rendering specification and editable tokens: `docs/G4B_OPTICAL_CLARITY.md`, `scripts/presentation/optical_theme.gd`. Broader screen rollout awaits owner visual acceptance.
+Owner selection, ADR-0004: navy atmosphere, controlled luminous glass edges and optical depth with clean composition, precision details and readable typography. UX11 palette remains controlling; the proposed B lime palette is not adopted. ADR-0004 Phase 1 originally changed gameplay only; ADR-0005 now authorizes the named Home/gameplay/Win and Settings→About refinement. Actual rendering specification and editable tokens: `docs/G4B_OPTICAL_CLARITY.md`, `scripts/presentation/optical_theme.gd`. Further rollout beyond ADR-0005 awaits a separate owner decision; visual acceptance remains pending.
+
+## Real Game UI — bounded owner refinement
+
+ADR-0005 authorizes compact original vector Home/Pause/Undo/Restart controls, Home hero and compact Map/Settings, About inside Settings, and a borderless Win card without an X. Next names the actual next available level; Replay/Map are secondary icons, last-level fallback stays Map. Android Back routing remains explicit. Icons retain localized accessible names, focus states and 96 reference-pixel targets; tube order and non-directional glyph geometry are not blindly mirrored.

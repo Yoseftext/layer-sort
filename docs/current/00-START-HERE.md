@@ -121,3 +121,7 @@ LayerSort/
 ## Owner-authorized Optical Clarity slice
 
 G4-B Phase 1 owner selection is recorded in `docs/adr/ADR-0004-optical-clarity.md`: one gameplay screen combines navy optical depth with precision/readability, subject to visual review before expansion. Existing gameplay and Android contracts remain authoritative.
+
+## Current owner authorization — Real Game UI
+
+ADR-0005 records the bounded Home/gameplay/Win presentation and Settings→About navigation refinement based on PR #14. Earlier dated gate statements describe authorization at their dates; they do not supersede this explicit later scope. Classic rules, save architecture and all prior evidence remain unchanged. G5/G6 and merging remain outside scope.

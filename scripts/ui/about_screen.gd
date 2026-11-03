@@ -4,6 +4,7 @@ extends Control
 signal home_requested
 
 var language: String = "en"
+var back_to_settings: bool = false
 
 
 func _ready() -> void:
@@ -21,7 +22,7 @@ func _ready() -> void:
 	for entry: Dictionary in AttributionCatalog.entries():
 		column.add_child(ScreenWidgets.label("%s · %s" % [entry.name, entry.license], 23))
 	column.add_child(ScreenWidgets.label(UiText.get_text("about_note", language), 21, true))
-	var home: Button = ScreenWidgets.button(UiText.get_text("home", language))
+	var home: Button = ScreenWidgets.button(UiText.get_text("back" if back_to_settings else "home", language))
 	home.name = "HomeButton"
 	column.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
