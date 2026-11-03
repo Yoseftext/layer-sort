@@ -2,14 +2,14 @@
 
 **Document:** `docs/current/04-AGENT-OPERATIONS.md`  
 **Identifier:** `LS-AGENT-OPS-1.4`  
-**Status:** Owner-requested operational policy for a new **G1.5** gate; implement in an isolated PR and request owner review before merge.  
-**Scope now:** Agent orchestration, scripts, tool inventory, UI inspection, QA workflows, optional Shizuku diagnostics. **No G2 gameplay implementation until a separate owner authorization.**
+**Status:** Active operating policy originating in G1.5; original gate authorization statements are historical scope, not current execution instructions.
+**Current scope:** G4 documentation consistency review only, under [ADR-0006](../adr/ADR-0006-g4-checkpoint-acceptance.md) and the owner's PR17 remediation instruction. **Historical G1.5 scope:** orchestration/tool inventory/QA and optional Shizuku; G2 was then awaiting separate authorization, subsequently recorded in ADR-0003.
 
 ## 1. Scope and source-of-truth
 
 1. Preserve all existing design decisions: Godot 4 Standard / typed GDScript / Android portrait / offline-first / Firebase Spark only, with Firebase integration later.
-2. `AGENTS.md` and `docs/current/{00-START-HERE,01-UX-ART,02-ENGINEERING,03-PRODUCTION}.md` remain authoritative for their subjects. This document adds only agent/QA-operations policy. On conflict, do not silently override: file a small ADR for owner review.
-3. The current G1 PR remains unmerged pending owner approval. Protect `main`, `spike/godot-csharp-android`, git history, existing CI, and Termux/ADB/Appium infrastructure.
+2. AGENTS defines agent operating constraints; [00-START-HERE.md](00-START-HERE.md) is the active project entry point. Approved, later owner-authorized ADRs control decisions within scope; other active specifications conform. Never resolve a conflict silently: record it and request an explicit owner decision if authority is unclear. This policy cannot override the prohibition on modifying main.
+3. **Historical G1 scope:** its PR required owner approval; this is not a current G1 execution instruction. Protect `main`, `spike/godot-csharp-android`, git history, existing CI, and Termux/ADB/Appium infrastructure.
 4. Treat the prior device report and screenshots as **G1 evidence**, not proof of game mechanics, UI beauty, or G2 readiness.
 5. Never open the GPLv3 reference implementation, import its assets, or copy its code. Never contact paid APIs or enable billing.
 
@@ -27,7 +27,7 @@ Create **project-scoped** agent definitions under `.opencode/agents/`, after dis
 | `dependency-auditor` | Evaluate libraries, tools, compatibility, licenses, risk | Read-only exploration and controlled project-local installs, version pins | Source/version/license/hash/security notes and removal plan |
 | `reviewer` | Independent cross-check of modifications, scope, security and evidence | Read-only | PR risks, missing tests, acceptance verdict |
 
-Start G1.5 with **four** reusable subagents, e.g. `repo-auditor`, `device-qa`, `visual-auditor`, `reviewer`; add roles on evidence of need. Primary agent may create extra agents or commands **inside the project** when needed and document each role's purpose, permissions, version, and expected output. No worker may create hidden perpetual agents or unbounded nested jobs. Agent orchestration uses native child tasks/workflows first, not a third-party fleet manager.
+**Historical G1.5 bootstrap plan, not a current instruction to create agents:** start G1.5 with **four** reusable subagents, e.g. `repo-auditor`, `device-qa`, `visual-auditor`, `reviewer`; add roles on evidence of need. Primary agent may create extra agents or commands **inside the project** when needed and document each role's purpose, permissions, version, and expected output. No worker may create hidden perpetual agents or unbounded nested jobs. Agent orchestration uses native child tasks/workflows first, not a third-party fleet manager.
 
 **Concurrency:** CPU/Git/static tasks may run in parallel when independent. The *single OPPO phone* must always use `agentctl`/`phone-queue` locking; only one phone-mutating test session at a time. Use bounded runtime and cleanup; avoid endless loops or continuous screen tapping.
 
@@ -71,7 +71,7 @@ Implement short, rerunnable commands or scripts with typed exit codes and machin
 | `qa-bug-repro` | issue ID, seed, steps | Exact reproduction, expected vs actual state/screenshots, log lines, regression test link |
 | `qa-report` | run directory | One index showing PASS/FAIL/SKIP/UNVERIFIED and evidence links, plus unfinished blockers |
 
-The automated tests **must be able to fail deliberately** in controlled negative-test fixtures: nonexistent package; wrong expected orientation; mismatching APK hash or screenshot. Do not cause destructive OS or data faults. Once G2 is authorized, add a rule-oracle comparing GDScript GameState to expected state after actual pours/undo/restart; screen taps alone never establish game correctness.
+The automated tests **must be able to fail deliberately** in controlled negative-test fixtures: nonexistent package; wrong expected orientation; mismatching APK hash or screenshot. Do not cause destructive OS or data faults. The historical G1.5 plan required a rule-oracle once G2 received separate authorization; later G2 authorization is ADR-0003. The requirement was to compare GDScript GameState to expected state after actual pours/undo/restart; screen taps alone never establish game correctness.
 
 ## 6. Screenshot and visual QA pipeline
 
@@ -90,9 +90,9 @@ Shizuku is an **optional, privileged Android shell diagnostic channel** (via Shi
 
 Termux native environment is the supported location for the exported `rish`/DEX. Debian proot **cannot be presumed** to invoke it directly; ask the agent to test and document a **narrow Termux-side allowlisted bridge**, without changing Supervisor/Termux services. If unavailable, keep Shizuku marked `OPTIONAL_BLOCKED`; G1/G2 tests continue on ADB/Appium normally. Keep any bridge on-demand rather than a persistent privileged service.
 
-## 8. Owner review / acceptance for G1.5
+## 8. Historical owner review / acceptance criteria for G1.5
 
-A report is acceptable only when it has: inspected OpenCode version/schema; persisted project-scoped agent files; an auditable permissions matrix; tool inventory; at least two demonstrated workflows; deliberate negative-test evidence; a screenshot review report for the G1 scene (not a claim about the final UI); bounded device-lock behavior; Shizuku capability state/permissions and actual `rish id` proof **if enabled**; PR and rollback instructions. Do **not** claim a bridge, vision model or tool existed if it was not directly tested. G2 remains blocked until owner authorizes it separately.
+A report is acceptable only when it has: inspected OpenCode version/schema; persisted project-scoped agent files; an auditable permissions matrix; tool inventory; at least two demonstrated workflows; deliberate negative-test evidence; a screenshot review report for the G1 scene (not a claim about the final UI); bounded device-lock behavior; Shizuku capability state/permissions and actual `rish id` proof **if enabled**; PR and rollback instructions. Do **not** claim a bridge, vision model or tool existed if it was not directly tested. At that historical gate G2 awaited separate owner authorization; ADR-0003 subsequently authorized it. This is not a present G2 blocker or permission to reopen accepted gameplay.
 
 ## Current gate reconciliation — ADR-0006
 

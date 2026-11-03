@@ -17,6 +17,8 @@
 
 **قاعدة المراحل:** 8 ساعات/أسبوع افتراضية للتخطيط وليست موعد تسليم، 3–15 ساعة ممكنة؛ المرحلة تُقفل بالوظيفة+جودة+اختبارات، لا بانتهاء أسبوع. لا تذكرة تتجاوز جلسة مراجعة كبيرة إلا بتقسيمها إلى مخرجات واضحة.
 
+> **Historical authorization scope:** G1/G1.5/G2 permission and startup statements below describe their original dated gates, not current authorization. Later owner-authorized ADRs (including [ADR-0006](../adr/ADR-0006-g4-checkpoint-acceptance.md)) control subsequent project decisions. AGENTS operating constraints remain in force. The entry point is [00-START-HERE.md](00-START-HERE.md). No historical gate text restarts implementation or grants merging permission.
+
 ## 2. بوابات التنفيذ المعتمدة
 
 | Gate | العمل المطلوب | شروط اكتمال محددة |
@@ -110,3 +112,5 @@ The obsolete G0 checklist and one-time bootstrap prompt were moved to [the index
 ## Current gate reconciliation — ADR-0006
 
 See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. G4 checkpoint acceptance is not integration completion or 20-level MVP acceptance. Future G5 remains the Circuit proof and content 15–20 under ADR-0002.
+
+**Integration blocker:** PR #1 targets main, but AGENTS prohibits modifying/merging to main. The proposed sequence in MERGE-READINESS is not executable until the owner records an explicit integration-destination and authority decision. No merge is authorized by this production plan.

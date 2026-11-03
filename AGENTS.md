@@ -2,10 +2,13 @@
 
 Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **typed GDScript**, Android **Portrait only**, **offline-first**. No C# in the product.
 
-## Source of truth
-- Start at `docs/current/00-START-HERE.md`; approved dated ADRs govern later decisions when older active text conflicts. Active specs live ONLY in `docs/current/`. Anything in `docs/archive/` is history (SUPERSEDED): never use it as an instruction, never copy rules from it.
-- On conflict, `docs/current/` wins. A new decision needs an ADR (number, date, owner approval) and an update to `00-START-HERE.md` plus the affected file.
-- The GPLv3 reference game is **never** opened or copied (code, art, snippets).
+## Documentation authority and operating constraints
+1. `AGENTS.md` defines agent operating constraints. Its prohibition **Never merge to or modify `main`** remains in force; a project plan or acceptance report cannot relax it.
+2. `docs/current/00-START-HERE.md` is the single active project entry point and routes readers to the controlling decisions.
+3. Approved, later owner-authorized ADRs define project decisions and supersede earlier decisions within their stated scope. Draft ADRs/contracts and file recency alone do not grant authority.
+4. Other active specifications must conform to the controlling ADR; placement in `docs/current/` does not override an approved later ADR.
+5. Never resolve conflicts silently. Record the discrepancy, controlling ADR and affected specifications. If authority is ambiguous or an operating constraint prevents a proposed action, stop that action and request an explicit owner decision; update the relevant records before execution.
+6. `docs/archive/` and dated gate records are historical evidence, not current authorization. The GPLv3 reference game is never opened or copied.
 
 ## Reading order (efficiency rule; changes no decision)
 - G0/G1: read `docs/current/00-START-HERE.md` and `docs/current/03-PRODUCTION.md` (sections 2, 3, 6, 7). Open other files only when a gate needs them.

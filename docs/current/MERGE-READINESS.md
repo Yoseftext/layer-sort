@@ -2,6 +2,14 @@
 
 Audit date: 2026-11-03. Authoritative entry: [00-START-HERE.md](00-START-HERE.md); current acceptance: [ADR-0006](../adr/ADR-0006-g4-checkpoint-acceptance.md). Source snapshot and complete changed-file inventory: [PR audit JSON](../evidence/g4-exit/pr-audit.json). REST PR/files/reviews/comments/check-runs and GraphQL thread/mergeability queries were fetched with pagination; zero unresolved review threads and zero formal submitted reviews were returned across PRs1–15. PR15 has one owner acceptance conversation comment; it is not a formal GitHub approval or merge permission.
 
+## Mandatory owner decision before integration
+
+**OWNER DECISION REQUIRED — MAIN POLICY.** AGENTS says **Never merge to or modify `main`**. PR #1 targets main. Consequently the topological order below is a dependency description, not an executable merge plan under current operating constraints. Acceptance of PR15, green CI, and ADR-0006 do not override this prohibition.
+
+The owner must separately decide and record the permitted integration destination, authorized actor, and any required operating-policy treatment before any integration can proceed. Until that decision exists, no agent may execute the proposed main-target sequence. Do not infer an exception from this report. The prohibition is unchanged and this remediation authorizes no merge.
+
+Authority: AGENTS defines operating constraints; [00-START-HERE.md](00-START-HERE.md) is the entry point; approved later owner-authorized ADRs define decisions; other active specs conform. Ambiguous conflicts must be recorded and referred to the owner, never silently resolved.
+
 ## Dependency graph and topological order
 
 Edges are actual base/head branch relationships and verified Git ancestry, not assumptions from PR numbers. Every base→head ancestry check passed. All fifteen original PRs are OPEN and UNMERGED. PR1–3 are non-draft; PR4–15 are Draft. GitHub returned mergeable for all at the captured snapshot; this is not a guarantee after integrations.
@@ -81,15 +89,15 @@ Local relevant checks: `git diff --check`; YAML parse and non-trigger-key identi
 
 Owner accepts PR15 with minor non-blocking polish deferred and reports10/10 physical-device groups passed ([comment](https://github.com/Yoseftext/layer-sort/pull/15#issuecomment-6606381017)). Do not substitute owner report for agent-run device logs, benchmark values or per-ID test matrix. No raw phone evidence was acquired in this task. Existing ObjectDB/resource-at-exit warnings remain documented; stylized tilted liquid, low-brightness tuning and other accepted polish are deferred rather than reopened. G15-QA-001 remains OPEN pending its own unobscured-capture/negative-fixture/owner acceptance criteria. Rules contract remains Draft. G4 acceptance is not full MVP, release or integration completion; G5 Circuit15–20 remains unauthorized for implementation.
 
-## Recommended safe sequence (owner action only)
+## Conditional integration proposal — blocked by main-policy decision
 
-1. Review CI repair and this documentation independently; preserve accepted PR15/APK. Approve no gameplay changes as part of this gate.
+1. First obtain the explicit owner main-policy/destination/actor decision above; do not execute this proposal until the constraint is resolved in the governing records. Review CI repair and this documentation independently; preserve accepted PR15/APK. Approve no gameplay changes as part of this gate.
 2. Approve the integration strategy explicitly. Keep stack ancestry; no rebase/force-push/silent retarget or branch deletion. PR13 stays optional parallel design history.
-3. With explicit merge authorization, integrate the main path1–12, then14. Refresh diff/mergeability/checks at every layer; older smoke-only checks cannot substitute for final cumulative gameplay regression.
+3. Only after the main-policy decision and separate merge authorization are recorded, the proposed dependency path is 1–12, then14. Refresh diff/mergeability/checks at every layer; older smoke-only checks cannot substitute for final cumulative gameplay regression.
 4. After14 is integrated under the authorized strategy, handle CI16 and accepted15 as sibling layers. Apply CI16 before or alongside15 so both automatic event paths can be checked on the resulting integration. Review workflow overlap rather than overwriting15 tests. Then integrate documentation based on15; future retargeting, if needed, is an owner-reviewed operation.
 5. Run full CI on the exact resulting integration commit, verify APK provenance and preservation compatibility, and record final owner integration acceptance. Do not claim G4 fully merged before this exists.
 
-Current verdict: **READY WITH KNOWN LIMITATIONS** for owner review of the CI/documentation PRs. No PR is merged or marked ready by this report; all integration remains pending explicit approval. Rollback this reconciliation by reverting its normal commit on a review branch, preserving saves and all accepted source history.
+Current verdict: **READY WITH KNOWN LIMITATIONS** for documentation owner review; **integration is BLOCKED pending the explicit owner main-policy decision**. No PR is merged or marked ready by this report; all integration remains pending explicit approval. Rollback this reconciliation by reverting its normal commit on a review branch, preserving saves and all accepted source history.
 
 ## Workspace preservation
 
