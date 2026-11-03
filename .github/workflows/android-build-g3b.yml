@@ -346,6 +346,9 @@ jobs:
           timeout 60s godot --headless --path . --script res://tests/g3d/player_flow_test.gd 2>&1 | tee logs/g3d-player-flow.log
           grep -q 'G3D_FLOW_TESTS status=PASS' logs/g3d-player-flow.log
           if grep -Eq 'SCRIPT ERROR|G3D_FLOW_FAIL' logs/g3d-player-flow.log; then exit 1; fi
+          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-real-ui-captures" timeout 90s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/visual/real_ui_test.gd 2>&1 | tee logs/real-ui.log
+          grep -q "REAL_UI_TESTS PASS" logs/real-ui.log
+          if grep -Eq "SCRIPT ERROR|Assertion failed" logs/real-ui.log; then exit 1; fi
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-optical-captures" timeout 120s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/visual/optical_clarity_test.gd 2>&1 | tee logs/optical-visual.log
           grep -q "OPTICAL_VISUAL PASS" logs/optical-visual.log
           if grep -Eq "SCRIPT ERROR|Assertion failed" logs/optical-visual.log; then exit 1; fi
@@ -426,6 +429,8 @@ jobs:
 
       - name: Collect rendered evidence after export
         run: |
+          mkdir -p logs/real-ui-screenshots
+          cp "$RUNNER_TEMP/layersort-real-ui-captures/"*.png logs/real-ui-screenshots/
           mkdir -p logs/optical-screenshots
           cp "$RUNNER_TEMP/layersort-optical-captures/"*.png logs/optical-screenshots/
           mkdir -p logs/feedback-screenshots
@@ -455,6 +460,7 @@ jobs:
             logs/*.txt
             logs/*.log
             logs/*.json
+            logs/real-ui-screenshots/*.png
             logs/optical-screenshots/*.png
             logs/feedback-screenshots/*.png
             logs/campaign-screenshots/*.png

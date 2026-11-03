@@ -46,9 +46,10 @@ func _run() -> void:
 	await click_named("EffectsToggle")
 	await click_named("ArabicButton")
 	await capture("05-settings-ar")
-	await click_named("HomeButton")
 	await click_named("AboutButton")
 	await capture("06-about-ar")
+	await click_named("HomeButton")
+	check(navigation.current_screen() is SettingsScreen, "About Back returns Settings")
 	await click_named("HomeButton")
 	check((navigation.current_screen() as HomeScreen).primary_label == UiText.get_text("home_play_level", "ar") % "001", "Arabic Home names actual first level")
 	await capture("06-home-ar")
@@ -78,12 +79,12 @@ func _run() -> void:
 	await create_timer(0.4).timeout
 	check(not game._session.animation_locked, "pour releases input")
 	await capture("12-pour-settled")
-	await click_text(UiText.get_text("undo", "en"))
+	await click_named("UndoButton")
 	check(game._session.snapshot().identity() == original, "real Undo restores snapshot")
 	await tap(game._views[0])
 	await tap(game._views[3])
 	await create_timer(0.7).timeout
-	await click_text(UiText.get_text("restart", "en"))
+	await click_named("RestartButton")
 	var restart: ConfirmationDialog = navigation.get("_restart_dialog") as ConfirmationDialog
 	check(restart != null and restart.visible, "toolbar Restart requires confirmation")
 	await capture("13-toolbar-restart")
@@ -96,6 +97,11 @@ func _run() -> void:
 	await click_named("SettingsButton")
 	await click_named("ArabicButton")
 	await capture("15-paused-settings-ar")
+	var saved_board: String = game.committed_snapshot().identity()
+	await click_named("AboutButton")
+	await capture("15-paused-about-ar")
+	await click_named("HomeButton")
+	check(navigation.get("_pause_settings") != null and game.committed_snapshot().identity() == saved_board, "About icon roundtrip keeps paused board")
 	await click_named("HomeButton")
 	check((navigation.get("_pause_screen") as PauseScreen).language == "ar", "Pause relocalizes")
 	await click_named("ResumeButton")
@@ -129,6 +135,7 @@ func _run() -> void:
 	await capture("19-win")
 	var win: AcceptDialog = navigation.get("_win_dialog") as AcceptDialog
 	check(win != null and win.visible, "completion dialog shown")
+	check(win.borderless, "Win has no window close chrome")
 	check(win.ok_button_text == UiText.get_text("next_level", "en") % "002", "win primary names unlocked next level")
 	if win != null:
 		await tap(win.get_ok_button())
@@ -250,7 +257,9 @@ func tap(control: Control, settle: float = 0.12) -> void:
 
 func click_named(node_name: String) -> void:
 	var scope: Control = navigation.current_screen()
-	if navigation.get("_pause_settings") != null:
+	if navigation.get("_settings_about") != null:
+		scope = navigation.get("_settings_about") as Control
+	elif navigation.get("_pause_settings") != null:
 		scope = navigation.get("_pause_settings") as Control
 	elif navigation.get("_pause_screen") != null:
 		scope = navigation.get("_pause_screen") as Control

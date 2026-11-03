@@ -80,8 +80,11 @@ func _draw() -> void:
 	var amount: float = transfer_progress(_progress)
 	var lip: Vector2 = mouth + Vector2(direction * _body_size.x * 0.42, 0).rotated(rotation_angle)
 	if _progress >= 0.25 and _progress < 0.75:
-		draw_line(lip, _target + Vector2(0, 9), Color(TubePainter.COLOURS[_colour], 0.18), 13.0, true)
-		draw_line(lip, _target + Vector2(0, 9), TubePainter.COLOURS[_colour], 5.0, true)
+		var strength: float = sin(PI * (_progress - 0.25) / 0.5)
+		var width: float = 2.0 + 3.0 * strength
+		draw_line(lip, _target + Vector2(0, 9), Color(TubePainter.COLOURS[_colour], 0.14 * strength), width + 6.0, true)
+		draw_line(lip, _target + Vector2(0, 9), TubePainter.COLOURS[_colour], width, true)
+		draw_line(lip, _target + Vector2(0, 9), Color(1, 1, 1, 0.25 * strength), 1.0, true)
 	# Rotate around the lip so the liquid bridge joins the mouth, not the tube wall.
 	draw_set_transform(mouth, rotation_angle)
 	_painter.paint(self, Rect2(Vector2(-_body_size.x * 0.5, 0), _body_size), _layers, _capacity, false, -float(_moved) * amount, _colour, false, false)

@@ -20,6 +20,7 @@ var _save_failed: bool = false
 var _save_status: String = ""
 var _save_dialog: ConfirmationDialog
 var _active: Dictionary = {}
+var _win_dimmer: ColorRect
 var _win_dialog: AcceptDialog
 var _win_pending: bool = false
 var _win_action_taken: bool = false
@@ -29,6 +30,8 @@ var _exit_dialog: ConfirmationDialog
 var _restart_dialog: ConfirmationDialog
 var _pause_screen: PauseScreen
 var _pause_settings: SettingsScreen
+var _settings_about: AboutScreen
+var _about_return_settings: bool = false
 var _leave_to_map: bool = false
 var _leave_dialog: ConfirmationDialog
 var _audio: GameAudio
@@ -110,8 +113,37 @@ func show_settings() -> void:
 
 
 func show_about() -> void:
+	if _pause_settings != null:
+		if _settings_about != null:
+			return
+		_pause_settings.hide()
+		_settings_about = ABOUT_SCENE.instantiate() as AboutScreen
+		_settings_about.language = _settings.language
+		_settings_about.back_to_settings = true
+		_surface.add_child(_settings_about)
+		_settings_about.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_settings_about.home_requested.connect(_close_settings_about)
+		_wire_ui_sounds(_settings_about)
+		return
+	_about_return_settings = _screen is SettingsScreen
 	_state.open_about()
 	_show(ABOUT_SCENE)
+
+
+func _close_settings_about() -> void:
+	if _settings_about != null:
+		_settings_about.queue_free()
+		_settings_about = null
+	if _pause_settings != null:
+		_pause_settings.show()
+
+
+func _return_from_about() -> void:
+	if _about_return_settings:
+		_about_return_settings = false
+		show_settings()
+	else:
+		go_home()
 
 
 func open_level(level_id: String, restore: bool = false) -> bool:
@@ -169,6 +201,12 @@ func go_back() -> void:
 	if _exit_dialog != null and is_instance_valid(_exit_dialog) and _exit_dialog.visible:
 		_exit_dialog.hide()
 		return
+	if _settings_about != null:
+		_close_settings_about()
+		return
+	if _state.route == NavigationState.Route.ABOUT:
+		_return_from_about()
+		return
 	if _pause_settings != null:
 		_close_pause_settings()
 		return
@@ -201,6 +239,8 @@ func _show(scene: PackedScene) -> void:
 		(next as SettingsScreen).reduce_motion = _settings.reduce_motion
 		(next as SettingsScreen).sound_enabled = _settings.sound_enabled
 		(next as SettingsScreen).rich_effects = _settings.rich_effects
+	if next is AboutScreen:
+		(next as AboutScreen).back_to_settings = _about_return_settings
 	if next is HomeScreen:
 		var target: Dictionary = _home_target()
 		var label_key: String = "home_choose_level" if target.mode == "map" else ("home_resume_level" if target.mode == "resume" else ("home_play_level" if target.mode == "play" else "play"))
@@ -219,16 +259,16 @@ func _show(scene: PackedScene) -> void:
 		(next as HomeScreen).continue_requested.connect(continue_game)
 		(next as HomeScreen).retry_save_requested.connect(_retry_save)
 		(next as HomeScreen).settings_requested.connect(show_settings)
-		(next as HomeScreen).about_requested.connect(show_about)
 	elif next is SettingsScreen:
 		(next as SettingsScreen).language_selected.connect(_on_language_selected)
 		(next as SettingsScreen).motion_selected.connect(_on_motion_selected)
 		(next as SettingsScreen).sound_selected.connect(_on_sound_selected)
 		(next as SettingsScreen).effects_selected.connect(_on_effects_selected)
 		(next as SettingsScreen).home_requested.connect(go_home)
+		(next as SettingsScreen).about_requested.connect(show_about)
 		(next as SettingsScreen).tutorials_requested.connect(func() -> void: open_level("level_001"))
 	elif next is AboutScreen:
-		(next as AboutScreen).home_requested.connect(go_home)
+		(next as AboutScreen).home_requested.connect(_return_from_about)
 
 
 func _replace_screen(next: Control) -> void:
@@ -318,8 +358,15 @@ func _on_game_presentation_complete(won: bool) -> void:
 func _show_win_dialog() -> void:
 	_win_pending = false
 	if _win_dialog == null:
+		_win_dimmer = ColorRect.new()
+		_win_dimmer.color = Color(0.02, 0.04, 0.08, 0.55)
+		_win_dimmer.z_index = 40
+		_win_dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_win_dimmer.hide()
+		add_child(_win_dimmer)
 		_win_dialog = WinDialog.new()
 		add_child(_win_dialog)
+		_win_dialog.visibility_changed.connect(func() -> void: _win_dimmer.visible = _win_dialog.visible)
 		_win_dialog.confirmed.connect(_on_win_primary)
 		(_win_dialog as WinDialog).replay_requested.connect(_on_win_replay)
 		(_win_dialog as WinDialog).map_requested.connect(_on_win_map)
@@ -495,10 +542,12 @@ func _open_pause_settings() -> void:
 	_pause_settings.sound_selected.connect(_on_sound_selected)
 	_pause_settings.effects_selected.connect(_on_effects_selected)
 	_pause_settings.home_requested.connect(_close_pause_settings)
+	_pause_settings.about_requested.connect(show_about)
 	_wire_ui_sounds(_pause_settings)
 
 
 func _close_pause_settings() -> void:
+	_close_settings_about()
 	if _pause_settings != null:
 		_pause_settings.queue_free()
 		_pause_settings = null

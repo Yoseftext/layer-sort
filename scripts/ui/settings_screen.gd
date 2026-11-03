@@ -6,6 +6,7 @@ signal motion_selected(value: bool)
 signal sound_selected(value: bool)
 signal effects_selected(value: bool)
 signal tutorials_requested
+signal about_requested
 signal home_requested
 
 var language: String = "en"
@@ -50,6 +51,10 @@ func _ready() -> void:
 		tutorials.name = "ReplayTutorials"
 		column.add_child(tutorials)
 		tutorials.pressed.connect(func() -> void: tutorials_requested.emit())
+	var about: Button = ScreenWidgets.button(UiText.get_text("about", language))
+	about.name = "AboutButton"
+	column.add_child(about)
+	about.pressed.connect(func() -> void: about_requested.emit())
 	var home: Button = ScreenWidgets.button(UiText.get_text("back", language) if return_to_pause else UiText.get_text("home", language))
 	home.name = "HomeButton"
 	column.add_child(home)

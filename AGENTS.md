@@ -13,7 +13,8 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - Later gates: read the sections the gate names (UX → `01-UX-ART.md`, engineering/risk/Firebase → `02-ENGINEERING.md`).
 
 ## Current scope
-- **G0/G1/G1.5 and owner-authorized G2 Classic prototype only** (ADR-0003). No Circuit, G3+ or PR merges without separate owner approval.
+- **Current owner-authorized scope:** preserve G2 Classic, G3 navigation/saves/campaign1–14/G3-D flow and G4 Optical Clarity; implement the bounded Real Game UI refinement above PR #14 (ADR-0005). G5 Circuit, G6 generation, production release and PR merges remain unauthorized.
+- The G0–G2 bullets below summarize historical gate scope; they do not revoke subsequent explicit owner authorizations.
 - G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
 - G1: Godot Standard portrait smoke scene, pinned engine + export templates (`ENGINE_VERSION.lock`), APK built by GitHub Actions, installed on the connected OPPO via `agentctl` / `phone-queue` / Appium, with screenshot + logcat. Done criteria are in `03-PRODUCTION.md` section 2.
 - G1.5: project-scoped OpenCode agents (`.opencode/agents/`), QA workflows under `tools/qa/`, dependency inventory, negative-test evidence, screenshot review, and optional Shizuku preparation. Policy: `docs/current/04`–`06`, `docs/adr/ADR-0001`. No gameplay, Firebase, signing, or paid services.

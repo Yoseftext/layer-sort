@@ -82,9 +82,9 @@ func _build_ui() -> void:
 	var header: HBoxContainer = HBoxContainer.new()
 	header.add_theme_constant_override("separation", 14)
 	layout.add_child(header)
-	var home: Button = _make_button(UiText.get_text("home", language))
+	var home: Button = OpticalIconButton.make("home", UiText.get_text("home", language), "HomeButton")
 	home.name = "HomeButton"
-	home.custom_minimum_size = Vector2(112, 76)
+	home.custom_minimum_size = Vector2(96, 96)
 	header.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
 	var title: Label = _make_label(UiText.get_text("game_title", language), 22)
@@ -94,9 +94,9 @@ func _build_ui() -> void:
 	var header_space: Control = Control.new()
 	header_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(header_space)
-	var pause: Button = _make_button(UiText.get_text("pause", language))
+	var pause: Button = OpticalIconButton.make("pause", UiText.get_text("pause", language), "PauseButton")
 	pause.name = "PauseButton"
-	pause.custom_minimum_size = Vector2(112, 76)
+	pause.custom_minimum_size = Vector2(96, 96)
 	header.add_child(pause)
 	pause.pressed.connect(func() -> void: pause_requested.emit())
 	layout.add_child(title)
@@ -146,11 +146,11 @@ func _build_ui() -> void:
 	buttons.add_theme_constant_override("separation", 20)
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	layout.add_child(buttons)
-	var undo: Button = _make_button(UiText.get_text("undo", language))
+	var undo: Button = OpticalIconButton.make("undo", UiText.get_text("undo", language), "UndoButton")
 	undo.name = "UndoButton"
 	buttons.add_child(undo)
 	undo.pressed.connect(_on_undo)
-	var restart: Button = _make_button(UiText.get_text("restart", language))
+	var restart: Button = OpticalIconButton.make("restart", UiText.get_text("restart", language), "RestartButton")
 	restart.name = "RestartButton"
 	buttons.add_child(restart)
 	restart.pressed.connect(func() -> void:
@@ -185,8 +185,7 @@ func apply_language(value: String) -> void:
 	for node_name: String in ["HomeButton", "PauseButton", "UndoButton", "RestartButton"]:
 		var button: Button = find_child(node_name, true, false) as Button
 		var key: String = node_name.trim_suffix("Button").to_lower()
-		button.text = UiText.get_text(key, value)
-		button.accessibility_name = button.text
+		(button as OpticalIconButton).set_label(UiText.get_text(key, value))
 	(find_child("GameTitle", true, false) as Label).text = UiText.get_text("game_title", value)
 	(find_child("GameHelp", true, false) as Label).text = UiText.get_text("game_help", value)
 	(find_child("LevelBadge", true, false) as Label).text = UiText.get_text("level_number", value) % _session.snapshot().level_id.trim_prefix("level_")
@@ -194,14 +193,6 @@ func apply_language(value: String) -> void:
 	for index: int in range(_views.size()):
 		_views[index].accessibility_name = UiText.get_text("tube", value) % (index + 1)
 	_refresh()
-
-
-func _make_button(value: String) -> Button:
-	var button: Button = ScreenWidgets.button(value)
-	button.custom_minimum_size = Vector2(170, 92)
-	button.add_theme_font_size_override("font_size", 27)
-	OpticalTheme.style_button(button)
-	return button
 
 
 func _update_tube_layout() -> void:
