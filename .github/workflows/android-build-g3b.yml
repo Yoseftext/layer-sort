@@ -362,6 +362,7 @@ jobs:
           grep -q "G5_P3_VISUAL_PASS" logs/g5-p3-teardown-before.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-g5-p3-captures" timeout 90s xvfb-run -a godot --verbose --audio-driver Dummy --path . --script res://tests/g5/p3_visual_test.gd 2>&1 | tee logs/g5-p3-visual.log
           grep -q "G5_P3_VISUAL_PASS" logs/g5-p3-visual.log
+          if grep -Eq "ObjectDB.*leaked|resources? still in use|SCRIPT ERROR" logs/g5-p3-visual.log; then exit 1; fi
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-feedback-captures" timeout 90s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/feedback/feedback_visual_test.gd 2>&1 | tee logs/feedback-visual.log
           grep -q "FEEDBACK_VISUAL PASS" logs/feedback-visual.log
           if grep -Eq "SCRIPT ERROR|FEEDBACK_FAIL|FEEDBACK_VISUAL_FAIL" logs/feedback*.log; then exit 1; fi
