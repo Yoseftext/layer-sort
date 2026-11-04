@@ -96,7 +96,7 @@ Approved Art Brief / Visual Bible
 
 ## 7. Current gate execution
 
-The obsolete G0 checklist and one-time bootstrap prompt were moved to [the indexed archive](../archive/G0-START-INSTRUCTIONS.md). Current acceptance and limits are defined in [00-START-HERE.md](00-START-HERE.md) and ADR-0006. Do not restart G0 or treat old unchecked start tasks as current blockers.
+The obsolete G0 checklist and one-time bootstrap prompt were moved to [the indexed archive](../archive/G0-START-INSTRUCTIONS.md). Current acceptance and limits are defined in [00-START-HERE.md](00-START-HERE.md#current-project-state--2026-11-04); ADR-0006 remains the historical PR15 checkpoint record. Do not restart G0 or treat old unchecked start tasks as current blockers.
 
 ## 9. ما زال يحتاج إثباتًا، وليس سؤال تصميم جديدًا
 
@@ -109,8 +109,17 @@ The obsolete G0 checklist and one-time bootstrap prompt were moved to [the index
 
 هذه **بوابات تحقق تشغيلية** وليست مبررًا لتأخير بدء GDScript Core؛ الخطة تعتمد المبدأ وتترك الأرقام لتجربة موثقة.
 
-## Current gate reconciliation — ADR-0006
+## Historical G4 checkpoint reconciliation — ADR-0006
 
-See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. G4 checkpoint acceptance is not integration completion or 20-level MVP acceptance. Future G5 remains the Circuit proof and content 15–20 under ADR-0002.
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. At that dated checkpoint the task was CI/documentation/merge readiness only, with no gameplay, phone operations, merge or G5 implementation authorized. That acceptance alone did not prove integration or a 20-level MVP. G4 has since been integrated and accepted; current G5 acceptance and planning scope are recorded below.
 
 **Protected-main integration:** the previous blanket main-policy decision gate is superseded by [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md). No direct main pushes. Reviewed PRs, passing required CI, no unresolved blocking comments and explicit owner authorization for each PR/head SHA/target/intended changes are prerequisites for agent merge execution. No actual merge is authorized by this production plan or the current documentation task.
+
+## Current G5 acceptance and planning gate — 2026-11-04
+
+- G4 is integrated and accepted at PR18 merge `144c744b92c3e66f71ad44a0d5b962121c72bba1`; its earlier acceptance evidence above is preserved.
+- G5-P1 Level15 is accepted by owner-reported physical-device QA **12/12 PASS**.
+- G5-P2 Levels16–17 at `6e3f10f8a3fec017aed756d96e69471eb3da238d` are **ACCEPTED — OWNER-REPORTED PHYSICAL DEVICE QA**, dated 2026-11-04: **13/13 PASS**, zero reported failures. [All 13 groups and limitations](../G5_P2.md#owner-reported-physical-device-qa-acceptance--2026-11-04). This is not independent agent device QA, performance benchmarking or logcat inspection; automated CI is recorded separately.
+- G5-P3 planning only is authorized. [The plan](../G5_P3.md) is **PLANNED / NOT IMPLEMENTED**:18 Classic,19 Circuit,20 Classic, with no new mechanic. Implementation needs a separate owner decision; the roadmap's full G5 target does not authorize it automatically.
+- G5-Final visual/audio polish is deferred. G6 is not authorized. No new assets, shaders, animations, audio systems, dependencies, gameplay changes or save migrations are authorized by this documentation task. Existing rules contract stays Draft; G15-QA-001 stays OPEN.
+- PR19 stays Draft on its existing branch and base. No merge is authorized; the 20-level Core MVP and full G5 gate remain incomplete until the remaining content and applicable acceptance gates pass.
