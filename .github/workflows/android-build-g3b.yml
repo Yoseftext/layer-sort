@@ -6,9 +6,9 @@ name: android-build-g3b
 
 "on":
   push:
-    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa", "feat/g4-visual-production", "feat/g3c-classic-campaign", "feat/g3c-player-ux"]
+    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa", "feat/g4-visual-production", "feat/g3c-classic-campaign", "feat/g3c-player-ux", "feat/g3d-player-flow", "feat/g4b-optical-clarity", "feat/real-game-ui", "chore/g4-ci-trigger-fix"]
   pull_request:
-    branches: ["feat/g3a-navigation", "feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa"]
+    branches: ["feat/g3a-navigation", "feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa", "feat/g4-visual-production", "feat/g3c-classic-campaign", "feat/g3c-player-ux", "feat/g3d-player-flow", "feat/g4b-optical-clarity", "feat/real-game-ui"]
   workflow_dispatch:
 
 concurrency:
