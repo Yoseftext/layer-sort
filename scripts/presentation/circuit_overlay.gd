@@ -28,15 +28,25 @@ func _set_pulse(value: float) -> void:
 	pulse = value
 	queue_redraw()
 
+## Centers are above the entire tube control, leaving room for the ring pulse
+## and lock shackle without overlapping either liquid or the selected tube lift.
+func sensor_indicator_position() -> Vector2:
+	return _indicator_position(int(state.circuit.sensor_tube))
+
+func gate_indicator_position() -> Vector2:
+	return _indicator_position(int(state.circuit.gate_tube))
+
+func _indicator_position(index: int) -> Vector2:
+	var tube: TubeView = views[index]
+	return tube.global_position - global_position + Vector2(tube.size.x * 0.5, -22.0)
+
 func _draw() -> void:
 	if state == null or state.circuit.is_empty() or views.is_empty():
 		return
-	var sensor: TubeView = views[int(state.circuit.sensor_tube)]
-	var gate: TubeView = views[int(state.circuit.gate_tube)]
-	var a: Vector2 = sensor.global_position - global_position + Vector2(sensor.size.x * 0.5, sensor.size.y + 8)
-	var b: Vector2 = gate.global_position - global_position + Vector2(gate.size.x * 0.5, gate.size.y + 8)
+	var a: Vector2 = sensor_indicator_position()
+	var b: Vector2 = gate_indicator_position()
 	var colour: Color = TubePainter.COLOURS[int(state.circuit.target_colour)]
-	draw_line(a, b, Color(0.5, 0.8, 0.9, 0.7 if state.circuit_open else 0.3), 2.0 + pulse * 2.0, true)
+	draw_line(a, b, Color(0.5, 0.8, 0.9, 0.85 if state.circuit_open else 0.5), 1.5 + pulse, true)
 	draw_circle(a, 14.0 + pulse * 4.0, Color(0.05, 0.12, 0.2))
 	draw_arc(a, 12.0, 0, TAU, 24, colour, 3.0, true)
 	# Target colour uses the same stable numeric symbol as the liquid layers.

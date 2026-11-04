@@ -15,11 +15,10 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - G1.5 (agents/QA/tooling): read `docs/current/04-AGENT-OPERATIONS.md`; use `docs/current/05-QA-TEST-CATALOG.md` for test IDs and report fields; Shizuku only per `docs/current/06-SHIZUKU-TERMUX.md`.
 - Later gates: read the sections the gate names (UX → `01-UX-ART.md`, engineering/risk/Firebase → `02-ENGINEERING.md`).
 
-## G5-P1 owner-authorized checkpoint
-Implement only deterministic Layer Circuit and curated Level 15, preserving Classic1–14, G4 presentation and schema1 saves. G5-P2/levels16–20, G6 and merges remain unauthorized. See `docs/G5_P1.md`. This newer explicit owner authorization supersedes historical G4-only scope below.
-
 ## Current scope
-- **Current owner-authorized scope:** preserve G2 Classic, G3 navigation/saves/campaign1–14/G3-D flow and G4 Optical Clarity; accepted PR15 is frozen at c961972365258baa34cae279dfc10ab46edce2f7 with minor non-blocking polish deferred (ADR-0006); current work is G4 exit CI/documentation/merge-readiness only. G5 Circuit, G6 generation, production release and PR merges remain unauthorized.
+- G4 is integrated and accepted: PR18 merged at `144c744b92c3e66f71ad44a0d5b962121c72bba1`; owner-reported Android QA passed 10/10. Preserve accepted G4 presentation and the deferred minor polish from ADR-0006.
+- **Current owner-authorized implementation: G5-P1**, deterministic Layer Circuit and curated Level 15, including the bounded PR19 UX corrections. Preserve Classic1–14, navigation, schema1 saves and progression. See `docs/G5_P1.md`.
+- G5-P2 and Levels16–20 are not yet authorized. G6, production release and any further PR merges remain unauthorized. The PR18 protection exception applied only to that exact merge.
 - The G0–G2 bullets below summarize historical gate scope; they do not revoke subsequent explicit owner authorizations.
 - G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
 - G1: Godot Standard portrait smoke scene, pinned engine + export templates (`ENGINE_VERSION.lock`), APK built by GitHub Actions, installed on the connected OPPO via `agentctl` / `phone-queue` / Appium, with screenshot + logcat. Done criteria are in `03-PRODUCTION.md` section 2.
@@ -49,4 +48,4 @@ Commit hash, branch, PR link, build link, device evidence, exact blockers. Nothi
 
 ## Governance roles — ADR-0007
 
-ChatGPT supplies architecture guidance, independent change/risk review, test-evidence assessment and a merge-readiness recommendation. The repository owner retains final decisions, scope/priorities and exact per-merge authorization. Codex implements/tests/opens PRs and executes only an explicitly authorized exact merge. This documentation task itself authorizes no merge, main modification or protection change.
+ChatGPT supplies architecture guidance, independent change/risk review, test-evidence assessment and a merge-readiness recommendation. The repository owner retains final decisions, scope/priorities and exact per-merge authorization. Codex implements/tests/opens PRs and executes only an explicitly authorized exact merge. The current G5-P1 implementation authorizes no merge, direct main modification or protection change.

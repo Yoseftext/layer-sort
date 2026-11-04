@@ -88,7 +88,7 @@ func _build_ui() -> void:
 	home.custom_minimum_size = Vector2(96, 96)
 	header.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
-	var title: Label = _make_label(UiText.get_text("game_title", language), 22)
+	var title: Label = _make_label(_game_text("game_title"), 22)
 	title.name = "GameTitle"
 	title.custom_minimum_size.y = 38
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -159,7 +159,7 @@ func _build_ui() -> void:
 			restart_requested.emit()
 		else:
 			_on_restart())
-	var help: Label = _make_label(UiText.get_text("game_help", language), 21)
+	var help: Label = _make_label(_game_text("game_help"), 21)
 	help.name = "GameHelp"
 	help.custom_minimum_size.y = 72
 	layout.add_child(help)
@@ -173,6 +173,11 @@ func _build_ui() -> void:
 	add_child(_circuit)
 	resized.connect(_update_tube_layout)
 	_update_tube_layout()
+
+
+func _game_text(key: String) -> String:
+	var circuit: bool = _session != null and not _session.snapshot().circuit.is_empty()
+	return UiText.get_text("circuit_" + key if circuit else key, language)
 
 
 func _make_label(value: String, font_size: int) -> Label:
@@ -191,8 +196,8 @@ func apply_language(value: String) -> void:
 		var button: Button = find_child(node_name, true, false) as Button
 		var key: String = node_name.trim_suffix("Button").to_lower()
 		(button as OpticalIconButton).set_label(UiText.get_text(key, value))
-	(find_child("GameTitle", true, false) as Label).text = UiText.get_text("game_title", value)
-	(find_child("GameHelp", true, false) as Label).text = UiText.get_text("game_help", value)
+	(find_child("GameTitle", true, false) as Label).text = _game_text("game_title")
+	(find_child("GameHelp", true, false) as Label).text = _game_text("game_help")
 	(find_child("LevelBadge", true, false) as Label).text = UiText.get_text("level_number", value) % _session.snapshot().level_id.trim_prefix("level_")
 	_status.text = UiText.get_text("choose_destination", value) % (_selected_source + 1) if _selected_source >= 0 else UiText.get_text("choose", value)
 	for index: int in range(_views.size()):
