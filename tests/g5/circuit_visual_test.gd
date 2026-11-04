@@ -1,6 +1,7 @@
 extends SceneTree
 
 var checks: int = 0
+var failures: int = 0
 const TITLES: Dictionary = {"en": "LAYER SORT · CIRCUIT", "ar": "LAYER SORT · الدائرة"}
 const HINTS: Dictionary = {
 	"en": "Reveal the target color on the sensor tube to unlock the connected gate.",
@@ -11,8 +12,10 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func check(value: bool, label: String) -> void:
-	assert(value, label)
 	checks += 1
+	if not value:
+		failures += 1
+		push_error("G5_VISUAL_FAIL " + label)
 
 func check_text(game: ClassicGame, language: String) -> void:
 	check((game.find_child("GameTitle", true, false) as Label).text == TITLES[language], "Circuit title")
@@ -97,8 +100,8 @@ func run() -> void:
 		check((classic.find_child("GameHelp", true, false) as Label).text == UiText.get_text("game_help", language), "Classic help retained")
 	classic.queue_free()
 	await process_frame
-	print("G5_VISUAL_PASS checks=%d" % checks)
-	quit()
+	print("G5_VISUAL_PASS checks=%d" % checks if failures == 0 else "G5_VISUAL_FAIL failures=%d" % failures)
+	quit(0 if failures == 0 else 1)
 
 func capture(path: String) -> void:
 	await process_frame
