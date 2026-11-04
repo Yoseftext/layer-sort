@@ -356,6 +356,9 @@ jobs:
           grep -q "FEEDBACK_TESTS PASS" logs/feedback.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-g5-captures" timeout 60s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/g5/circuit_visual_test.gd 2>&1 | tee logs/g5-visual.log
           grep -q "G5_VISUAL_PASS" logs/g5-visual.log
+          git show 1e766ab8763d81d0d4389833ccff055f5fe54beb:tests/g5/p3_visual_test.gd > "$RUNNER_TEMP/p3-teardown-before.gd"
+          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-p3-teardown-before" timeout 90s xvfb-run -a godot --verbose --audio-driver Dummy --path . --script "$RUNNER_TEMP/p3-teardown-before.gd" 2>&1 | tee logs/g5-p3-teardown-before.log
+          grep -q "G5_P3_VISUAL_PASS" logs/g5-p3-teardown-before.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-g5-p3-captures" timeout 90s xvfb-run -a godot --verbose --audio-driver Dummy --path . --script res://tests/g5/p3_visual_test.gd 2>&1 | tee logs/g5-p3-visual.log
           grep -q "G5_P3_VISUAL_PASS" logs/g5-p3-visual.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-feedback-captures" timeout 90s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/feedback/feedback_visual_test.gd 2>&1 | tee logs/feedback-visual.log
