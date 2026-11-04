@@ -6,7 +6,7 @@ name: android-build-g3b
 
 "on":
   push:
-    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa", "feat/g4-visual-production", "feat/g3c-classic-campaign", "feat/g3c-player-ux", "feat/g3d-player-flow", "feat/g4b-optical-clarity", "feat/real-game-ui", "chore/g4-ci-trigger-fix", "main"]
+    branches: ["feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa", "feat/g4-visual-production", "feat/g3c-classic-campaign", "feat/g3c-player-ux", "feat/g3d-player-flow", "feat/g4b-optical-clarity", "feat/real-game-ui", "chore/g4-ci-trigger-fix", "feat/g5-p1-layer-circuit", "main"]
   pull_request:
     branches: ["feat/g3a-navigation", "feat/g3b-progression", "feat/g3b-remediation", "feat/g4-gameplay-visual", "feat/cloud-visual-qa", "feat/g4-visual-production", "feat/g3c-classic-campaign", "feat/g3c-player-ux", "feat/g3d-player-flow", "feat/g4b-optical-clarity", "feat/real-game-ui", "main"]
   workflow_dispatch:
@@ -288,6 +288,12 @@ jobs:
             echo "::error::Script error during headless smoke test."
             exit 1
           fi
+
+      - name: Run G5-P1 Circuit critical paths
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/g5/circuit_test.gd 2>&1 | tee logs/g5-circuit.log
+          grep -q "G5_CIRCUIT_PASS" logs/g5-circuit.log
 
       - name: Run G2 Classic rules unit suite
         run: |

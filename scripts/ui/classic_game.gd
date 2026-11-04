@@ -24,6 +24,7 @@ var _animation_token: int = 0
 var _pending_tap: int = -1
 var _pending_win: bool = false
 var _views: Array[TubeView] = []
+var _circuit: CircuitOverlay
 var _trail: PourTrail
 var _board_row: HBoxContainer
 var _status: Label
@@ -166,6 +167,10 @@ func _build_ui() -> void:
 	_trail.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_trail)
 	_trail.flow_started.connect(_cue.bind("pour"))
+	_circuit = CircuitOverlay.new()
+	_circuit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_circuit.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_circuit)
 	resized.connect(_update_tube_layout)
 	_update_tube_layout()
 
@@ -207,6 +212,8 @@ func _update_tube_layout() -> void:
 
 func _refresh(celebrate: bool = false) -> void:
 	var state: GameState = _session.snapshot()
+	if _circuit != null:
+		_circuit.present(state, _views, reduce_motion)
 	_moves.text = UiText.get_text("moves", language) % state.move_count
 	for index: int in range(_views.size()):
 		_views[index].reduce_motion = reduce_motion
@@ -232,6 +239,11 @@ func _on_tube_pressed(index: int) -> void:
 	var state: GameState = _session.snapshot()
 	if WinRules.is_won(state):
 		_status.text = UiText.get_text("already_won", language)
+		return
+	if CircuitRules.blocked(state, index):
+		_status.text = UiText.get_text("reject_gate_closed", language)
+		_views[index].flash_invalid()
+		_cue("invalid")
 		return
 	if _selected_source < 0:
 		if state.tubes[index].layers.is_empty():
@@ -265,6 +277,9 @@ func _on_tube_pressed(index: int) -> void:
 	_selected_source = -1
 	_pending_win = bool(result.won)
 	_status.text = UiText.get_text("pouring", language)
+	if not state.circuit.is_empty() and not state.circuit_open and _session.snapshot().circuit_open:
+		_circuit.present(_session.snapshot(), _views, reduce_motion)
+		_cue("complete")
 	state_committed.emit(_session.snapshot(), result.won)
 	var duration: float = 0.1 if reduce_motion else 0.48
 	if reduce_motion:

@@ -93,6 +93,12 @@ func _run() -> void:
 	check(game.committed_snapshot().level_id == "level_014", "primary opens level 14")
 	await solve(game, solutions["level_014"].solution)
 	win = navigation.get("_win_dialog") as WinDialog
+	check(win.ok_button_text == UiText.get_text("next_level", "en") % "015", "Classic finale offers first Circuit")
+	win.confirmed.emit()
+	game = navigation.current_screen() as ClassicGame
+	check(game.committed_snapshot().level_id == "level_015", "Next opens Circuit directly")
+	await solve(game, solutions["level_015"].solution)
+	win = navigation.get("_win_dialog") as WinDialog
 	check(win.ok_button_text == UiText.get_text("level_map", "en"), "last level primary gracefully opens Map")
 	check(not (win.find_child("MapButton", true, false) as Button).visible, "last level has no duplicate Map action")
 	win.confirmed.emit()

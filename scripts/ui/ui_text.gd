@@ -3,6 +3,7 @@ extends RefCounted
 
 const STRINGS: Dictionary = {
 	"en": {
+		"reject_gate_closed": "Locked: reveal the ring colour on the sensor tube to unlock.",
 		"subtitle": "A quiet puzzle of colour and glass",
 		"loading": "Preparing your puzzle…",
 		"play": "Play Classic",
@@ -83,6 +84,7 @@ const STRINGS: Dictionary = {
 		"reject_history_full": "Undo history is full"
 	},
 	"ar": {
+		"reject_gate_closed": "مقفل: أظهر لون الحلقة أعلى أنبوب المستشعر لفتحه.",
 		"subtitle": "لغز هادئ من الألوان والزجاج",
 		"loading": "بنجهز اللغز…",
 		"play": "العب الكلاسيكي",
