@@ -12,6 +12,10 @@ func present(value: GameState, tubes: Array[TubeView], reduced: bool) -> void:
 	state = value.copy()
 	views = tubes
 	visible = not state.circuit.is_empty()
+	if not state.circuit_open or reduced:
+		if _tween != null:
+			_tween.kill()
+		pulse = 0.0
 	if activated and not reduced:
 		if _tween != null:
 			_tween.kill()

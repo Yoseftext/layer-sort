@@ -24,6 +24,7 @@ func run() -> void:
 		await create_timer(0.55).timeout
 		await capture(output.path_join(language + "-unlocked.png"))
 		game._on_undo()
+		assert(game._circuit.pulse == 0.0)
 		assert(game.committed_snapshot().identity() == identity)
 		game.queue_free()
 		await process_frame
