@@ -18,7 +18,7 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 ## Current scope
 - G4 is integrated and accepted: PR18 merged at `144c744b92c3e66f71ad44a0d5b962121c72bba1`; owner-reported Android QA passed 10/10. Preserve accepted G4 presentation and the deferred minor polish from ADR-0006.
 - G5-P1 Level15 is accepted by owner-reported physical-device QA (12/12 PASS). G5-P2 Levels16–17 at `6e3f10f8a3fec017aed756d96e69471eb3da238d` are **ACCEPTED — OWNER-REPORTED PHYSICAL DEVICE QA**, dated 2026-11-04: 13/13 PASS, zero reported failures. Exact groups and limitations: [G5-P2 acceptance](docs/G5_P2.md#owner-reported-physical-device-qa-acceptance--2026-11-04). These are not agent-run phone tests, benchmarks or logcat inspection.
-- **Current owner-authorized work: G5-P3 planning only.** Levels18 Classic /19 Circuit /20 Classic are **PLANNED / NOT IMPLEMENTED**; gameplay implementation requires separate owner authorization. Preserve accepted Levels1–17, navigation, G4 presentation and schema1 saves. See [G5-P3 plan](docs/G5_P3.md).
+- **Current owner-authorized work: G5-P3 implementation**, Levels18 Classic /19 Circuit /20 Classic on existing Draft PR19. Content is implemented with bounded production-rule proofs; final-head CI evidence belongs in the PR/handoff. **P3 is awaiting owner device QA, NOT ACCEPTED.** Preserve accepted Levels1–17, navigation, G4 presentation and schema1 saves. See [G5-P3 implementation and gates](docs/G5_P3.md).
 - G5-Final visual and audio polish is deferred. G6, production release and any further PR merges remain unauthorized. The PR18 protection exception applied only to that exact merge.
 - The G0–G2 bullets below summarize historical gate scope; they do not revoke subsequent explicit owner authorizations.
 - G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
@@ -49,4 +49,4 @@ Commit hash, branch, PR link, build link, device evidence, exact blockers. Nothi
 
 ## Governance roles — ADR-0007
 
-ChatGPT supplies architecture guidance, independent change/risk review, test-evidence assessment and a merge-readiness recommendation. The repository owner retains final decisions, scope/priorities and exact per-merge authorization. Codex implements/tests/opens PRs and executes only an explicitly authorized exact merge. The current acceptance-recording and G5-P3 planning task authorizes no gameplay implementation, merge, direct main modification or protection change.
+ChatGPT supplies architecture guidance, independent change/risk review, test-evidence assessment and a merge-readiness recommendation. The repository owner retains final decisions, scope/priorities and exact per-merge authorization. Codex implements/tests/opens PRs and executes only an explicitly authorized exact merge. The current G5-P3 implementation authorizes no merge, direct main modification, protection change, G5-Final polish or G6.
