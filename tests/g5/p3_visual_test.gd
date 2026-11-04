@@ -63,6 +63,9 @@ func run() -> void:
 				check(not game.committed_snapshot().circuit_open, "activation Undo closes visual gate")
 			game.restart_attempt()
 			check(game.committed_snapshot().identity() == original, "Restart preserves authored content")
+			# Focus cancellation invalidates callbacks; let their finite timers settle
+			# before freeing test fixtures so the harness owns no suspended pours.
+			await create_timer(0.55).timeout
 			game.queue_free()
 			await process_frame
 	for language: String in ["en", "ar"]:
@@ -117,6 +120,7 @@ func final_campaign_flow(language: String) -> void:
 	check(home.primary_label == UiText.get_text("home_choose_level", language), "fully completed Home offers replay map")
 	(home.find_child("PlayButton", true, false) as Button).pressed.emit()
 	check(nav.current_screen() is LevelMapScreen and nav._catalog.path_for("level_021").is_empty(), "completed Play opens Map never21 or silent1")
+	await create_timer(0.55).timeout
 	nav.queue_free()
 	await process_frame
 
