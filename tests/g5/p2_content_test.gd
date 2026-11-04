@@ -89,7 +89,7 @@ func _initialize() -> void:
 		for old_id: String in legacy:
 			check(progression.completed[old_id] == legacy[old_id] and progression.is_unlocked(old_id), "existing progress unchanged")
 	check(progression.is_unlocked("level_016") and progression.is_unlocked("level_017"), "15 to16 to17 remains accessible")
-	check(not progression.is_unlocked("level_018"), "future content not packaged")
+	check(progression.is_unlocked("level_018"), "accepted P2 completion unlocks newly packaged18")
 	print("G5_P2_PASS checks=%d" % checks if failures == 0 else "G5_P2_FAIL failures=%d" % failures)
 	quit(0 if failures == 0 else 1)
 

@@ -183,15 +183,15 @@ func _run() -> void:
 	check((navigation.current_screen() as ClassicGame).committed_snapshot().level_id == "level_002", "pause return retains next level")
 	# Isolated failure fixture starts from the certified level-001 solution.
 	var progress: Progression = navigation.get("_progression") as Progression
-	for number: int in range(2, 17):
+	for number: int in range(2, 20):
 		progress.record_win("level_%03d" % number, 20)
-	navigation.open_level("level_017")
+	navigation.open_level("level_020")
 	game = navigation.current_screen() as ClassicGame
 	game.reduce_motion = true
 	await create_timer(0.15).timeout
 	check(game._views[0].get_global_rect().get_center().x < 720.0, "last-level pointer targets settle inside viewport")
 	var all_solutions: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/campaign/solutions.json"))
-	for pair: Array in all_solutions["level_017"].solution:
+	for pair: Array in all_solutions["level_020"].solution:
 		await tap(game._views[int(pair[0])], 0.01)
 		await tap(game._views[int(pair[1])], 0.01)
 		await create_timer(0.14).timeout

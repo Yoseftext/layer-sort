@@ -99,7 +99,7 @@ func _run() -> void:
 	check(game.committed_snapshot().level_id == "level_015", "Next opens Circuit directly")
 	await solve(game, solutions["level_015"].solution)
 	win = navigation.get("_win_dialog") as WinDialog
-	for number: int in [16, 17]:
+	for number: int in [16, 17, 18, 19, 20]:
 		check(win.ok_button_text == UiText.get_text("next_level", "en") % ("%03d" % number), "Next names the next allocated level")
 		win.confirmed.emit()
 		game = navigation.current_screen() as ClassicGame
