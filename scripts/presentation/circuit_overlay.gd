@@ -9,6 +9,14 @@ var drawn_gate_center: Vector2
 var _tween: Tween
 var _panel: StyleBoxFlat = StyleBoxFlat.new()
 
+func _ready() -> void:
+	set_notify_transform(true)
+	item_rect_changed.connect(queue_redraw)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSFORM_CHANGED:
+		queue_redraw()
+
 func present(value: GameState, tubes: Array[TubeView], reduced: bool) -> void:
 	var activated: bool = state != null and not state.circuit_open and value.circuit_open
 	state = value.copy()

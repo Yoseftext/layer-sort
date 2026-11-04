@@ -121,7 +121,12 @@ func final_campaign_flow(language: String) -> void:
 	check(home.primary_label == UiText.get_text("home_choose_level", language), "fully completed Home offers replay map")
 	(home.find_child("PlayButton", true, false) as Button).pressed.emit()
 	check(nav.current_screen() is LevelMapScreen and nav._catalog.path_for("level_021").is_empty(), "completed Play opens Map never21 or silent1")
-	await create_timer(0.55).timeout
+	# Drain test-owned AudioServer playbacks while players are still alive.
+	var audio: GameAudio = nav.get("_audio") as GameAudio
+	audio.stop_all()
+	for voice: AudioStreamPlayer in audio._voices:
+		voice.stream = null
+	await create_timer(0.2).timeout
 	nav.queue_free()
 	await process_frame
 
