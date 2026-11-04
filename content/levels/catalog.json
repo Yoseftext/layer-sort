@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "entry_level_id": "level_001",
+  "available_level_ids": [
+    "level_001",
+    "level_002",
+    "level_003",
+    "level_004",
+    "level_005",
+    "level_006",
+    "level_007",
+    "level_008",
+    "level_009",
+    "level_010",
+    "level_011",
+    "level_012",
+    "level_013",
+    "level_014"
+  ]
+}

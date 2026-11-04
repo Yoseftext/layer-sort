@@ -1,0 +1,38 @@
+{
+  "workflow": "qa-smoke",
+  "gate": "G1.5",
+  "status": "FAIL",
+  "timestamp_utc": "2026-10-25T04:31:01.744852+00:00",
+  "phases": {
+    "preflight": {
+      "status": "PASS",
+      "evidence": "/tmp/opencode/g15-smoke/preflight.json",
+      "screenshot": null,
+      "logcat": null
+    },
+    "install": {
+      "status": "PASS",
+      "evidence": "/tmp/opencode/g15-smoke/install.log",
+      "screenshot": null,
+      "logcat": null
+    },
+    "provenance": {
+      "status": "PASS",
+      "evidence": "/tmp/opencode/g15-smoke/provenance.json",
+      "screenshot": null,
+      "logcat": null
+    },
+    "smoke": {
+      "status": "PASS",
+      "evidence": "/root/device-tests/agent-runs/20261025-041319-17057-g15-smoke/status.json",
+      "screenshot": "/root/device-tests/agent-runs/20261025-041319-17057-g15-smoke/screenshot.png",
+      "logcat": "/root/device-tests/agent-runs/20261025-041319-17057-g15-smoke/logcat.txt"
+    },
+    "touch": {
+      "status": "FAIL",
+      "evidence": "/root/device-tests/agent-runs/20261025-041347-17631-g15-touch/status.json",
+      "screenshot": "/root/device-tests/agent-runs/20261025-041347-17631-g15-touch/after.png",
+      "logcat": "/root/device-tests/agent-runs/20261025-041347-17631-g15-touch/logcat.txt"
+    }
+  }
+}

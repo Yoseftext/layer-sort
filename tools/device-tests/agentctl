@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# Layer Sort device-test entrypoint.
+# All device checks use the shared phone reservation in /root/device-tests.
+set -Eeuo pipefail
+
+BASE="/root/device-tests"
+CONF="$BASE/services/supervisord.conf"
+PY="$BASE/.venv/bin/python"
+PKG="${LAYER_SORT_PACKAGE:-com.yoseftext.layersort.dev}"
+
+case "${1:-}" in
+  status)
+    echo "===== SERVICES ====="
+    supervisorctl -c "$CONF" status
+    echo "===== APPIUM ====="
+    curl --max-time 5 -fsS \
+      http://127.0.0.1:4723/status |
+      jq -r '.value.ready' || true
+    echo "===== PHONE ====="
+    adb devices -l
+    echo "===== TARGET PACKAGE ====="
+    echo "$PKG"
+    ;;
+
+  phone)
+    shift
+    if (( $# == 0 )); then
+      echo "Usage: agentctl phone COMMAND [ARGS...]"
+      exit 2
+    fi
+    exec /usr/local/bin/phone-queue "$@"
+    ;;
+
+  install)
+    APK="${2:-}"
+    if [[ -z "$APK" || ! -f "$APK" ]]; then
+      echo "Usage: agentctl install /path/to/layer-sort-g1-debug.apk"
+      exit 2
+    fi
+    echo "Installing through the shared phone reservation: $APK"
+    /usr/local/bin/phone-queue adb install -r "$APK"
+    echo "Install command completed. Verify package: $PKG"
+    ;;
+
+  runtime)
+    shift
+    exec /usr/local/bin/game-test "${1:-30}"
+    ;;
+
+  smoke|touch)
+    KIND="$1"
+    AGENT="${2:-manual}"
+
+    if [[ ! "$AGENT" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+      echo "Invalid agent name"
+      exit 2
+    fi
+
+    RUN="$(date +%Y%m%d-%H%M%S)-$$"
+    DIR="$BASE/agent-runs/$RUN-$AGENT-$KIND"
+    mkdir -p "$DIR"
+    chmod 700 "$DIR"
+
+    echo "Agent: $AGENT"
+    echo "Test: $KIND"
+    echo "Package: $PKG"
+    echo "Waiting for exclusive phone access..."
+
+    exec 9>"$BASE/test.lock"
+    flock -w 900 9 || {
+      echo "Phone lock timeout"
+      exit 75
+    }
+
+    echo "Phone reserved."
+    echo "Running test..."
+
+    set +e
+    LAYER_SORT_PACKAGE="$PKG" \
+    LAYER_SORT_DEVICE_TEST_BASE="$BASE" \
+    LAYER_SORT_RUN_DIR="$DIR" \
+      "$PY" -u "$BASE/appium-$KIND.py" \
+      > "$DIR/run.log" 2>&1
+    RC=$?
+    set -e
+
+    # Backward-compatible evidence names, if a script wrote only those.
+    for pair in \
+      "status.json:appium-$KIND-status.json" \
+      "screenshot.png:appium-$KIND.png" \
+      "logcat.txt:appium-$KIND-logcat.txt" \
+      "before.png:appium-$KIND-before.png" \
+      "after.png:appium-$KIND-after.png"; do
+      DEST="${pair%%:*}"
+      SRC="${pair##*:}"
+      [[ -f "$DIR/$DEST" ]] || cp "$BASE/$SRC" "$DIR/$DEST" 2>/dev/null || true
+    done
+
+    cp "$BASE/appium-$KIND-status.json" \
+      "$DIR/test-status.json" 2>/dev/null || true
+
+    jq -n \
+      --arg agent "$AGENT" \
+      --arg test "$KIND" \
+      --arg run "$RUN" \
+      --arg package "$PKG" \
+      --arg dir "$DIR" \
+      --argjson exit_code "$RC" \
+      '{
+        agent: $agent,
+        test: $test,
+        run_id: $run,
+        package: $package,
+        evidence_dir: $dir,
+        exit_code: $exit_code
+      }' > "$DIR/job.json"
+
+    echo "===== RESULT ====="
+    cat "$DIR/status.json" 2>/dev/null || true
+    echo
+    echo "Saved to: $DIR"
+    exit "$RC"
+    ;;
+
+  *)
+    echo "Usage:"
+    echo "  agentctl status"
+    echo "  agentctl phone COMMAND [ARGS...]"
+    echo "  agentctl install /path/to/main.apk"
+    echo "  agentctl smoke AGENT_NAME"
+    echo "  agentctl touch AGENT_NAME"
+    echo "  agentctl runtime SECONDS"
+    exit 2
+    ;;
+esac

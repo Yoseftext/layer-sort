@@ -1,0 +1,121 @@
+{
+  "before_commit": "dafc73398af9dd990fed729a23b60903101ab90b",
+  "before_harness": "same optical_clarity_test.gd executed from /tmp with baseline --path",
+  "after": "G4-B source tree committed with this evidence",
+  "display": "Xorg :100 dummy, llvmpipe, Godot4.7.2 Compatibility",
+  "animation_samples": "normalized0.30/0.50/0.70 with paused presentation tween and slowed scene clock during readback; not real-time performance captures",
+  "images": [
+    {
+      "path": "after/3-tubes-ar.png",
+      "sha256": "b02b652b74c7df087a6c3fe211d46194166f78ae7719f519690b40e1dbaec622"
+    },
+    {
+      "path": "after/3-tubes-en.png",
+      "sha256": "1360a495e33de61bf172f4b2b2394d7773611499050ddfd6196b91aa48fc26ca"
+    },
+    {
+      "path": "after/4-tubes-ar.png",
+      "sha256": "4e84c083c8f6a617a5af75c555261fa87b0533d65a4119efeb86f999a0949b66"
+    },
+    {
+      "path": "after/4-tubes-en.png",
+      "sha256": "051003a3f3ea95f5269762e86ee066a3e2287bf959ebc2252baf10b3653e4ad7"
+    },
+    {
+      "path": "after/5-tubes-ar.png",
+      "sha256": "f468e2d2e9129bd116dfe333ff36899e3fa9198689aea0801b5b648fa1c2fcf1"
+    },
+    {
+      "path": "after/5-tubes-en.png",
+      "sha256": "27be15eef8d09540291e136576f7d8c09512ee4bff19b3a4fd9d0d9e2a1b940c"
+    },
+    {
+      "path": "after/6-tubes-ar.png",
+      "sha256": "8cd14408e4754d9a9c4fd2ce6c22433144af9d2b8f052a75e1423e15084d267f"
+    },
+    {
+      "path": "after/6-tubes-en.png",
+      "sha256": "583a314ce6a00503ca761d4ac2541057b15948368b05dfab496058b61731cac0"
+    },
+    {
+      "path": "after/completed-reduced-motion.png",
+      "sha256": "6dc78ac10e126dce44a9eb94d72e9fe3ca087fa2d84424b4c7b8a9c797872ea1"
+    },
+    {
+      "path": "after/narrow-6-ar.png",
+      "sha256": "5c01c20ab2a4270ee48904b2d15860a2bdde34d881176fb1f30749f1497632ab"
+    },
+    {
+      "path": "after/pour-0.png",
+      "sha256": "829e38da72d516bc5798dd27c338a2e347e0f7ac97c819e35440f0ee49eba548"
+    },
+    {
+      "path": "after/pour-1.png",
+      "sha256": "8a30d311dc352a80068de50f7a5dee95a604a40cdfc47b714599e30eea94b0b2"
+    },
+    {
+      "path": "after/pour-2.png",
+      "sha256": "2bedb055976af730ca4f56abbfc9b47b7228ab6d8623d4067cdaec36f1f5cc22"
+    },
+    {
+      "path": "after/selected.png",
+      "sha256": "9f920cd867a0d1930307a49ec4e827b0775fb7bb4117f334ab73218b051d1e95"
+    },
+    {
+      "path": "before/3-tubes-ar.png",
+      "sha256": "f1a5a3783d79b970b824b7198fa9e426900e92ec573e42dd492a088e5bd4460b"
+    },
+    {
+      "path": "before/3-tubes-en.png",
+      "sha256": "63c2424715557b1a6252743b6559fa47861c3bfc1ab6e4bfbe9a001ac0ffc4b2"
+    },
+    {
+      "path": "before/4-tubes-ar.png",
+      "sha256": "d19017aa26ce308856bf6536a1c1990226150ecca2f0932b401c743570154a78"
+    },
+    {
+      "path": "before/4-tubes-en.png",
+      "sha256": "08734ed89ef6f61b7ad593b088d9b55ef6efec7234f2c726bd6422032385955a"
+    },
+    {
+      "path": "before/5-tubes-ar.png",
+      "sha256": "1a8dfae26189accefc0c81583bb0a0f5f0831ad4b1cd9cd31458b0aa58b38146"
+    },
+    {
+      "path": "before/5-tubes-en.png",
+      "sha256": "747b1bda597811fb5c3c5392458b2975f28daf245cfda69678712ed616052763"
+    },
+    {
+      "path": "before/6-tubes-ar.png",
+      "sha256": "db74cf3c4c82a30311a7f6b77f265dcc89b6cf8d2974b34876d949ef437e831a"
+    },
+    {
+      "path": "before/6-tubes-en.png",
+      "sha256": "9ae40ec477e0b82982c94f38773030336da576d9aa565c47af52575ed391a3b1"
+    },
+    {
+      "path": "before/completed-reduced-motion.png",
+      "sha256": "266c4f2f6f2293300c4398fb32ad09b2ebcb573c04deaa6dfd431fa3e94abd1e"
+    },
+    {
+      "path": "before/narrow-6-ar.png",
+      "sha256": "eb0b55cb9fc3e1a907a94ecf44fa4326602ee2b0e27f3172ca10d544306b9bb1"
+    },
+    {
+      "path": "before/pour-0.png",
+      "sha256": "a2ad77abefba232ed0d87f7470d4fa6056aed14bd7886103bda1b1c161fc9598"
+    },
+    {
+      "path": "before/pour-1.png",
+      "sha256": "6c2e4acb1f58feb8350d0552e232ec640b1082e163b0d2ab565e1234b09d177a"
+    },
+    {
+      "path": "before/pour-2.png",
+      "sha256": "e2d86fba7c6854722b80dea040a9674c6eb40a2d7f1ef4334d76eec95c972609"
+    },
+    {
+      "path": "before/selected.png",
+      "sha256": "e7af4afa7bd16019d8624cc9aeeea1c246dbcd844444b0cc0533314b7e541c95"
+    }
+  ]
+}

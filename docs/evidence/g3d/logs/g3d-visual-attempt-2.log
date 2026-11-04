@@ -1,0 +1,199 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+LAYER_SORT_G3_HOME_READY
+QA_POINTER MapButton (360.0, 868.0) window=root
+QA_POINTER @Button@24 (360.0, 1496.0) window=root
+LAYER_SORT_G3_HOME_READY
+QA_POINTER SettingsButton (360.0, 988.0) window=root
+QA_POINTER SoundToggle (360.0, 902.0) window=root
+QA_POINTER SoundToggle (360.0, 902.0) window=root
+QA_POINTER EffectsToggle (360.0, 1022.0) window=root
+QA_POINTER EffectsToggle (360.0, 1022.0) window=root
+QA_POINTER ArabicButton (360.0, 608.0) window=root
+QA_POINTER HomeButton (360.0, 1297.0) window=root
+LAYER_SORT_G3_HOME_READY
+QA_POINTER AboutButton (360.0, 1118.0) window=root
+QA_POINTER HomeButton (360.0, 1071.0) window=root
+LAYER_SORT_G3_HOME_READY
+QA_POINTER SettingsButton (360.0, 998.0) window=root
+QA_POINTER EnglishButton (360.0, 508.0) window=root
+QA_POINTER HomeButton (360.0, 1262.0) window=root
+LAYER_SORT_G3_HOME_READY
+QA_POINTER PlayButton (360.0, 748.0) window=root
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_001
+QA_POINTER @Button@87 (136.0, 785.0) window=root
+QA_POINTER @Button@88 (248.0, 785.0) window=root
+LAYER_SORT_G2_REJECT FULL_DESTINATION
+QA_POINTER @Button@90 (472.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 1 3 1
+QA_POINTER @Button@89 (360.0, 785.0) window=root
+QA_POINTER UndoButton (265.0, 1334.0) window=root
+LAYER_SORT_G2_UNDO level_001|1|4|0|[0,1,2,0]|[1,2,0,1]|[2,0,1,2]|[]|[]
+QA_POINTER @Button@87 (136.0, 785.0) window=root
+QA_POINTER @Button@90 (472.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 0 3 1
+QA_POINTER RestartButton (455.0, 1334.0) window=root
+QA_POINTER @Button@102 (235.0, 894.5) window=@ConfirmationDialog@104
+QA_POINTER PauseButton (604.5, 94.0) window=root
+QA_POINTER SettingsButton (360.0, 844.0) window=root
+QA_POINTER ArabicButton (360.0, 668.0) window=root
+QA_POINTER HomeButton (360.0, 1237.0) window=root
+QA_POINTER ResumeButton (360.0, 621.0) window=root
+QA_POINTER PauseButton (155.0, 94.0) window=root
+QA_POINTER RestartButton (360.0, 741.0) window=root
+QA_POINTER @Button@100 (251.0, 884.0) window=@ConfirmationDialog@104
+LAYER_SORT_G2_RESTART level_001|1|4|0|[0,1,2,0]|[1,2,0,1]|[2,0,1,2]|[]|[]
+QA_POINTER PauseButton (155.0, 94.0) window=root
+QA_POINTER SettingsButton (360.0, 861.0) window=root
+QA_POINTER EnglishButton (360.0, 568.0) window=root
+QA_POINTER @CheckButton@147 (360.0, 842.0) window=root
+QA_POINTER HomeButton (360.0, 1202.0) window=root
+QA_POINTER ResumeButton (360.0, 604.0) window=root
+QA_POINTER @Button@87 (136.0, 785.0) window=root
+QA_POINTER @Button@90 (472.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 0 3 1
+QA_POINTER @Button@89 (360.0, 785.0) window=root
+QA_POINTER @Button@87 (136.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 2 0 1
+QA_POINTER @Button@88 (248.0, 785.0) window=root
+QA_POINTER @Button@89 (360.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 1 2 1
+QA_POINTER @Button@88 (248.0, 785.0) window=root
+QA_POINTER @Button@90 (472.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 1 3 1
+QA_POINTER @Button@87 (136.0, 785.0) window=root
+QA_POINTER @Button@88 (248.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 0 1 2
+QA_POINTER @Button@89 (360.0, 785.0) window=root
+QA_POINTER @Button@87 (136.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 2 0 2
+QA_POINTER @Button@89 (360.0, 785.0) window=root
+QA_POINTER @Button@90 (472.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 2 3 1
+QA_POINTER @Button@88 (248.0, 785.0) window=root
+QA_POINTER @Button@89 (360.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 1 2 3
+QA_POINTER @Button@87 (136.0, 785.0) window=root
+QA_POINTER @Button@88 (248.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 0 1 3
+QA_POINTER @Button@87 (136.0, 785.0) window=root
+QA_POINTER @Button@90 (472.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 0 3 1
+LAYER_SORT_G2_WIN
+QA_POINTER @Button@158 (359.5, 1144.5) window=@AcceptDialog@160
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_002
+QA_POINTER PauseButton (604.5, 94.0) window=root
+QA_POINTER MapButton (360.0, 964.0) window=root
+QA_POINTER level_002 (360.5, 264.0) window=root
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_002
+QA_POINTER @Button@204 (136.0, 785.0) window=root
+QA_POINTER @Button@207 (472.0, 785.0) window=root
+LAYER_SORT_G2_MOVE 0 3 1
+QA_POINTER HomeButton (115.5, 94.0) window=root
+QA_POINTER @Button@204 (136.0, 785.0) window=root
+LAYER_SORT_G3_HOME_READY
+QA_POINTER PlayButton (360.0, 748.0) window=root
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_002
+QA_POINTER PauseButton (604.5, 94.0) window=root
+QA_POINTER SettingsButton (360.0, 844.0) window=root
+QA_POINTER ArabicButton (360.0, 668.0) window=root
+QA_POINTER HomeButton (360.0, 1237.0) window=root
+QA_POINTER ResumeButton (360.0, 621.0) window=root
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_014
+QA_POINTER @Button@285 (108.0, 851.0) window=root
+QA_POINTER @Button@289 (508.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 0 4 1
+QA_POINTER @Button@285 (108.0, 851.0) window=root
+QA_POINTER @Button@290 (608.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 0 5 1
+QA_POINTER @Button@286 (208.0, 851.0) window=root
+QA_POINTER @Button@289 (508.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 1 4 1
+QA_POINTER @Button@286 (208.0, 851.0) window=root
+QA_POINTER @Button@290 (608.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 1 5 1
+QA_POINTER @Button@287 (308.0, 851.0) window=root
+QA_POINTER @Button@285 (108.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 2 0 1
+QA_POINTER @Button@286 (208.0, 851.0) window=root
+QA_POINTER @Button@287 (308.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 1 2 1
+QA_POINTER @Button@285 (108.0, 851.0) window=root
+QA_POINTER @Button@286 (208.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 0 1 2
+QA_POINTER @Button@287 (308.0, 851.0) window=root
+QA_POINTER @Button@285 (108.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 2 0 2
+QA_POINTER @Button@287 (308.0, 851.0) window=root
+QA_POINTER @Button@289 (508.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 2 4 1
+QA_POINTER @Button@287 (308.0, 851.0) window=root
+QA_POINTER @Button@290 (608.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 2 5 1
+QA_POINTER @Button@288 (408.0, 851.0) window=root
+QA_POINTER @Button@290 (608.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 3 5 1
+QA_POINTER @Button@288 (408.0, 851.0) window=root
+QA_POINTER @Button@285 (108.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 3 0 1
+QA_POINTER @Button@288 (408.0, 851.0) window=root
+QA_POINTER @Button@289 (508.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 3 4 1
+QA_POINTER @Button@286 (208.0, 851.0) window=root
+QA_POINTER @Button@288 (408.0, 851.0) window=root
+LAYER_SORT_G2_MOVE 1 3 3
+LAYER_SORT_G2_WIN
+QA_POINTER @Button@297 (360.0, 1134.0) window=@AcceptDialog@299
+LAYER_SORT_G2_READY
+LAYER_SORT_G3_GAME_READY level_001
+QA_POINTER @Button@322 (136.0, 812.0) window=root
+QA_POINTER @Button@325 (472.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 0 3 1
+QA_POINTER @Button@324 (360.0, 812.0) window=root
+QA_POINTER @Button@322 (136.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 2 0 1
+QA_POINTER @Button@323 (248.0, 812.0) window=root
+QA_POINTER @Button@324 (360.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 1 2 1
+QA_POINTER @Button@323 (248.0, 812.0) window=root
+QA_POINTER @Button@325 (472.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 1 3 1
+QA_POINTER @Button@322 (136.0, 812.0) window=root
+QA_POINTER @Button@323 (248.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 0 1 2
+QA_POINTER @Button@324 (360.0, 812.0) window=root
+QA_POINTER @Button@322 (136.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 2 0 2
+QA_POINTER @Button@324 (360.0, 812.0) window=root
+QA_POINTER @Button@325 (472.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 2 3 1
+QA_POINTER @Button@323 (248.0, 812.0) window=root
+QA_POINTER @Button@324 (360.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 1 2 3
+QA_POINTER @Button@322 (136.0, 812.0) window=root
+QA_POINTER @Button@323 (248.0, 812.0) window=root
+LAYER_SORT_G2_MOVE 0 1 3
+QA_POINTER @Button@322 (136.0, 812.0) window=root
+QA_POINTER @Button@325 (472.0, 812.0) window=root
+ERROR: G3B_SAVE_WRITE_FAILED
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _persist (res://scripts/ui/navigation_coordinator.gd:276)
+       [1] _on_game_commit (res://scripts/ui/navigation_coordinator.gd:307)
+       [2] _on_tube_pressed (res://scripts/ui/classic_game.gd:275)
+LAYER_SORT_G2_MOVE 0 3 1
+LAYER_SORT_G2_WIN
+QA_POINTER @Button@337 (512.5, 884.0) window=@ConfirmationDialog@339
+CLOUD_VISUAL_TESTS status=PASS checks=185 failures=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

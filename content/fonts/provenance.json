@@ -1,0 +1,38 @@
+[
+  {
+    "file": "Manrope.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/Manrope%5Bwght%5D.ttf",
+    "sha256": "3ae11c49db0455a3cc33e37d380f20fdb8c7f8b41dc07625c177e3d87a9d6ae6",
+    "bytes": 164700,
+    "retrieved": "2026-11-02",
+    "license": "SIL OFL 1.1",
+    "modification": "none"
+  },
+  {
+    "file": "manrope-OFL.txt",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt",
+    "sha256": "58172e0c0fac2cda8a37b348164bb55e44b0e69051e557e92b1d3f6910141f7b",
+    "bytes": 4387,
+    "retrieved": "2026-11-02",
+    "license": "SIL OFL 1.1",
+    "modification": "none"
+  },
+  {
+    "file": "NotoSansArabic.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosansarabic/NotoSansArabic%5Bwdth%2Cwght%5D.ttf",
+    "sha256": "63111b5b2e074dd48cc67692e0a2726d86ee94c1c37fe8598257b7b4e87e869e",
+    "bytes": 844676,
+    "retrieved": "2026-11-02",
+    "license": "SIL OFL 1.1",
+    "modification": "none"
+  },
+  {
+    "file": "notosansarabic-OFL.txt",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosansarabic/OFL.txt",
+    "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96",
+    "bytes": 4382,
+    "retrieved": "2026-11-02",
+    "license": "SIL OFL 1.1",
+    "modification": "none"
+  }
+]

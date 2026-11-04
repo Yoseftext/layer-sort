@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# Safe ADB endpoint discovery for the shared OPPO phone.
+#
+# Rules:
+#   - Reuse an already-connected matching device without restarting anything.
+#   - Otherwise try the cached endpoint and ADB's own advertised mDNS
+#     `_adb-tls-connect._tcp` endpoints only.
+#   - Validate model/serial before remembering an endpoint.
+#   - Never scan thousands of ports. If discovery fails, say exactly why.
+set -Eeuo pipefail
+umask 077
+
+CACHE="${LAYER_SORT_PHONE_ENDPOINT_CACHE:-/root/.config/layersort/phone-endpoint}"
+MODEL="${PHONE_MODEL:-CPH1937}"
+SERIAL="${PHONE_SERIAL:-OP4B80L1}"
+EXPECTED_IP="${PHONE_IP:-}"
+
+mkdir -p "$(dirname "$CACHE")"
+
+adb start-server >/dev/null 2>&1
+
+remember() {
+    printf '%s\n' "$1" > "$CACHE"
+    echo "PHONE_CONNECTED: $1"
+}
+
+online_target() {
+    local line endpoint state rest
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        read -r endpoint state rest <<< "$line"
+        [[ "$state" == "device" ]] || continue
+        if [[ "$rest" == *"model:$MODEL"* || "$rest" == *"device:$SERIAL"* ]]; then
+            printf '%s\n' "$endpoint"
+            return 0
+        fi
+    done < <(adb devices -l | tail -n +2)
+    return 1
+}
+
+target_is_expected() {
+    local endpoint="$1" found_model found_serial
+    found_model="$(adb -s "$endpoint" shell getprop ro.product.model 2>/dev/null | tr -d '\r' | head -1)"
+    found_serial="$(adb -s "$endpoint" shell getprop ro.serialno 2>/dev/null | tr -d '\r' | head -1)"
+    [[ "$found_model" == "$MODEL" || "$found_serial" == "$SERIAL" ]]
+}
+
+# Reuse the healthy connection; do not reconnect or restart services.
+CURRENT="$(online_target || true)"
+if [[ -n "$CURRENT" ]]; then
+    remember "$CURRENT"
+    exit 0
+fi
+
+# Remove stale offline entries only (never kill a healthy device).
+while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    read -r endpoint state _ <<< "$line"
+    if [[ "$state" == "offline" ]]; then
+        adb disconnect "$endpoint" >/dev/null 2>&1 || true
+    fi
+done < <(adb devices | tail -n +2)
+
+CANDIDATES=()
+
+if (( $# == 1 )); then
+    CANDIDATES+=("$1")
+elif (( $# == 0 )); then
+    if [[ -s "$CACHE" ]]; then
+        CANDIDATES+=("$(<"$CACHE")")
+    fi
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        read -r _name type endpoint _rest <<< "$line"
+        [[ "$type" == "_adb-tls-connect._tcp" ]] || continue
+        CANDIDATES+=("$endpoint")
+    done < <(timeout 5s adb mdns services 2>/dev/null || true)
+else
+    echo "Usage: phone-connect [IP:PORT]"
+    exit 2
+fi
+
+declare -A SEEN=()
+for ENDPOINT in "${CANDIDATES[@]}"; do
+    [[ -n "$ENDPOINT" ]] || continue
+    [[ -z "${SEEN[$ENDPOINT]:-}" ]] || continue
+    SEEN[$ENDPOINT]=1
+    [[ "$ENDPOINT" =~ ^[0-9.]+:[0-9]+$ ]] || continue
+
+    PORT="${ENDPOINT##*:}"
+    (( PORT >= 1 && PORT <= 65535 )) || continue
+
+    if [[ -n "$EXPECTED_IP" && "${ENDPOINT%:*}" != "$EXPECTED_IP" ]]; then
+        echo "Skipping advertised endpoint outside PHONE_IP=$EXPECTED_IP: $ENDPOINT"
+        continue
+    fi
+
+    echo "Trying $ENDPOINT"
+    timeout 10s adb connect "$ENDPOINT" >/dev/null 2>&1 || true
+
+    if [[ "$(adb -s "$ENDPOINT" get-state 2>/dev/null | tr -d '\r')" == "device" ]] &&
+       target_is_expected "$ENDPOINT"; then
+        remember "$ENDPOINT"
+        exit 0
+    fi
+
+    adb disconnect "$ENDPOINT" >/dev/null 2>&1 || true
+done
+
+echo "MANUAL_ACTION_REQUIRED"
+echo "No advertised ADB endpoint matched model $MODEL / serial $SERIAL."
+echo "Enable Wireless debugging or provide its current IP:PORT."
+echo "No network port scan was performed."
+exit 1

@@ -1,0 +1,21 @@
+# Dedicated editor/engine caches and generated build outputs.
+/.godot/
+
+# Mono/.NET crash dumps
+/mono_crashes.d.*
+
+# Spike build outputs (uploaded as CI artifacts, never committed)
+/build/
+
+# CI log captures
+/logs/
+
+# Debug signing material must never enter Git.
+*.keystore
+*.jks
+secrets/
+.env
+
+# Python bytecode from local syntax checks
+__pycache__/
+*.pyc

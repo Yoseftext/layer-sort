@@ -1,0 +1,35 @@
+; Engine configuration file.
+; Layer Sort — G1 Godot 4 Standard / GDScript Android smoke.
+; Product target: Android, portrait only, offline-first, Compatibility renderer.
+; Engine/templates are pinned in ENGINE_VERSION.lock.
+
+config_version=5
+
+[application]
+
+config/name="Layer Sort"
+config/version="0.3.2-g3b"
+run/main_scene="res://scenes/navigation/root.tscn"
+config/quit_on_go_back=false
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1600
+window/size/window_width_override=720
+window/size/window_height_override=1600
+window/handheld/orientation=1
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+
+[internationalization]
+
+locale/fallback="en"

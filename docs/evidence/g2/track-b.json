@@ -1,0 +1,52 @@
+{
+  "track": "B \u2014 Real Android Device QA",
+  "status": "PASS",
+  "checks": [
+    {
+      "test": "installed APK SHA-256",
+      "status": "PASS"
+    },
+    {
+      "test": "launch/foreground/portrait/READY",
+      "status": "PASS"
+    },
+    {
+      "test": "valid move",
+      "status": "PASS"
+    },
+    {
+      "test": "invalid colour",
+      "status": "PASS"
+    },
+    {
+      "test": "Undo",
+      "status": "PASS"
+    },
+    {
+      "test": "Restart",
+      "status": "PASS"
+    },
+    {
+      "test": "solution/Win",
+      "status": "PASS"
+    }
+  ],
+  "workflow_run": "40194773406",
+  "commit": "437cd1f",
+  "expected_apk_sha256": "1f6751e4f8e7fa556f61c937d90080ce99b910868148a06c9acb700df2355247",
+  "issue": "G15-QA-001 remains OPEN; no external-overlay retry",
+  "device_model": "CPH1937",
+  "android_api": "30",
+  "installed_apk_sha256": "1f6751e4f8e7fa556f61c937d90080ce99b910868148a06c9acb700df2355247",
+  "fatal_line_count": 0,
+  "screenshots": {
+    "initial": "initial.png",
+    "valid": "valid.png",
+    "invalid": "invalid.png",
+    "undo": "undo.png",
+    "restart": "restart.png",
+    "win": "win.png"
+  },
+  "marker_evidence": "markers.log",
+  "raw_device_evidence_private": "/tmp/opencode/g2-track-b-final"
+}

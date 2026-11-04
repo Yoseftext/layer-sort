@@ -1,0 +1,53 @@
+{
+  "track": "A \u2014 Code & CI QA",
+  "status": "PASS",
+  "source_commit": "437cd1ffcb5394e1ff65b8d6fc16864a238951b8",
+  "workflow_run": "40194773406",
+  "workflow_url": "https://github.com/Yoseftext/layer-sort/actions/runs/40194773406",
+  "headless_checks": 68,
+  "headless_failures": 0,
+  "apk_sha256": "1f6751e4f8e7fa556f61c937d90080ce99b910868148a06c9acb700df2355247",
+  "apk_size": 28430837,
+  "provenance_checks": [
+    {
+      "id": "NEG-03",
+      "status": "PASS",
+      "detail": "expected hash=1f6751e4f8e7fa556f61c937d90080ce99b910868148a06c9acb700df2355247; actual=1f6751e4f8e7fa556f61c937d90080ce99b910868148a06c9acb700df2355247"
+    },
+    {
+      "id": "ENV-05",
+      "status": "PASS",
+      "detail": "valid APK=True; C# payload absent=True"
+    },
+    {
+      "id": "NEG-01",
+      "status": "PASS",
+      "detail": "expected package=com.yoseftext.layersort.dev; actual=com.yoseftext.layersort.dev"
+    },
+    {
+      "id": "SEC-01",
+      "status": "PASS",
+      "detail": "certificate SHA-256=de1faa3e10dbcc058f3f1b13c34fb1eb929140bbbe0a7499b348f75d8a1c095e"
+    },
+    {
+      "id": "NEG-02",
+      "status": "PASS",
+      "detail": "expected orientation=PORTRAIT; actual=PORTRAIT"
+    },
+    {
+      "id": "ENV-05",
+      "status": "PASS",
+      "detail": "launcher alias and arm64-v8a present"
+    },
+    {
+      "id": "DEV-06",
+      "status": "PASS",
+      "detail": "run=40194773406 conclusion=success commit=437cd1ffcb5394e1ff65b8d6fc16864a238951b8"
+    },
+    {
+      "id": "DEV-06",
+      "status": "PASS",
+      "detail": "CI artifact SHA-256=1f6751e4f8e7fa556f61c937d90080ce99b910868148a06c9acb700df2355247; supplied APK SHA-256=1f6751e4f8e7fa556f61c937d90080ce99b910868148a06c9acb700df2355247"
+    }
+  ]
+}
