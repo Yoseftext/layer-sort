@@ -3,6 +3,9 @@ extends RefCounted
 
 ## Original vector glass/liquid renderer, shared by static tubes and the pour ghost.
 const COLOURS: Array[Color] = [Color("f47783"), Color("55d4c3"), Color("f5c65a"), Color("b7a2fa"), Color("78b8fa"), Color("f5a873")]
+## Tunable comparison values; top meniscus remains unchanged.
+var internal_highlight_alpha: float = 0.12
+var internal_surface_lightening: float = 0.04
 var _glass: StyleBoxFlat = StyleBoxFlat.new()
 var _inner: StyleBoxFlat = StyleBoxFlat.new()
 var _selection: StyleBoxFlat = StyleBoxFlat.new()
@@ -73,11 +76,11 @@ func _draw_liquid(canvas: CanvasItem, inner: Rect2, layers: Array[int], capacity
 			var band_width: float = region.size.x * 0.26 / float(bands)
 			canvas.draw_rect(Rect2(region.position + Vector2(float(band) * band_width, 0), Vector2(band_width, region.size.y)), Color(0.04, 0.08, 0.15, shade))
 			canvas.draw_rect(Rect2(region.position + Vector2(region.size.x - float(band + 1) * band_width, 0), Vector2(band_width, region.size.y)), Color(0.04, 0.08, 0.15, shade * 0.8))
-		canvas.draw_colored_polygon(_ellipse(Vector2(region.get_center().x, region.position.y + 2), Vector2(region.size.x * 0.5 - 1, 2.2)), COLOURS[colour_index].lightened(0.10))
-		canvas.draw_line(region.position + Vector2(3, 1), region.position + Vector2(region.size.x - 3, 1), Color(1, 1, 1, 0.30), 1.0)
+		canvas.draw_colored_polygon(_ellipse(Vector2(region.get_center().x, region.position.y + 2), Vector2(region.size.x * 0.5 - 1, 2.2)), COLOURS[colour_index].lightened(internal_surface_lightening))
+		canvas.draw_line(region.position + Vector2(3, 1), region.position + Vector2(region.size.x - 3, 1), Color(1, 1, 1, internal_highlight_alpha), 1.0)
 		if amount > 0.65:
 			for dot: int in range(colour_index + 1):
-				canvas.draw_circle(region.position + Vector2(12 + dot * 7, region.size.y * 0.52), 2.3, Color("152437", 0.72), true, -1.0, true)
+				canvas.draw_circle(marker_center(region, colour_index + 1, dot), marker_radius(region), Color("152437", 0.72), true, -1.0, true)
 	if units > 0:
 		var surface: float = inner.end.y - height * units
 		var top_colour: int = layers[ceili(units) - 1] if ceili(units) <= layers.size() else added_colour
@@ -95,3 +98,15 @@ func _ellipse(center: Vector2, radius: Vector2) -> PackedVector2Array:
 		var angle: float = TAU * float(step) / 24.0
 		points.append(center + Vector2(cos(angle) * radius.x, sin(angle) * radius.y))
 	return points
+
+
+static func marker_radius(region: Rect2) -> float:
+	return maxf(0.0, minf(2.3, minf(region.size.x / 12.0, region.size.y / 8.0)))
+
+static func marker_center(region: Rect2, count: int, index: int) -> Vector2:
+	var columns: int = mini(count, 3)
+	var rows: int = ceili(float(count) / 3.0)
+	var row: int = index / 3
+	var row_columns: int = mini(columns, count - row * 3)
+	var spacing: float = marker_radius(region) * 3.0
+	return region.get_center() + Vector2((float(index % 3) - float(row_columns - 1) * 0.5) * spacing, (float(row) - float(rows - 1) * 0.5) * spacing)

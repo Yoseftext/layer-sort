@@ -43,13 +43,13 @@ func _draw() -> void:
 				var direction: Vector2 = Vector2.RIGHT.rotated(TAU * float(index) / 8.0)
 				draw_line(direction * 10, direction * 15, color, 3.0, true)
 		"undo":
-			draw_line(Vector2(-13, -6), Vector2(2, -6), color, 2.4, true)
-			draw_arc(Vector2(2, 3), 9, -PI * 0.5, PI * 0.5, 20, color, 2.4, true)
-			draw_line(Vector2(2, 12), Vector2(-4, 12), color, 2.4, true)
-			line([Vector2(-6,-13),Vector2(-13,-6),Vector2(-6,1)],color)
+			# A single return arrow, distinct from Restart's complete circular path.
+			line([Vector2(-14, -3), Vector2(1, -3), Vector2(8, 3), Vector2(8, 12)], color)
+			line([Vector2(-6, -11), Vector2(-14, -3), Vector2(-6, 5)], color)
 		"restart":
-			draw_arc(Vector2.ZERO, 12, -PI * 0.75, PI * 0.65, 26, color, 2.4, true)
-			line([Vector2(-12,-3),Vector2(-10,-12),Vector2(-1,-10)],color)
+			draw_arc(Vector2.ZERO, 12, -PI * 0.5, PI * 1.35, 28, color, 2.4, true)
+			line([Vector2(-12, -9), Vector2(-5, -11), Vector2(-3, -4)], color)
+
 	draw_set_transform(Vector2.ZERO)
 
 func line(points: Array[Vector2], color: Color) -> void:

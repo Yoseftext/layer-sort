@@ -24,9 +24,12 @@ var _animation_token: int = 0
 var _pending_tap: int = -1
 var _pending_win: bool = false
 var _views: Array[TubeView] = []
+var _circuit: CircuitOverlay
 var _trail: PourTrail
-var _board_row: HBoxContainer
-var _status: Label
+var _board: TubeBoard
+var _board_panel: PanelContainer
+var _info: VBoxContainer
+var _status: GameplayFeedback
 var _moves: Label
 var _contacts: Array[int] = []
 var _suspended: bool = false
@@ -58,6 +61,7 @@ func _ready() -> void:
 	var level_number: int = _session.snapshot().level_id.trim_prefix("level_").to_int()
 	if level_number >= 1 and level_number <= 5:
 		var guide: TutorialGuide = TutorialGuide.new()
+		guide.name = "TutorialGuide"
 		guide.game = self
 		add_child(guide)
 	print(READY_MARKER)
@@ -87,35 +91,29 @@ func _build_ui() -> void:
 	home.custom_minimum_size = Vector2(96, 96)
 	header.add_child(home)
 	home.pressed.connect(func() -> void: home_requested.emit())
-	var title: Label = _make_label(UiText.get_text("game_title", language), 22)
-	title.name = "GameTitle"
-	title.custom_minimum_size.y = 38
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var header_space: Control = Control.new()
-	header_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(header_space)
+	_info = VBoxContainer.new()
+	_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_info.alignment = BoxContainer.ALIGNMENT_CENTER
+	header.add_child(_info)
 	var pause: Button = OpticalIconButton.make("pause", UiText.get_text("pause", language), "PauseButton")
 	pause.name = "PauseButton"
 	pause.custom_minimum_size = Vector2(96, 96)
 	header.add_child(pause)
 	pause.pressed.connect(func() -> void: pause_requested.emit())
-	layout.add_child(title)
-	var info: HBoxContainer = HBoxContainer.new()
-	info.add_theme_constant_override("separation", 20)
-	layout.add_child(info)
-	var level: Label = _make_label(UiText.get_text("level_number", language) % _session.snapshot().level_id.trim_prefix("level_"), 23)
+	var level: Label = _make_label(UiText.get_text("level_number", language) % str(_session.snapshot().level_id.trim_prefix("level_").to_int()), 23)
 	level.name = "LevelBadge"
 	level.add_theme_color_override("font_color", ScreenWidgets.ACCENT)
 	level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(level)
+	_info.add_child(level)
 	_moves = _make_label(UiText.get_text("moves", language) % 0, 25)
 	_moves.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(_moves)
-	_status = _make_label(UiText.get_text("choose", language), 23)
-	_status.add_theme_color_override("font_color", OpticalTheme.MUTED)
-	layout.add_child(_status)
+	_info.add_child(_moves)
+	_status = GameplayFeedback.new()
+	_status.name = "GameplayFeedback"
+	add_child(_status)
 	var board: PanelContainer = PanelContainer.new()
 	board.name = "BoardPanel"
+	_board_panel = board
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var panel: StyleBoxFlat = StyleBoxFlat.new()
 	panel.bg_color = Color.TRANSPARENT
@@ -127,17 +125,14 @@ func _build_ui() -> void:
 	layout.add_child(board)
 	var center: CenterContainer = CenterContainer.new()
 	board.add_child(center)
-	var row: HBoxContainer = HBoxContainer.new()
-	row.name = "TubeRow"
-	row.add_theme_constant_override("separation", 12)
-	row.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	center.add_child(row)
-	_board_row = row
 	var state: GameState = _session.snapshot()
+	_board = TubeBoard.new()
+	_board.build(state.tubes.size())
+	center.add_child(_board)
 	for index: int in range(state.tubes.size()):
 		var tube: TubeView = TubeView.new()
 		tube.custom_minimum_size = Vector2(100, 400)
-		row.add_child(tube)
+		_board.add_tube(tube, index, state.tubes.size())
 		tube.accessibility_name = UiText.get_text("tube", language) % (index + 1)
 		tube.pressed.connect(_on_tube_pressed.bind(index))
 		_views.append(tube)
@@ -158,15 +153,16 @@ func _build_ui() -> void:
 			restart_requested.emit()
 		else:
 			_on_restart())
-	var help: Label = _make_label(UiText.get_text("game_help", language), 21)
-	help.name = "GameHelp"
-	help.custom_minimum_size.y = 72
-	layout.add_child(help)
 	_trail = PourTrail.new()
 	_trail.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_trail)
 	_trail.flow_started.connect(_cue.bind("pour"))
+	_circuit = CircuitOverlay.new()
+	_circuit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_circuit.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_circuit)
 	resized.connect(_update_tube_layout)
+	board.resized.connect(_update_tube_layout)
 	_update_tube_layout()
 
 
@@ -186,9 +182,8 @@ func apply_language(value: String) -> void:
 		var button: Button = find_child(node_name, true, false) as Button
 		var key: String = node_name.trim_suffix("Button").to_lower()
 		(button as OpticalIconButton).set_label(UiText.get_text(key, value))
-	(find_child("GameTitle", true, false) as Label).text = UiText.get_text("game_title", value)
-	(find_child("GameHelp", true, false) as Label).text = UiText.get_text("game_help", value)
-	(find_child("LevelBadge", true, false) as Label).text = UiText.get_text("level_number", value) % _session.snapshot().level_id.trim_prefix("level_")
+	_status.dismiss()
+	(find_child("LevelBadge", true, false) as Label).text = UiText.get_text("level_number", value) % str(_session.snapshot().level_id.trim_prefix("level_").to_int())
 	_status.text = UiText.get_text("choose_destination", value) % (_selected_source + 1) if _selected_source >= 0 else UiText.get_text("choose", value)
 	for index: int in range(_views.size()):
 		_views[index].accessibility_name = UiText.get_text("tube", value) % (index + 1)
@@ -196,17 +191,17 @@ func apply_language(value: String) -> void:
 
 
 func _update_tube_layout() -> void:
-	if _board_row == null or _views.is_empty():
+	if _board == null or _views.is_empty():
 		return
-	var available: float = size.x - 48.0 - 40.0 - 12.0 * float(_views.size() - 1)
-	var width: float = clampf(available / float(_views.size()), 64.0, 116.0)
-	var height: float = clampf(size.y * 0.29, 200.0, 400.0)
-	for tube: TubeView in _views:
-		tube.custom_minimum_size = Vector2(width, height)
+	_board.fit(_views, Vector2(size.x - 88.0, minf(size.y * 0.55, _board_panel.size.y - 112.0)))
+	_status.position = Vector2(24, _info.global_position.y - global_position.y + _info.size.y + 18)
+	_status.size = Vector2(size.x - 48, 64)
 
 
 func _refresh(celebrate: bool = false) -> void:
 	var state: GameState = _session.snapshot()
+	if _circuit != null:
+		_circuit.present(state, _views, reduce_motion)
 	_moves.text = UiText.get_text("moves", language) % state.move_count
 	for index: int in range(_views.size()):
 		_views[index].reduce_motion = reduce_motion
@@ -233,13 +228,19 @@ func _on_tube_pressed(index: int) -> void:
 	if WinRules.is_won(state):
 		_status.text = UiText.get_text("already_won", language)
 		return
+	if CircuitRules.blocked(state, index):
+		_status.show_message(UiText.get_text("reject_gate_closed", language))
+		_views[index].flash_invalid()
+		_cue("invalid")
+		return
 	if _selected_source < 0:
 		if state.tubes[index].layers.is_empty():
 			_cue("invalid")
-			_status.text = UiText.get_text("empty", language)
+			_status.show_message(UiText.get_text("empty", language))
 			print("LAYER_SORT_G2_REJECT EMPTY_SOURCE")
 			return
 		_selected_source = index
+		_status.dismiss()
 		_cue("select")
 		_status.text = UiText.get_text("choose_destination", language) % (index + 1)
 		_refresh()
@@ -254,17 +255,20 @@ func _on_tube_pressed(index: int) -> void:
 	var result: Dictionary = _session.submit(source, index)
 	if not result.ok:
 		_cue("invalid")
-		_status.text = UiText.get_text("reject_" + String(result.reason).to_lower(), language)
+		_status.show_message(UiText.get_text("reject_" + String(result.reason).to_lower(), language))
 		_views[index].flash_invalid()
 		if not state.tubes[index].layers.is_empty():
 			_selected_source = index
-			_status.text = UiText.get_text("choose_destination", language) % (index + 1)
 			_refresh()
 		print("LAYER_SORT_G2_REJECT %s" % result.reason)
 		return
+	_status.dismiss()
 	_selected_source = -1
 	_pending_win = bool(result.won)
 	_status.text = UiText.get_text("pouring", language)
+	if not state.circuit.is_empty() and not state.circuit_open and _session.snapshot().circuit_open:
+		_circuit.present(_session.snapshot(), _views, reduce_motion)
+		_cue("complete")
 	state_committed.emit(_session.snapshot(), result.won)
 	var duration: float = 0.1 if reduce_motion else 0.48
 	if reduce_motion:
@@ -299,6 +303,7 @@ func _on_undo() -> void:
 	if audio != null:
 		audio.stop_all()
 	_cue("ui")
+	_status.dismiss()
 	_pending_tap = -1
 	_animation_token += 1
 	_pending_win = false
@@ -321,6 +326,7 @@ func _on_restart() -> void:
 	if audio != null:
 		audio.stop_all()
 	_cue("ui")
+	_status.dismiss()
 	_pending_tap = -1
 	_animation_token += 1
 	_pending_win = false
@@ -358,6 +364,8 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
 		_pending_tap = -1
 		_suspended = true
+		if _status != null:
+			_status.dismiss()
 		_contacts.clear()
 		_conflicting_touch = false
 		_selected_source = -1
