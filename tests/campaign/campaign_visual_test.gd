@@ -16,6 +16,7 @@ func _run() -> void:
 			await process_frame
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png(output + "/level_%03d_%s.png" % [number, language])
+			assert((game.find_child("LevelBadge",true,false) as Label).text == UiText.get_text("level_number",language) % str(number))
 			var views: Array = game.get("_views")
 			for tube: Control in views:
 				assert(tube.get_global_rect().end.x <= 720)
@@ -28,7 +29,8 @@ func _run() -> void:
 				game.call("_on_tube_pressed", dest)
 				await create_timer(0.8).timeout
 				assert(game.committed_snapshot().move_count == 1)
-				assert(not (game.find_child("TutorialToggle", true, false) as Button).visible)
+				assert(not game._status.visible)
+				assert((game.find_child("TutorialGuide",true,false) as TutorialGuide)._target == -1)
 			game.queue_free()
 			await process_frame
 	var level_map: LevelMapScreen = LevelMapScreen.new()

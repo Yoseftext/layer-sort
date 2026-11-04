@@ -358,14 +358,15 @@ jobs:
           grep -q 'G4_PRODUCTION_TESTS status=PASS' logs/g4-production.log
           if grep -Eq 'SCRIPT ERROR|G4_PRODUCTION_FAIL' logs/g4-production.log; then exit 1; fi
           python3 -m unittest tests/test_audio_assets.py
+          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-hud-polish" timeout 120s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/polish/gameplay_hud_test.gd 2>&1 | tee logs/hud-polish.log
+          grep -q "HUD_POLISH_PASS" logs/hud-polish.log
+          if grep -Eq "SCRIPT ERROR|ObjectDB.*leaked|resources? still in use" logs/hud-polish.log; then exit 1; fi
           timeout 60s godot --headless --audio-driver Dummy --path . --script res://tests/feedback/feedback_test.gd 2>&1 | tee logs/feedback.log
           grep -q "FEEDBACK_TESTS PASS" logs/feedback.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-g5-captures" timeout 60s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/g5/circuit_visual_test.gd 2>&1 | tee logs/g5-visual.log
           grep -q "G5_VISUAL_PASS" logs/g5-visual.log
-          git fetch --depth=1 origin 1e766ab8763d81d0d4389833ccff055f5fe54beb
-          git show 1e766ab8763d81d0d4389833ccff055f5fe54beb:tests/g5/p3_visual_test.gd > "$RUNNER_TEMP/p3-teardown-before.gd"
-          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-p3-teardown-before" timeout 90s xvfb-run -a godot --verbose --audio-driver Dummy --path . --script "$RUNNER_TEMP/p3-teardown-before.gd" 2>&1 | tee logs/g5-p3-teardown-before.log
-          grep -q "G5_P3_VISUAL_PASS" logs/g5-p3-teardown-before.log
+          # Historical teardown reproduction remains in CI41820563737 evidence.
+          # Its old title/help expectations predate the owner-approved P2 HUD.
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-g5-p3-captures" timeout 90s xvfb-run -a godot --verbose --audio-driver Dummy --path . --script res://tests/g5/p3_visual_test.gd 2>&1 | tee logs/g5-p3-visual.log
           grep -q "G5_P3_VISUAL_PASS" logs/g5-p3-visual.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-tube-polish" timeout 120s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/polish/tube_render_test.gd 2>&1 | tee logs/tube-polish.log
@@ -465,6 +466,8 @@ jobs:
 
       - name: Collect rendered evidence after export
         run: |
+          mkdir -p logs/hud-polish-screenshots
+          cp "$RUNNER_TEMP/layersort-hud-polish/"*.png logs/hud-polish-screenshots/
           mkdir -p logs/tube-polish-screenshots
           cp "$RUNNER_TEMP/layersort-tube-polish/"*.png logs/tube-polish-screenshots/
           mkdir -p logs/g5-p3-screenshots
@@ -502,6 +505,7 @@ jobs:
             logs/*.txt
             logs/*.log
             logs/*.json
+            logs/hud-polish-screenshots/*.png
             logs/tube-polish-screenshots/*.png
             logs/g5-p3-screenshots/*.png
             logs/g5-screenshots/*.png

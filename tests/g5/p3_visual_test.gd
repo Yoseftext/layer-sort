@@ -76,8 +76,8 @@ func run() -> void:
 
 func check_layout(game: ClassicGame, language: String) -> void:
 	check(game.layout_direction == (Control.LAYOUT_DIRECTION_RTL if language == "ar" else Control.LAYOUT_DIRECTION_LTR), "language layout direction")
-	var circuit: bool = not game.committed_snapshot().circuit.is_empty()
-	check((game.find_child("GameTitle", true, false) as Label).text == UiText.get_text("circuit_game_title" if circuit else "game_title", language), "title follows declared mechanic")
+	check(game.find_child("GameTitle", true, false) == null and game.find_child("GameHelp", true, false) == null, "uncluttered gameplay HUD")
+	check((game.find_child("LevelBadge", true, false) as Label).text == UiText.get_text("level_number", language) % str(game.committed_snapshot().level_id.trim_prefix("level_").to_int()), "readable level number")
 	var bounds: Rect2 = root.get_visible_rect()
 	for name: String in ["HomeButton", "PauseButton", "UndoButton", "RestartButton"]:
 		var button: Button = game.find_child(name, true, false) as Button

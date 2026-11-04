@@ -1,6 +1,6 @@
 # G5-Final — Visual & Audio Polish Proposal
 
-**ORIGINAL PROPOSAL — bounded P1 rendering implementation subsequently authorized; see [implementation checkpoint](#10-g5-final-p1-implementation-checkpoint). All other proposals await owner approval.** Historical audit baseline: existing Draft [PR #19](https://github.com/Yoseftext/layer-sort/pull/19), `8f3a49c1f84a982da060a06f9d47df02f249d0f3`. The original audit authorized no runtime changes. The later owner instruction authorizes only P1 marker geometry and a controlled liquid-boundary comparison; no audio, external imports, dependencies, gameplay or export changes. G6 remains unauthorized.
+**ORIGINAL PROPOSAL — bounded P1 rendering and P2 gameplay presentation/audio subsequently authorized; see [P1 checkpoint](#10-g5-final-p1-implementation-checkpoint) and [P2 checkpoint](#11-g5-final-p2-gameplay-hud-board-and-audio). All other proposals await owner approval.** Historical audit baseline: existing Draft [PR #19](https://github.com/Yoseftext/layer-sort/pull/19), `8f3a49c1f84a982da060a06f9d47df02f249d0f3`. The original audit authorized no runtime changes. Later owner instructions authorize bounded P1 marker/liquid rendering and P2 HUD/board/Circuit presentation/original audio. No external imports, dependencies, authoritative gameplay or export changes. G6 remains unauthorized.
 
 ## 1. Acceptance and evidence boundaries
 
@@ -172,3 +172,46 @@ VISUAL_CAPTURE_DIR=/tmp/layersort-tube-polish xvfb-run -a godot --path . --scrip
 CI additionally checks the new visual log for script errors, leaked ObjectDB instances and resources still in use. Historical baseline teardown-reproduction logs remain preserved separately; this is not a claim that all historical warning logs are empty. Owner-only remaining checks: inspect narrow-phone marker readability at normal viewing distance with Color Assist, selected/partial/full tubes, Reduced Motion and normal quality modes on the exact signed APK. Do not uninstall or clear saves. No device access was used.
 
 Rollback: review and revert the P1 commits normally on PR19; do not reset saves, rewrite history, change signing or revert accepted G5 content. Broader material/glass, HUD/Home/Map, motion and all audio proposals remain pending; G6 remains unauthorized.
+
+
+## 11. G5-Final P2 — gameplay HUD, board and audio
+
+**IMPLEMENTED — CI/device evidence recorded on current Draft PR19; owner Android/visual/audio acceptance pending.** Starting head `0b24172e069af48f6f9689b7324a0ce34d8dee5d`. Later owner authorization supersedes the P1-only restrictions for this bounded slice; it does not approve the rest of this proposal. Existing P1/P2/P3 content acceptance remains unchanged.
+
+Visible changes:
+
+- Remove gameplay mode/title and permanent top/bottom instructions. Header contains Home/Pause and centered, localized level/move counters; numbers use human-readable5/19 rather than005/019. Invalid/locked/empty feedback appears for2 seconds as a nonblocking overlay, never relaying out the board. Selection/moves do not display permanent instructional text.
+- Keep the approved first-five tutorial cue contextual: one static highlight after3 seconds idle, at most3 seconds visible with a2-second localized message; a committed action dismisses it. No persistent hint toggle/bar, no idle per-frame snapshot/solver loop. G6/180-second contextual solving is not implemented.
+- Remove completed-tube checkmark and its now-unused visual Tween; completion detection/signal/audio and authoritative win state remain unchanged. Undo is a return arrow; Restart is a circular reset path, with unchanged actions, accessible labels and96px reference touch controls.
+- Circuit ring uses the same count markers as liquid, coloured rim and contrast dots. Lock/shackle/open check and finite pulse remain; a restrained orthogonal signal runs above mouths, using an outer gutter if rows differ. Existing transform-correct tube alignment and mouse-ignore behavior remain.
+- `TubeBoard` owns stable row-major LTR ordering in either language: up to6 in one row,7 as4+3 and8 as4+4, centered with bounded tube size and72px row gap. Geometry derives from available board dimensions; no runtime tube rebuilding on resize. **Packaged content/strict loader remain limited to3–6 tubes.** Seven/eight-tube screenshots are presentation-only fixtures that add empty tubes in memory, not new authored levels or save formats. No accepted level is changed or implicitly extended.
+
+| Files | Primary responsibility |
+|---|---|
+| `scripts/ui/classic_game.gd` | Existing input/session orchestration; wire compact header, feedback and board. No authoritative rule changes. |
+| `scripts/presentation/tube_board.gd` | Row ownership and responsive sizing only. |
+| `scripts/presentation/gameplay_feedback.gd` | Localized transient feedback overlay with node-owned one-shot expiry. |
+| `scripts/ui/tutorial_guide.gd` | One bounded contextual cue for1–5; no persistent text/control or idle allocations. |
+| `scripts/presentation/tube_view.gd` | Remove completed badge and unused completion-effect Tween; keep completion detection/signals. |
+| `scripts/presentation/circuit_overlay.gd` | Count-based target ring, gate material and routed signal; no mechanic decisions. |
+| `scripts/presentation/optical_icon_button.gd` | Distinct procedural Undo/Restart glyphs. Shared Replay uses the same restart glyph; no navigation change. |
+| `tools/assets/generate_ui_audio.py`, five gameplay WAVs, `scripts/audio/game_audio.gd` | Deterministic offline synthesis and explicit cue gains using existing4-voice pool. UI navigation WAV unchanged. |
+| `tests/polish/gameplay_hud_test.gd`, existing visual tests, `tests/test_audio_assets.py`, workflow | New HUD/row/glyph/pixel/audio checks, updated intentional UX expectations, required CI execution/capture. |
+
+Audio provenance/optimization: original mathematical synthesis, existingCC0 dedication, no samples/third-party assets/dependencies. Exact hashes/bytes and reproduction in [audio inventory](../content/audio/README.md). Mono22050Hz16-bit PCM, six files total61,120 bytes (old74,350). Soft damped glass partials replace stepped gameplay tones; bounded filtered-flow/bubble pour, quiet blocked tick, short completion and soft overlapping win chord. Source PCM RMS before→after: select0.0675→0.0272, invalid0.0710→0.0219, complete0.0815→0.0259, win0.0845→0.0245; pour0.0169→0.0276 with explicit-3dB cue gain, versus completion-8dB. No limiter hits; first samplezero and final sample≤32 PCM units. These are file measurements, not perceptual loudness, acoustic quality, latency or OPPO benchmarks. Phone speaker/headphone audition remains required; “more natural” is a design intent, not an agent-verified acoustic PASS. Mute, focus, pause/resume and settings storage are preserved.
+
+Verification commands added/reused:
+
+```sh
+python3 -m unittest tests/test_audio_assets.py
+godot --headless --path . --script tests/visual/production_test.gd
+VISUAL_CAPTURE_DIR=/tmp/layersort-hud-polish xvfb-run -a godot --audio-driver Dummy --path . --script tests/polish/gameplay_hud_test.gd
+```
+
+The current complete G2–G5 suites remain required. Tests asserting the removed mode/help are deliberately updated to require absence and readable localized level counters; no mechanical assertion is removed. New graphical checks cover600/720, Arabic/English,6/7/8 tubes,4+4 layout/spacing/targets, cross-row pour/Undo/Restart, visible distinct glyph silhouettes, no green completed badge, Circuit feedback expiry/Reduced Motion/Undo and bounded mute/focus behavior. Existing Circuit/P3 tests retain initial/unlock/Undo indicator-position checks; campaign captures verify unpadded1–5 too. New test rejects script errors/resource-retention warnings. Existing legacy diagnostic warnings are not hidden or claimed fixed.
+
+Historical P3 teardown reproduction used the old mode/help UI and is no longer rerun against intentionally changed presentation. Its original source and full failure/before-after evidence remain preserved in [CI41820563737](https://github.com/Yoseftext/layer-sort/actions/runs/41820563737); the corrected current P3 suite and strict leak/error guard still run. No existing test suite, export/signature/budget check, job/artifact identity, permissions or concurrency is removed/weakened.
+
+Scope/preservation: domain/application/levels/schema1/project/export/engine unchanged; no gameplay/input-lock/Undo/Restart or save transition changes. No phone operations, G6, menu/map redesign, external asset imports or merge. Final pinned4.7.2 CI/APK/SHA links are published on PR19 so the evidence references the exact final head without a self-referential documentation commit.
+
+Owner handoff: update the exact signed APK without uninstall/data clearing; inspect level5/19 number and clean HUD; Undo versus Restart; selected/invalid/completed tubes; Circuit locked/unlock/Undo; Arabic/English600/720 composition and Reduced Motion; audition select/pour/blocked/complete/win repeatedly with sound/mute and background/foreground. Seven/eight tube fixtures are cloud layout tests, not additional campaign content. Device performance/sound quality remain UNVERIFIED. Deferred: Home/Map redesign, broader material/animation work, variants/soundtrack and all G6. Rollback is a reviewed normal revert of P2 changes only, preserving P1 rendering, accepted content, saves and signing; no reset/history rewrite.

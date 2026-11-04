@@ -27,10 +27,10 @@
 | G5-P1 | Accepted: Level15, owner-reported physical-device QA **12/12 PASS**. |
 | G5-P2 | **ACCEPTED — OWNER-REPORTED PHYSICAL DEVICE QA**, 2026-11-04, **13/13 PASS**, zero reported failures; implementation `6e3f10f8a3fec017aed756d96e69471eb3da238d`. [Exact acceptance record and limitations](../G5_P2.md#owner-reported-physical-device-qa-acceptance--2026-11-04). |
 | G5-P3 | Implementation authorized:18 Classic /19 Circuit /20 Classic, implemented with bounded production-rule tests. Exact final-head CI/APK evidence is published on PR19. **Accepted — OWNER-REPORTED PHYSICAL DEVICE QA:12/12 PASS** at corrected checkpoint `8f3a49c1f84a982da060a06f9d47df02f249d0f3`. [Implementation and acceptance](../G5_P3.md). |
-| G5-Final | [Bounded P1 tube/marker implementation](../G5_FINAL.md#10-g5-final-p1-implementation-checkpoint) authorized; broader polish/audio/imports remain unapproved. |
+| G5-Final | [P2 gameplay HUD/board/audio slice](../G5_FINAL.md#11-g5-final-p2-gameplay-hud-board-and-audio) authorized; menu/map redesign and imports remain unapproved. |
 | G6 | Not authorized. |
 
-P1/P2/P3 are accepted by owner-reported Android QA12/12,13/13,12/12. The current scope is owner-authorized G5-Final P1 procedural tube/marker rendering on existing Draft PR19. Broader polish, audio, Home/Map/HUD redesign and external imports remain unauthorized. No accepted Levels1–20, save schema, package/signing identity or main change is authorized. Owner-reported phone QA is distinct from automated CI; no independent device test, benchmark or logcat inspection is claimed. The 20-level Core MVP is not yet complete. The rules contract remains Draft; G15-QA-001 remains OPEN. No merge authorization is granted. The dated records below are retained as historical evidence.
+P1/P2/P3 are accepted by owner-reported Android QA12/12,13/13,12/12. The current scope is owner-authorized G5-Final P2 gameplay HUD/board/Circuit presentation and original audio cleanup on existing Draft PR19. Broader polish, Home/Map redesign and external imports remain unauthorized. No accepted Levels1–20, save schema, package/signing identity or main change is authorized. Owner-reported phone QA is distinct from automated CI; no independent device test, benchmark or logcat inspection is claimed. The 20-level Core MVP is not yet complete. The rules contract remains Draft; G15-QA-001 remains OPEN. No merge authorization is granted. The dated records below are retained as historical evidence.
 
 ## 1. القرار المركزي والإطار
 

@@ -2,11 +2,6 @@ extends SceneTree
 
 var checks: int = 0
 var failures: int = 0
-const TITLES: Dictionary = {"en": "LAYER SORT · CIRCUIT", "ar": "LAYER SORT · الدائرة"}
-const HINTS: Dictionary = {
-	"en": "Reveal the target color on the sensor tube to unlock the connected gate.",
-	"ar": "أظهر اللون المطلوب أعلى أنبوبة المستشعر لفتح الأنبوبة المقفولة."
-}
 
 func _initialize() -> void:
 	call_deferred("run")
@@ -18,10 +13,10 @@ func check(value: bool, label: String) -> void:
 		push_error("G5_VISUAL_FAIL " + label)
 
 func check_text(game: ClassicGame, language: String) -> void:
-	check((game.find_child("GameTitle", true, false) as Label).text == TITLES[language], "Circuit title")
-	var help: Label = game.find_child("GameHelp", true, false) as Label
-	check(help.text == HINTS[language], "Circuit teaching instruction")
-	check(help.size.y >= help.get_minimum_size().y, "instruction is not clipped")
+	check(game.find_child("GameTitle", true, false) == null, "no mode label in gameplay")
+	check(game.find_child("GameHelp", true, false) == null, "no persistent lower instruction")
+	check(not game._status.visible, "no persistent upper instruction")
+	check((game.find_child("LevelBadge", true, false) as Label).text == UiText.get_text("level_number", language) % "15", "localized unpadded Circuit level")
 
 func check_indicators(game: ClassicGame) -> void:
 	var overlay: CircuitOverlay = game._circuit
@@ -96,8 +91,8 @@ func run() -> void:
 	await process_frame
 	for language: String in ["en", "ar"]:
 		classic.apply_language(language)
-		check((classic.find_child("GameTitle", true, false) as Label).text == UiText.get_text("game_title", language), "Classic title retained")
-		check((classic.find_child("GameHelp", true, false) as Label).text == UiText.get_text("game_help", language), "Classic help retained")
+		check(classic.find_child("GameTitle", true, false) == null, "Classic has no mode label")
+		check(classic.find_child("GameHelp", true, false) == null and not classic._status.visible, "Classic has no permanent instructions")
 	classic.queue_free()
 	await process_frame
 	print("G5_VISUAL_PASS checks=%d" % checks if failures == 0 else "G5_VISUAL_FAIL failures=%d" % failures)

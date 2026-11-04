@@ -8,8 +8,10 @@ var drawn_sensor_center: Vector2
 var drawn_gate_center: Vector2
 var _tween: Tween
 var _panel: StyleBoxFlat = StyleBoxFlat.new()
+var _signal: PackedVector2Array = PackedVector2Array()
 
 func _ready() -> void:
+	_signal.resize(6)
 	set_notify_transform(true)
 	item_rect_changed.connect(queue_redraw)
 
@@ -65,11 +67,26 @@ func _draw() -> void:
 	drawn_sensor_center = a
 	drawn_gate_center = b
 	var colour: Color = TubePainter.COLOURS[int(state.circuit.target_colour)]
-	draw_line(a, b, Color(0.5, 0.8, 0.9, 0.85 if state.circuit_open else 0.5), 1.5 + pulse, true)
+	# Route above the mouths. Cross-row links use the outer board gutter,
+	# never a diagonal wire across liquid or touch targets.
+	var gutter: float = a.x
+	for tube: TubeView in views:
+		var edge: Vector2 = get_global_transform_with_canvas().affine_inverse() * tube.get_global_transform_with_canvas() * Vector2.ZERO
+		gutter = minf(gutter, edge.x - 14.0)
+	var cross_row: bool = absf(a.y - b.y) > 36.0
+	_signal[0] = a
+	_signal[1] = a - Vector2(0, 24)
+	_signal[2] = Vector2(gutter if cross_row else b.x, a.y - 24)
+	_signal[3] = Vector2(gutter if cross_row else b.x, b.y - 24)
+	_signal[4] = b - Vector2(0, 24)
+	_signal[5] = b
+	draw_polyline(_signal, Color("68d9ce", 0.75 if state.circuit_open else 0.28), 1.5 + pulse, true)
 	draw_circle(a, 14.0 + pulse * 4.0, Color(0.05, 0.12, 0.2))
 	draw_arc(a, 12.0, 0, TAU, 24, colour, 3.0, true)
 	# Target colour uses the same stable numeric symbol as the liquid layers.
-	draw_string(ThemeDB.fallback_font, a + Vector2(-4, 5), str(int(state.circuit.target_colour) + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color.WHITE)
+	var markers: Rect2 = Rect2(a - Vector2(10, 8), Vector2(20, 16))
+	for index: int in range(int(state.circuit.target_colour) + 1):
+		draw_circle(TubePainter.marker_center(markers, int(state.circuit.target_colour) + 1, index), TubePainter.marker_radius(markers), OpticalTheme.INK, true, -1.0, true)
 	draw_style_box(_lock_panel(), Rect2(b - Vector2(12, 10), Vector2(24, 20)))
 	var offset: float = 8.0 * (1.0 - pulse) if state.circuit_open else 0.0
 	draw_arc(b + Vector2(offset, -10), 8.0, PI, TAU, 12, Color(0.8, 0.9, 1), 3.0, true)
