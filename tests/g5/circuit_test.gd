@@ -43,6 +43,8 @@ func _initialize() -> void:
 	for number: int in range(1, 15):
 		records["level_%03d" % number] = {"best_moves": 20, "stars": 1}
 	# Boundary validation is also exercised without altering real user saves.
+	var legacy: Dictionary = repo._read("res://tests/g5/g4_schema1_save.json", catalog)
+	check(legacy.ok and legacy.completed.level_001.best_moves == 3 and legacy.active.level_id == "level_001", "G4 schema1 fixture preserves progress")
 	var active: Dictionary = {"level_id":"level_015", "content_version":1, "move_count":1, "tubes":[[0,0],[1,1,0,0],[1,1],[]], "circuit_open":true}
 	check(repo._valid_active(active, catalog), "valid persisted latch")
 	var restored: GameSession = GameSession.new(initial)
@@ -60,6 +62,8 @@ func _initialize() -> void:
 	definition.gate_tube = 1
 	definition.name = "unknown"
 	check(not CircuitRules.parse([definition], 4, 2).ok, "unknown mechanic rejected")
+	active.erase("circuit_open")
+	check(not repo._valid_active(active, catalog), "missing Circuit latch rejected")
 	active.circuit_open = "true"
 	check(not repo._valid_active(active, catalog), "reject malformed latch")
 	for number: int in range(1,15):
