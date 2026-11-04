@@ -4,13 +4,21 @@ extends Control
 var state: GameState
 var views: Array[TubeView] = []
 var pulse: float = 0.0
+var drawn_sensor_center: Vector2
+var drawn_gate_center: Vector2
 var _tween: Tween
 var _panel: StyleBoxFlat = StyleBoxFlat.new()
 
 func present(value: GameState, tubes: Array[TubeView], reduced: bool) -> void:
 	var activated: bool = state != null and not state.circuit_open and value.circuit_open
 	state = value.copy()
-	views = tubes
+	if views != tubes:
+		for tube: TubeView in views:
+			if is_instance_valid(tube) and tube.item_rect_changed.is_connected(queue_redraw):
+				tube.item_rect_changed.disconnect(queue_redraw)
+		views = tubes
+		for tube: TubeView in views:
+			tube.item_rect_changed.connect(queue_redraw)
 	visible = not state.circuit.is_empty()
 	if not state.circuit_open or reduced:
 		if _tween != null:
@@ -38,13 +46,16 @@ func gate_indicator_position() -> Vector2:
 
 func _indicator_position(index: int) -> Vector2:
 	var tube: TubeView = views[index]
-	return tube.global_position - global_position + Vector2(tube.size.x * 0.5, -22.0)
+	var tube_to_overlay: Transform2D = get_global_transform_with_canvas().affine_inverse() * tube.get_global_transform_with_canvas()
+	return tube_to_overlay * Vector2(tube.size.x * 0.5, -22.0)
 
 func _draw() -> void:
 	if state == null or state.circuit.is_empty() or views.is_empty():
 		return
 	var a: Vector2 = sensor_indicator_position()
 	var b: Vector2 = gate_indicator_position()
+	drawn_sensor_center = a
+	drawn_gate_center = b
 	var colour: Color = TubePainter.COLOURS[int(state.circuit.target_colour)]
 	draw_line(a, b, Color(0.5, 0.8, 0.9, 0.85 if state.circuit_open else 0.5), 1.5 + pulse, true)
 	draw_circle(a, 14.0 + pulse * 4.0, Color(0.05, 0.12, 0.2))

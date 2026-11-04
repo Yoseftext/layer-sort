@@ -68,10 +68,11 @@ func run() -> void:
 			await create_timer(0.55).timeout
 			game.queue_free()
 			await process_frame
+	await fresh_circuit_matrix()
 	for language: String in ["en", "ar"]:
 		await final_campaign_flow(language)
 	print("G5_P3_VISUAL_PASS checks=%d" % checks if failures == 0 else "G5_P3_VISUAL_FAIL failures=%d" % failures)
-	quit(0 if failures == 0 else 1)
+	call_deferred("quit", 0 if failures == 0 else 1)
 
 func check_layout(game: ClassicGame, language: String) -> void:
 	check(game.layout_direction == (Control.LAYOUT_DIRECTION_RTL if language == "ar" else Control.LAYOUT_DIRECTION_LTR), "language layout direction")
@@ -137,3 +138,47 @@ func capture(label: String) -> void:
 	await process_frame
 	await RenderingServer.frame_post_draw
 	check(root.get_texture().get_image().save_png(output.path_join(label + ".png")) == OK, "actual Godot screenshot written")
+
+# Fresh roots are essential: a resize-only case can mask RTL layout invalidation.
+func fresh_circuit_matrix() -> void:
+	for width: int in [600, 720]:
+		for language: String in ["ar", "en"]:
+			root.content_scale_size = Vector2i(width, 1600)
+			root.size = Vector2i(width, 1600)
+			await process_frame
+			var game: ClassicGame = ClassicGame.new()
+			game.level_path = "res://content/levels/level_019.json"
+			game.language = language
+			game.reduce_motion = true
+			root.add_child(game)
+			game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			await create_timer(0.25).timeout
+			await check_drawn_indicators(game, "%d-%s-initial" % [width, language])
+			for pair: Array in solutions.level_019.solution:
+				game._on_tube_pressed(int(pair[0]))
+				game._on_tube_pressed(int(pair[1]))
+				await create_timer(0.14).timeout
+				if game.committed_snapshot().circuit_open:
+					break
+			check(game.committed_snapshot().circuit_open, "fresh scene unlock")
+			await check_drawn_indicators(game, "%d-%s-unlocked" % [width, language])
+			game._on_undo()
+			check(not game.committed_snapshot().circuit_open, "fresh scene Undo closes gate")
+			await check_drawn_indicators(game, "%d-%s-undo" % [width, language])
+			game.queue_free()
+			await process_frame
+
+func check_drawn_indicators(game: ClassicGame, label: String) -> void:
+	await process_frame
+	await RenderingServer.frame_post_draw
+	var overlay: CircuitOverlay = game._circuit
+	var transform: Transform2D = overlay.get_global_transform_with_canvas()
+	var centers: Array[Vector2] = [transform * overlay.drawn_sensor_center, transform * overlay.drawn_gate_center]
+	var state: GameState = game.committed_snapshot()
+	var indices: Array[int] = [int(state.circuit.sensor_tube), int(state.circuit.gate_tube)]
+	for i: int in range(2):
+		var tube: TubeView = game._views[indices[i]]
+		var expected: Vector2 = tube.get_global_transform_with_canvas() * Vector2(tube.size.x * 0.5, -22.0)
+		check(centers[i].distance_to(expected) < 0.1, "drawn indicator follows actual tube center " + label)
+		check(root.get_visible_rect().encloses(Rect2(centers[i] - Vector2(18,18), Vector2(36,36))), "drawn indicator inside viewport " + label)
+	await capture("fresh19-" + label)
