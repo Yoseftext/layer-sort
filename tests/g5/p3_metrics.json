@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "accepted_content_sha256": {
+    "level_001": "554542e68c1f39c0e466f3aad75a88be5c0498b594f77b284df3deb568667508",
+    "level_002": "96c4eeeecb37baf9b262145bc73f043cef92ca1bc982e0f7c7c3da103f24809f",
+    "level_003": "55d564fb59f466ced2717a05de9ba17c1ca3fff86fb5dff653eeddbe8d783b7f",
+    "level_004": "0e8b116edbce59b0179fa1d4a1d64c90e96ecce3be34f26668aed4f90d17f632",
+    "level_005": "1b5d6a040e2deb31062368f4f2f1999e1b96ea2acce119433c03823bea6c6dbd",
+    "level_006": "b879912ab4329548113c58526eb900220cea73da325f699cb6819d0a042b9d45",
+    "level_007": "988b2dcc133d7c5a7bc5ce0a32b8046acbf26afd51255ccb370f7feadfa7927c",
+    "level_008": "9364eb363423f6d2399a31a50bb5f078d6fdac64c64153383628913ccddaf4a3",
+    "level_009": "cd9124303e4c931083d15ce20794f1679451b58a14394c37cf044205396a9323",
+    "level_010": "3c737f5b9c501333822743f5b8372e3a706a139cd8621161111d43d0fe026073",
+    "level_011": "be91027ae4d6acb6e5eb3efa7d8662772d025dad7a35e65a433efee7fb11a8e5",
+    "level_012": "366af0d8812b0cdf2f80b435cbb25a80741d22703acc8d6cbc4fe20aa6bc34d9",
+    "level_013": "1f6b4f938326952aa83a09e13d1bb897d381fe74d2cb8e6d0c5b51c6094821de",
+    "level_014": "33613c6a313c3659f9a188391c708288a0ac9a1001b45d5ce531bb9550e64cd8",
+    "level_015": "c56537b2b2ab7f11a4c3d144e9523dfb1ec98a50b137982628915fe681aaace1",
+    "level_016": "a4f3a6a2f9b26a60d9462cbaaaa6a1a19008a95404b189df67ec0e3988e39a62",
+    "level_017": "4e9643672bd2fe2756d721665f20ec648b5a1f1bb1e3246f12acd28395577502"
+  },
+  "levels": {
+    "level_018": {
+      "moves": 16,
+      "production_replay_command_budget": 64,
+      "classic_search_state_budget": 300000,
+      "canonical_states_seen": 71
+    },
+    "level_019": {
+      "moves": 14,
+      "production_replay_command_budget": 64,
+      "candidate_screen_state_budget": 100000,
+      "candidate_screen_time_budget_seconds": 30,
+      "candidate_screen_states_seen": 6072
+    },
+    "level_020": {
+      "moves": 16,
+      "production_replay_command_budget": 64,
+      "classic_search_state_budget": 300000,
+      "canonical_states_seen": 93
+    }
+  }
+}
