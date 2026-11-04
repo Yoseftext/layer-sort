@@ -27,6 +27,7 @@ func check_indicators(game: ClassicGame) -> void:
 		var center: Vector2 = overlay.sensor_indicator_position() if index == int(state.circuit.sensor_tube) else overlay.gate_indicator_position()
 		center += overlay.global_position
 		var tube: Rect2 = game._views[index].get_global_rect()
+		check(tube.position.x >= 0 and tube.end.x <= root.get_visible_rect().size.x, "tube fits current narrow viewport")
 		check(is_equal_approx(center.x, tube.get_center().x), "indicator centered on its tube")
 		check(center.y + 18.0 < tube.position.y, "entire indicator above tube and liquid")
 		check(root.get_visible_rect().encloses(Rect2(center - Vector2(18, 18), Vector2(36, 36))), "indicator inside portrait viewport")
@@ -36,6 +37,7 @@ func run() -> void:
 	var output: String = OS.get_environment("VISUAL_CAPTURE_DIR")
 	DirAccess.make_dir_recursive_absolute(output)
 	for width: int in [720, 600]:
+		root.content_scale_size = Vector2i(width, 1600)
 		root.size = Vector2i(width, 1600)
 		for language: String in ["en", "ar"]:
 			var game: ClassicGame = ClassicGame.new()
