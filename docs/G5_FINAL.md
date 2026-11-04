@@ -1,6 +1,6 @@
 # G5-Final — Visual & Audio Polish Proposal
 
-**PROPOSAL ONLY — OWNER REVIEW REQUIRED.** Baseline: existing Draft [PR #19](https://github.com/Yoseftext/layer-sort/pull/19), `8f3a49c1f84a982da060a06f9d47df02f249d0f3`. No visual/audio implementation, assets imported into the project, dependency, gameplay or export change is authorized by this audit. G6 remains unauthorized.
+**ORIGINAL PROPOSAL — bounded P1 rendering implementation subsequently authorized; see [implementation checkpoint](#10-g5-final-p1-implementation-checkpoint). All other proposals await owner approval.** Historical audit baseline: existing Draft [PR #19](https://github.com/Yoseftext/layer-sort/pull/19), `8f3a49c1f84a982da060a06f9d47df02f249d0f3`. The original audit authorized no runtime changes. The later owner instruction authorizes only P1 marker geometry and a controlled liquid-boundary comparison; no audio, external imports, dependencies, gameplay or export changes. G6 remains unauthorized.
 
 ## 1. Acceptance and evidence boundaries
 
@@ -116,9 +116,9 @@ All numbers below are **proposed limits/acceptance targets**, not measurements o
 
 ## 8. Now / Next / Later and implementation sequence
 
-**Now — authorized audit/documentation only:** record acceptance; inventory exact licenses and bytes; obtain/review current captures where access permits; approve the marker-fit reproduction, visual priorities and audio audition plan. No game edit, import or benchmark execution is performed here.
+**Historical audit scope, before subsequent P1 authorization — documentation only:** record acceptance; inventory exact licenses and bytes; obtain/review current captures where access permits; approve the marker-fit reproduction, visual priorities and audio audition plan. No game edit, import or benchmark execution is performed here.
 
-**Next — separate owner implementation approval required:**
+**Original proposed sequence — only item 1 and the bounded boundary comparison are now authorized under P1; all broader steps still require separate owner approval:**
 
 1. Reproduce marker-fit on5-colour narrow content and current captures; choose a symbol layout retaining accessibility. Freeze one representative glass/liquid before/after comparison, not every screen at once.
 2. Implement a small procedural material/selection/pour prototype with tokens; verify a6-tube narrow scene, Circuit19 and Reduced Motion before broader application. Keep rendering independent from authoritative state.
@@ -142,3 +142,33 @@ Before any future polish is accepted:
 - Owner signs off on visual coherence and audio on the exact APK; separately record device QA from CI. No benchmark/phone/logcat PASS without evidence. A successful build does not authorize a merge or G6.
 
 Rollback is a separately reviewed revert of future polish commits, preserving schema, level identities, accepted content and real saves. Keep before/after captures, editable original artwork, synthesis source, exact third-party bytes/licenses and derived hashes. Never uninstall/reset data, rewrite history, delete branches or alter signing to roll back art. This documentation commit can be reverted independently and contains no runtime assets/code.
+
+
+## 10. G5-Final P1 implementation checkpoint
+
+Owner-authorized scope: responsive count markers and a controlled procedural liquid-boundary refinement only. PR19 remains Draft; no merge or Android acceptance is claimed. All accepted content, rules, input, animation locking, audio, schema1, package, signature and export settings remain unchanged. The shared painter also renders existing decorative tubes; no Home layout/component changes were made.
+
+| File | Responsibility/change |
+|---|---|
+| `scripts/presentation/tube_painter.gd` | Fit count1–6 in a centered maximum3-column ×2-row group; radius derives from available width/height. Internal highlight alpha0.30→0.12 and surface lightening0.10→0.04; top meniscus, glass and palette unchanged. No arrays allocated by marker layout. |
+| `tests/polish/marker_geometry_test.gd` | 540 assertions: all six indices across20 width/height combinations, full-circle containment, spacing and bounding-box centering. |
+| `tests/polish/tube_render_test.gd` | Fresh actual TubeView fixture matrix and four fresh ClassicGame scenes. Both widths600/720, Arabic/English,3/6 tubes, all six indices, selected/unselected, empty/half/full. Pixel comparison and teardown diagnostics. |
+| `.github/workflows/android-build-g3b.yml` | Run both tests as required existing-job steps, preserve existing suites/export/signing/artifact identity. Store screenshots in the existing build-log artifact; bounded original PNG previews in logs permit inspection when artifact storage is inaccessible. |
+| `AGENTS.md`, current entry/production documents, this report | Record later bounded authorization; preserve original proposal and acceptance history. |
+
+Evidence from implementation `3cb2b351ed163b078af47eebf3e8c29856f78881`: full pinned Godot4.7.2 [PR CI41829302217](https://github.com/Yoseftext/layer-sort/actions/runs/41829302217) succeeded, including540 geometry and2180 graphical checks, existing regressions, Android export, signing and32MiB package guard. This is an intermediate verified implementation checkpoint; the final follow-up adds selected-position assertions, more log previews and this documentation. Use the final PR19 check run for delivery provenance.
+
+The controlled comparison uses identical marker geometry, layers, viewport and glass, changing only the two internal-boundary parameters. On600px Arabic/six full tubes, measured luminance-stroke contrast falls0.069882→0.051200 (~26.7%); top contrast0.270969 and adjacent-colour boundary difference0.075616 are unchanged at sampled positions. These are deterministic pixel metrics, not a human readability study or Android performance measurement. Actual before/after PNGs and a fresh600px Arabic Level16 scene were visually inspected: full count groups stay inside the liquid, colour bands remain distinct and internal lines compete less with the top surface. Retain the restrained candidate pending owner visual review.
+
+Capture provenance: original PNG bytes from the pinned CI Godot application on Xvfb/Mesa, no generated artwork or image edits. Fixture labels explicitly distinguish renderer test boards from playable content. The complete matrix is under `tube-polish-screenshots/` in `layer-sort-g3b-build-logs`; `*-before.png` is the old liquid material with the corrected marker layout to isolate the material comparison, not a screenshot of the entire historical build. Four `game16-*` captures show actual gameplay. No physical Android touch, GPU/frame-time, speaker, thermal or battery result is inferred. No additional drawing primitives, runtime dependencies, textures, permanent loops or audio changes; existing redraw allocations are not claimed eliminated.
+
+Reproduction (pinned Godot4.7.2 Standard):
+
+```sh
+godot --headless --path . --script tests/polish/marker_geometry_test.gd
+VISUAL_CAPTURE_DIR=/tmp/layersort-tube-polish xvfb-run -a godot --path . --script tests/polish/tube_render_test.gd
+```
+
+CI additionally checks the new visual log for script errors, leaked ObjectDB instances and resources still in use. Historical baseline teardown-reproduction logs remain preserved separately; this is not a claim that all historical warning logs are empty. Owner-only remaining checks: inspect narrow-phone marker readability at normal viewing distance with Color Assist, selected/partial/full tubes, Reduced Motion and normal quality modes on the exact signed APK. Do not uninstall or clear saves. No device access was used.
+
+Rollback: review and revert the P1 commits normally on PR19; do not reset saves, rewrite history, change signing or revert accepted G5 content. Broader material/glass, HUD/Home/Map, motion and all audio proposals remain pending; G6 remains unauthorized.

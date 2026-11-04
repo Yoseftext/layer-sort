@@ -50,4 +50,4 @@ Commit hash, branch, PR link, build link, device evidence, exact blockers. Nothi
 
 ## Governance roles — ADR-0007
 
-ChatGPT supplies architecture guidance, independent change/risk review, test-evidence assessment and a merge-readiness recommendation. The repository owner retains final decisions, scope/priorities and exact per-merge authorization. Codex implements/tests/opens PRs and executes only an explicitly authorized exact merge. The current G5-Final audit authorizes documentation only, with no runtime polish implementation, merge, direct main modification, protection change or G6.
+ChatGPT supplies architecture guidance, independent change/risk review, test-evidence assessment and a merge-readiness recommendation. The repository owner retains final decisions, scope/priorities and exact per-merge authorization. Codex implements/tests/opens PRs and executes only an explicitly authorized exact merge. The current owner-authorized G5-Final P1 permits only the procedural tube-marker and liquid-boundary rendering slice described above; it does not authorize broader polish, audio, merge, direct main modification, protection change or G6.

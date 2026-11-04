@@ -84,9 +84,10 @@ func fixture(width: int, language: String, count: int, start: int, fill: int, se
 	await create_timer(0.12).timeout
 	var name: String = "%d-%s-%dt-b%d-fill%d-selected%s-%s" % [width, language, count, start, fill, selected, "before" if before else "after"]
 	var sample: bool = width == 600 and language == "ar" and count == 6 and fill == 4 and not selected
-	var rendered: Image = await capture(name, sample)
+	var preview: bool = sample or (width == 600 and language == "ar" and count == 3 and start == 0 and not selected and fill < 4) or (width == 600 and language == "ar" and count == 6 and fill == 4 and selected) or (width == 720 and language == "en" and count == 6 and fill == 4 and not selected)
+	var rendered: Image = await capture(name, preview)
 	for view: TubeView in views:
-		var inner: Rect2 = Rect2(Vector2(21, 26), Vector2(view.size.x - 42, view.size.y - 66))
+		var inner: Rect2 = Rect2(Vector2(21, 26 - view._lift), Vector2(view.size.x - 42, view.size.y - 66))
 		for layer: int in range(fill):
 			var region: Rect2 = Rect2(inner.position.x, inner.end.y - inner.size.y / 4 * (layer + 1), inner.size.x, inner.size.y / 4)
 			var palette: int = view.logical_layers[layer]
