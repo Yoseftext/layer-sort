@@ -26,11 +26,11 @@
 | G4 | Integrated and accepted: PR18 merge `144c744b92c3e66f71ad44a0d5b962121c72bba1`; [automatic main CI41789052494](https://github.com/Yoseftext/layer-sort/actions/runs/41789052494) passed. |
 | G5-P1 | Accepted: Level15, owner-reported physical-device QA **12/12 PASS**. |
 | G5-P2 | **ACCEPTED — OWNER-REPORTED PHYSICAL DEVICE QA**, 2026-11-04, **13/13 PASS**, zero reported failures; implementation `6e3f10f8a3fec017aed756d96e69471eb3da238d`. [Exact acceptance record and limitations](../G5_P2.md#owner-reported-physical-device-qa-acceptance--2026-11-04). |
-| G5-P3 | Implementation authorized:18 Classic /19 Circuit /20 Classic, implemented with bounded production-rule tests. Exact final-head CI/APK evidence is published on PR19. **Awaiting owner device QA — NOT ACCEPTED**. [Implementation and gates](../G5_P3.md). |
-| G5-Final | Visual and audio polish deferred; not authorized. |
+| G5-P3 | Implementation authorized:18 Classic /19 Circuit /20 Classic, implemented with bounded production-rule tests. Exact final-head CI/APK evidence is published on PR19. **Accepted — OWNER-REPORTED PHYSICAL DEVICE QA:12/12 PASS** at corrected checkpoint `8f3a49c1f84a982da060a06f9d47df02f249d0f3`. [Implementation and acceptance](../G5_P3.md). |
+| G5-Final | [Visual/audio audit and proposal](../G5_FINAL.md) authorized; implementation/imports remain unapproved. |
 | G6 | Not authorized. |
 
-The owner has now authorized P3 content implementation and device-QA handoff on existing Draft PR19, superseding the earlier planning-only scope. No accepted Levels1–17, save schema, package/signing identity or main change is authorized. Owner-reported phone QA is distinct from automated CI; no independent device test, benchmark or logcat inspection is claimed. The 20-level Core MVP is not yet complete. The rules contract remains Draft; G15-QA-001 remains OPEN. No merge authorization is granted. The dated records below are retained as historical evidence.
+P1/P2/P3 are accepted by owner-reported Android QA12/12,13/13,12/12. The current scope is G5-Final audit/proposal documentation only on existing Draft PR19; no polish implementation is authorized. No accepted Levels1–20, save schema, package/signing identity or main change is authorized. Owner-reported phone QA is distinct from automated CI; no independent device test, benchmark or logcat inspection is claimed. The 20-level Core MVP is not yet complete. The rules contract remains Draft; G15-QA-001 remains OPEN. No merge authorization is granted. The dated records below are retained as historical evidence.
 
 ## 1. القرار المركزي والإطار
 
