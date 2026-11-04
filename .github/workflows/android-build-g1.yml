@@ -7,8 +7,6 @@ name: android-build-g1
 "on":
   push:
     branches: ["feat/gdscript-foundation"]
-  pull_request:
-    branches: ["main"]
   workflow_dispatch:
 
 concurrency:
