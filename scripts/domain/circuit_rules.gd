@@ -38,7 +38,12 @@ static func valid_saved(state: GameState, active: Dictionary) -> bool:
 	if active.circuit_open:
 		return active.move_count > 0
 	var gate: int = int(state.circuit.gate_tube)
-	if active.tubes[gate] != state.tubes[gate].layers:
+	var saved_gate: Array = active.tubes[gate]
+	if saved_gate.size() != state.tubes[gate].layers.size():
 		return false
+	# Save boundary already validates integral palette IDs; JSON numbers are floats.
+	for index: int in range(saved_gate.size()):
+		if int(saved_gate[index]) != state.tubes[gate].layers[index]:
+			return false
 	var sensor: Array = active.tubes[int(state.circuit.sensor_tube)]
 	return active.move_count == 0 or sensor.is_empty() or int(sensor.back()) != int(state.circuit.target_colour)

@@ -44,11 +44,12 @@ func run() -> void:
 	await create_timer(0.2).timeout
 	await capture("02-grid-en")
 	var map: LevelMapScreen = nav.current_screen() as LevelMapScreen
+	var original_level_count: int = map.catalog.available_level_ids.size()
 	check((map.get("_grid") as GridContainer).columns == 3, "standard three columns")
 	check((map.find_child("level_001", true, false) as Button).text.contains("★"), "completion star readable")
 	check((map.find_child("level_010", true, false) as Button).text.contains("Current"), "selected attempt shown")
 	# Exercise actual scrolling with a bounded future-size catalog; 14 tiles can fit.
-	for number: int in range(16, 61):
+	for number: int in range(original_level_count + 1, 61):
 		map.catalog.available_level_ids.append("level_%03d" % number)
 	map.call("_populate")
 	await create_timer(0.2).timeout
@@ -108,7 +109,7 @@ func run() -> void:
 	await capture("08-game-ar")
 	nav.go_home()
 	var catalog: LevelCatalog = nav.get("_catalog")
-	catalog.available_level_ids.resize(15)
+	catalog.available_level_ids.resize(original_level_count)
 	nav.get("_settings").set_language("ar")
 	nav.show_map()
 	await create_timer(0.2).timeout

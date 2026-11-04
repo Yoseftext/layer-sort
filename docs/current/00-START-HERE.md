@@ -149,3 +149,7 @@ ChatGPT guides architecture and independently reviews changes, risk and test evi
 ## G5-P1 owner authorization — 2026-11-04
 
 G4 unified candidate PR18 merged as `144c744b92c3e66f71ad44a0d5b962121c72bba1`; automatic main CI41789052494 passed. The owner now authorizes only G5-P1 Layer Circuit and Level15; see [bounded contract](../G5_P1.md). Historical G4-only scope does not revoke this new authorization. G5-P2/levels16–20, G6 and any new merge remain unauthorized. Rules contract remains Draft; G15-QA-001 remains OPEN.
+
+## Current G5-P2 checkpoint
+
+Owner authorizes Levels16–17 on existing Draft PR19 after owner-reported G5-P1 Android QA12/12 PASS. Allocation:15 Circuit,16 Classic,17 Circuit;18 Classic/19 Circuit/20 Classic are planned only. See [G5-P2 content and verification](../G5_P2.md). This later authorization supersedes the earlier P1-only scope restriction, without authorizing G5-P3, G5-Final polish, G6 or any merge.
