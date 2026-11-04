@@ -307,6 +307,12 @@ jobs:
           timeout 60s godot --headless --path . --script res://tests/g5/p3_content_test.gd 2>&1 | tee logs/g5-p3.log
           grep -q "G5_P3_PASS" logs/g5-p3.log
 
+      - name: Run responsive marker geometry
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/polish/marker_geometry_test.gd 2>&1 | tee logs/marker-geometry.log
+          grep -q "MARKER_GEOMETRY_PASS" logs/marker-geometry.log
+
       - name: Run G2 Classic rules unit suite
         run: |
           set -o pipefail
@@ -362,6 +368,9 @@ jobs:
           grep -q "G5_P3_VISUAL_PASS" logs/g5-p3-teardown-before.log
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-g5-p3-captures" timeout 90s xvfb-run -a godot --verbose --audio-driver Dummy --path . --script res://tests/g5/p3_visual_test.gd 2>&1 | tee logs/g5-p3-visual.log
           grep -q "G5_P3_VISUAL_PASS" logs/g5-p3-visual.log
+          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-tube-polish" timeout 120s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/polish/tube_render_test.gd 2>&1 | tee logs/tube-polish.log
+          grep -q "TUBE_POLISH_PASS" logs/tube-polish.log
+          if grep -Eq "SCRIPT ERROR|ObjectDB.*leaked|resources? still in use" logs/tube-polish.log; then exit 1; fi
           if grep -Eq "ObjectDB.*leaked|resources? still in use|SCRIPT ERROR" logs/g5-p3-visual.log; then exit 1; fi
           VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-feedback-captures" timeout 90s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/feedback/feedback_visual_test.gd 2>&1 | tee logs/feedback-visual.log
           grep -q "FEEDBACK_VISUAL PASS" logs/feedback-visual.log
@@ -456,6 +465,8 @@ jobs:
 
       - name: Collect rendered evidence after export
         run: |
+          mkdir -p logs/tube-polish-screenshots
+          cp "$RUNNER_TEMP/layersort-tube-polish/"*.png logs/tube-polish-screenshots/
           mkdir -p logs/g5-p3-screenshots
           cp "$RUNNER_TEMP/layersort-g5-p3-captures/"*.png logs/g5-p3-screenshots/
           mkdir -p logs/g5-screenshots
@@ -491,6 +502,7 @@ jobs:
             logs/*.txt
             logs/*.log
             logs/*.json
+            logs/tube-polish-screenshots/*.png
             logs/g5-p3-screenshots/*.png
             logs/g5-screenshots/*.png
             logs/real-ui-screenshots/*.png
