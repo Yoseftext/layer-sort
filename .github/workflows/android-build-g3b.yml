@@ -358,7 +358,7 @@ jobs:
           grep -q 'G4_PRODUCTION_TESTS status=PASS' logs/g4-production.log
           if grep -Eq 'SCRIPT ERROR|G4_PRODUCTION_FAIL' logs/g4-production.log; then exit 1; fi
           python3 -m unittest tests/test_audio_assets.py
-          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-hud-polish" timeout 120s xvfb-run -a godot --audio-driver Dummy --path . --script res://tests/polish/gameplay_hud_test.gd 2>&1 | tee logs/hud-polish.log
+          VISUAL_CAPTURE_DIR="$RUNNER_TEMP/layersort-hud-polish" timeout 120s xvfb-run -a godot --verbose --audio-driver Dummy --path . --script res://tests/polish/gameplay_hud_test.gd 2>&1 | tee logs/hud-polish.log
           grep -q "HUD_POLISH_PASS" logs/hud-polish.log
           if grep -Eq "SCRIPT ERROR|ObjectDB.*leaked|resources? still in use" logs/hud-polish.log; then exit 1; fi
           timeout 60s godot --headless --audio-driver Dummy --path . --script res://tests/feedback/feedback_test.gd 2>&1 | tee logs/feedback.log

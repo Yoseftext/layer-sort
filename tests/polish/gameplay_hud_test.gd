@@ -144,10 +144,16 @@ func audio_lifecycle() -> void:
 	root.add_child(audio)
 	for cue: String in ["select","pour","invalid","complete","win"]:
 		audio.play(cue)
+		# Let deferred playback register before exercising mute/teardown.
+		# Muting five newly queued cues in their creation frame does not test
+		# audible playback and retained pending resources on pinned4.7.2.
+		await create_timer(0.04).timeout
+		check(audio._voices[(audio._next_voice + 3) % 4].playing, "gameplay cue starts before mute")
 	check(audio._voices.size() == 4, "bounded existing voice pool")
 	audio.enabled = false
 	for voice: AudioStreamPlayer in audio._voices:
 		check(not voice.playing, "mute stops gameplay sounds")
+	await create_timer(0.2).timeout
 	audio.enabled = true
 	audio._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 	audio.play("pour")
@@ -156,7 +162,7 @@ func audio_lifecycle() -> void:
 	audio._notification(NOTIFICATION_APPLICATION_FOCUS_IN)
 	for voice: AudioStreamPlayer in audio._voices:
 		voice.stream = null
-	await create_timer(0.1).timeout
+	await create_timer(0.2).timeout
 	audio.queue_free()
 	await process_frame
 
