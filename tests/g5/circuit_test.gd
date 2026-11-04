@@ -62,6 +62,8 @@ func _initialize() -> void:
 	definition.gate_tube = 1
 	definition.name = "unknown"
 	check(not CircuitRules.parse([definition], 4, 2).ok, "unknown mechanic rejected")
+	active.circuit_open = false
+	check(not repo._valid_active(active, catalog), "impossible unlatched matching sensor rejected")
 	active.erase("circuit_open")
 	check(not repo._valid_active(active, catalog), "missing Circuit latch rejected")
 	active.circuit_open = "true"

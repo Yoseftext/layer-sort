@@ -35,4 +35,10 @@ static func valid_saved(state: GameState, active: Dictionary) -> bool:
 		return not active.has("circuit_open")
 	if not active.get("circuit_open") is bool:
 		return false
-	return not active.circuit_open or active.move_count > 0
+	if active.circuit_open:
+		return active.move_count > 0
+	var gate: int = int(state.circuit.gate_tube)
+	if active.tubes[gate] != state.tubes[gate].layers:
+		return false
+	var sensor: Array = active.tubes[int(state.circuit.sensor_tube)]
+	return active.move_count == 0 or sensor.is_empty() or int(sensor.back()) != int(state.circuit.target_colour)
