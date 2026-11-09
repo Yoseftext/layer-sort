@@ -1,0 +1,12 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "layer-sort-agent-kit",
+  "displayName": "Layer Sort Agent Kit",
+  "version": "0.3.0",
+  "description": "Project-scoped engineering agents and quality workflows for Layer Sort Godot development, architecture review, security, Android QA, and release evidence.",
+  "suggestedPrompts": [
+    "Audit the current Layer Sort repository, branch, and toolchain without changing files.",
+    "Review a proposed Layer Sort change against the active project scope, security rules, and test evidence.",
+    "Plan a bounded Android QA run for a provenanced APK using the approved package-scoped wrapper."
+  ]
+}
