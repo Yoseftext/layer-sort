@@ -15,6 +15,11 @@ const BLOCKED_WRITE_TOOLS = new Set([
   "create_directory", "make_directory", "write_pdf"
 ]);
 
+// Only these content-writing tools may write, and only into a verified nested Git Worktree.
+const WORKTREE_WRITE_PATH_FIELDS = Object.freeze({
+  write_file: "Path"
+});
+
 const READ_PATH_FIELDS = Object.freeze({
   view_file: "AbsolutePath",
   read_file: "Path",
@@ -25,9 +30,11 @@ const READ_PATH_FIELDS = Object.freeze({
 
 const SENSITIVE_PATH =
   /(^|\/)(?:\.env(?:\.[^/]*)?|\.ssh|\.git|secrets?(?:\.[^/]*)?|credentials?(?:\.[^/]*)?|id_rsa(?:\.pub)?|id_ed25519(?:\.pub)?)(?:\/|$)|\.(?:jks|keystore|pem|key)$/i;
+const WORKTREE_PROTECTED_PATH = /(^|\/)\.agents(?:\/|$)/i;
 
 const SHELL_META = /[;&|><$(){}\[\]\r\n\\'"!#*?~]/;
 const PROJECT_ROOT = "/root/projects/layer-sort";
+const WORKTREE_BASE = path.join(PROJECT_ROOT, ".worktrees");
 const MAX_COMMAND_LENGTH = 2048;
 const MAX_COMMAND_TOKENS = 64;
 
@@ -77,6 +84,135 @@ function getWorkspaceRoots(payload) {
       canonicalPath(item) === expectedRoot
   );
   return includesProjectRoot ? [PROJECT_ROOT] : [];
+}
+
+function isRegisteredGitWorktree(worktreeRoot) {
+  try {
+    const absoluteRoot = path.resolve(worktreeRoot);
+    if (canonicalPath(absoluteRoot) !== absoluteRoot) return false;
+
+    const rootStat = fs.lstatSync(absoluteRoot);
+    if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) return false;
+
+    const marker = path.join(absoluteRoot, ".git");
+    const markerStat = fs.lstatSync(marker);
+    if (!markerStat.isFile() || markerStat.isSymbolicLink()) return false;
+
+    const markerMatch = /^gitdir:\s*(.+)$/i.exec(fs.readFileSync(marker, "utf8").trim());
+    if (!markerMatch) return false;
+
+    const adminRoot = canonicalPath(path.join(PROJECT_ROOT, ".git", "worktrees"));
+    const adminDir = canonicalPath(path.resolve(absoluteRoot, markerMatch[1]));
+    if (path.dirname(adminDir) !== adminRoot) return false;
+
+    const adminStat = fs.lstatSync(adminDir);
+    if (!adminStat.isDirectory() || adminStat.isSymbolicLink()) return false;
+
+    const commonDirFile = path.join(adminDir, "commondir");
+    const backlinkFile = path.join(adminDir, "gitdir");
+    const commonDirStat = fs.lstatSync(commonDirFile);
+    const backlinkStat = fs.lstatSync(backlinkFile);
+    if (
+      !commonDirStat.isFile() ||
+      commonDirStat.isSymbolicLink() ||
+      !backlinkStat.isFile() ||
+      backlinkStat.isSymbolicLink()
+    ) {
+      return false;
+    }
+
+    const commonDirText = fs.readFileSync(commonDirFile, "utf8").trim();
+    const backlinkText = fs.readFileSync(backlinkFile, "utf8").trim();
+    if (!commonDirText || !backlinkText) return false;
+
+    const expectedCommon = canonicalPath(path.join(PROJECT_ROOT, ".git"));
+    const actualCommon = canonicalPath(path.resolve(adminDir, commonDirText));
+    if (actualCommon !== expectedCommon) return false;
+
+    const actualBacklink = canonicalPath(path.resolve(adminDir, backlinkText));
+    return actualBacklink === canonicalPath(marker);
+  } catch {
+    return false;
+  }
+}
+
+function getRegisteredWorktreeRoot(candidate) {
+  const expectedBase = path.resolve(WORKTREE_BASE);
+  if (!fs.existsSync(expectedBase) || canonicalPath(expectedBase) !== expectedBase) {
+    return null;
+  }
+
+  const canonicalCandidate = canonicalPath(candidate);
+  if (!isWithin(canonicalCandidate, [expectedBase])) return null;
+
+  const relative = path.relative(expectedBase, canonicalCandidate);
+  const segments = relative.split(path.sep).filter(Boolean);
+  if (segments.length < 2) return null;
+
+  const worktreeRoot = path.join(expectedBase, segments[0]);
+  if (!isRegisteredGitWorktree(worktreeRoot)) return null;
+  return isWithin(canonicalCandidate, [worktreeRoot]) ? worktreeRoot : null;
+}
+
+function evaluateWorktreeWriteTool(toolName, payload) {
+  const field = WORKTREE_WRITE_PATH_FIELDS[toolName];
+  if (!field) return null;
+
+  const roots = getWorkspaceRoots(payload);
+  if (roots.length === 0) {
+    return deny("Worktree writes require the fixed Layer Sort workspace.");
+  }
+
+  const args = payload?.toolCall?.args ?? {};
+  const candidate = args[field];
+  if (typeof candidate !== "string" || candidate.length === 0) {
+    return deny("Worktree write tools require an absolute Path argument.");
+  }
+
+  const normalized = candidate.replaceAll("\\", "/");
+  if (
+    !path.isAbsolute(normalized) ||
+    normalized.includes(String.fromCharCode(0)) ||
+    normalized.split("/").includes("..") ||
+    SENSITIVE_PATH.test(normalized) ||
+    WORKTREE_PROTECTED_PATH.test(normalized)
+  ) {
+    return deny("Worktree write paths must be absolute, traversal-free, and non-sensitive.");
+  }
+
+  const lexicalCandidate = path.resolve(normalized);
+  const canonicalCandidate = canonicalPath(lexicalCandidate);
+  if (canonicalCandidate !== lexicalCandidate) {
+    return deny("Symlink traversal is not permitted for Worktree writes.");
+  }
+
+  const canonicalForPolicy = canonicalCandidate.replaceAll("\\", "/");
+  if (
+    SENSITIVE_PATH.test(canonicalForPolicy) ||
+    WORKTREE_PROTECTED_PATH.test(canonicalForPolicy)
+  ) {
+    return deny("Writes to Git metadata, agent configuration, secrets, and signing material are blocked.");
+  }
+
+  const worktreeRoot = getRegisteredWorktreeRoot(canonicalCandidate);
+  if (!worktreeRoot || !isWithin(canonicalCandidate, [worktreeRoot])) {
+    return deny("Write targets must remain inside a registered Git Worktree under .worktrees/.");
+  }
+
+  const relative = path.relative(worktreeRoot, canonicalCandidate);
+  if (!relative || relative === "." || relative.split(path.sep).includes("..")) {
+    return deny("A Worktree write must target a file below the Worktree root.");
+  }
+
+  try {
+    if (fs.lstatSync(canonicalCandidate).isDirectory()) {
+      return deny("Worktree write targets must be files, not directories.");
+    }
+  } catch {
+    // A new file is a valid target; canonicalPath already resolved its existing parent.
+  }
+
+  return allow();
 }
 
 function validatePath(candidate, cwd, roots) {
@@ -706,6 +842,9 @@ export function evaluate(payload) {
   if (/remote[_\s-]*desktop[_\s-]*commander|desktop[_\s-]*commander/i.test(toolName)) {
     return deny("Agents must not inherit or invoke Remote Desktop Commander.");
   }
+
+  const worktreeWriteDecision = evaluateWorktreeWriteTool(toolName, payload);
+  if (worktreeWriteDecision) return worktreeWriteDecision;
 
   if (BLOCKED_WRITE_TOOLS.has(toolName)) {
     return deny("Agent file-write tools are disabled until the infrastructure gates are complete.");
