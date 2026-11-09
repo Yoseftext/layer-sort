@@ -7,8 +7,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/policy.sh",
-            "timeout": 5
+            "command": "/usr/bin/bash /root/projects/layer-sort/.agents/plugins/layer-sort-agent-kit/scripts/policy.sh",
+            "timeout": 10
           }
         ]
       }

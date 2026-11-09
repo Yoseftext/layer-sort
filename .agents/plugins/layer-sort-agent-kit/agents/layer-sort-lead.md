@@ -28,6 +28,7 @@ agents:
   - dependency-auditor.md
   - device-qa.md
   - visual-auditor.md
+  - engineering-auditor.md
   - reviewer.md
 ---
 
