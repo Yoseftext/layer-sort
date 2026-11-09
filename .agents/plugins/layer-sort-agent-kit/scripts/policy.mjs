@@ -670,7 +670,7 @@ function evaluateRunCommand(payload) {
   if (executable === "agentctl") {
     const expected = path.resolve(roots[0], "tools/device-tests/agentctl");
     const actual = path.resolve(cwd, tokens[0]);
-    const actions = new Set(["status", "battery", "thermal", "screenshot", "logcat"]);
+    const actions = new Set(["status", "battery", "thermal", "performance-check", "screenshot", "logcat"]);
     return actual === expected && commandArgs.length === 1 && actions.has(commandArgs[0])
       ? allow()
       : deny("Only exact read-only actions through tools/device-tests/agentctl are allowed.");

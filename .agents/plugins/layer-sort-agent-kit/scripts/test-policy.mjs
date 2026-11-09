@@ -47,6 +47,8 @@ for (const toolName of [
 assert.equal(decision("run_command", "tools/device-tests/agentctl status"), "allow");
 assert.equal(decision("run_command", "tools/device-tests/agentctl battery"), "allow");
 assert.equal(decision("run_command", "tools/device-tests/agentctl thermal"), "allow");
+assert.equal(decision("run_command", "tools/device-tests/agentctl performance-check"), "allow");
+assert.equal(decision("run_command", "tools/device-tests/agentctl performance-check --force"), "deny");
 assert.equal(decision("run_command", "tools/device-tests/agentctl screenshot"), "allow");
 assert.equal(decision("run_command", "tools/device-tests/agentctl tap 10 20 --owner-approved"), "deny");
 assert.equal(decision("run_command", "tools/device-tests/device_qa.py status"), "deny");
