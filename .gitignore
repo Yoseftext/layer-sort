@@ -22,3 +22,6 @@ secrets/
 # Python bytecode from local syntax checks
 __pycache__/
 *.pyc
+
+# Nested isolated agent worktrees; create only after the owner selects sandbox mode.
+.worktrees/

@@ -103,8 +103,8 @@ This section supersedes historical G1.5 references to direct `phone-queue`, `gam
 - Remote Desktop Commander file tools are scoped to `/root/projects/layer-sort`. Its shell command runner remains privileged and is **not** an OS sandbox.
 - Agent Kit agents use `inheritMcp: false`; the project plugin defines no MCP servers. Agents must not inherit or receive the ChatGPT Remote Desktop Commander connector.
 - RDC file operations are limited to the project root. Its generic shell runner remains privileged and is not constrained by `allowedDirectories`; `blockedCommands` is a denylist, not a sandbox.
-- The plugin-scoped `.agents/plugins/layer-sort-agent-kit/hooks.json` installs a PreToolUse guard for all tools. It denies file-write/edit tools and RDC MCP calls, restricts file-inspection paths to the active workspace, blocks secret-file reads, and restricts `run_command` to an explicit project allowlist. The policy script returns a deny decision if its input is malformed or its Node process fails. Hook activation must be verified in the CLI with `/hooks`; hook policy is not OS isolation.
-- Agent shell execution must use Antigravity terminal sandbox mode (`agy --sandbox`) only after a read-only isolation probe confirms the sandbox is active. `unshare -Ur` availability alone is not proof that the CLI sandbox is active.
+- The plugin-scoped `.agents/plugins/layer-sort-agent-kit/hooks.json` installs a default-deny PreToolUse guard. Only explicitly named tools are allowed; unknown tools are denied. `run_command` uses per-executable and per-option allowlists. `view_file` (`AbsolutePath`) and `read_file` (`Path`) are restricted to the fixed project root and secret-file reads are denied. It blocks `rg --pre*`, `sed` write/execute/in-place commands, `find` file-output/execute/delete predicates, Git `--output`, file-write tools, and RDC MCP calls. Existing `ssh` allowlist entries are unchanged; any future need must be wrapped to a specific server. The hook command and script paths are absolute. Its wrapper emits an explicit deny for malformed input, missing Node, non-zero policy-engine exit, or unexpected output; it must never intentionally return empty stdout. Antigravity documents empty PreToolUse output as no-decision, not deny. A controlled missing-hook-executable probe on installed CLI 1.5.3 timed out before producing a decision, so spawn-failure behavior remains UNVERIFIED. The owner accepted that as a documented risk, not a standalone gate. Hook policy is not OS isolation.
+- The sandboxed `run_command` probe failed before execution with `fork/exec /root/.local/bin/agy: operation not permitted`; root cause is not yet distinguished between PRoot, sandbox execution, and executable permissions. Owner decision is pending: Option A repairs and verifies the sandbox; Option B disables sandbox and relies on the default-deny Hook plus dedicated Worktree/Patch/Reviewer controls, explicitly without OS isolation. Do not grant agent write authority or create the first Worktree until the owner selects A or B. `unshare -Ur` availability alone is not proof that the CLI sandbox is active.
 - The only approved device entrypoint is `tools/device-tests/agentctl`. It targets only `com.yoseftext.layersort.dev`, uses the existing shared phone lock and existing ADB server, and exposes no arbitrary shell, install, uninstall, clear-data, permissions, global settings, or service management.
 - Appium/UiAutomator2 are **Evaluated / Not Approved**. Do not start the service or use Appium without a new owner decision.
 - ADB `input tap/swipe` is synthetic input and measures in-game hit-testing, not physical touch accuracy. ADB timeouts or missing telemetry produce `UNKNOWN`.
@@ -112,36 +112,37 @@ This section supersedes historical G1.5 references to direct `phone-queue`, `gam
 ### Worktree + Patch governance
 
 - No agent currently has file-write or file-edit tools. The Lead's write tools are withheld; specialists remain read-only.
-- A named specialist may receive write authority only after `.agents/` is committed, the plugin guard is loaded, the Device Wrapper is verified, Antigravity sandbox isolation is confirmed, and that specialist's dedicated worktree exists.
+- A named specialist may receive write authority only after `.agents/` is committed, the plugin guard is loaded, the Device Wrapper is verified, the owner has explicitly selected sandbox Option A or B, and that specialist's dedicated Worktree exists under `.worktrees/`. Option B is an accepted operational risk, not OS isolation.
 - Each implementation specialist receives one disjoint path allowlist and one task. It writes only in its own worktree and returns a patch; it never writes to `main`, pushes, merges, or rewrites history. The Lead receives integration write tools only after the same prerequisites and only for the integration step.
 - Before Reviewer inspection, deterministic preflight must verify the patch path allowlist, reject protected paths, run `git diff --check`, and run the relevant existing tests.
 - Reviewer independently inspects the exact diff, test evidence, scope, security, and rollback. Engineering-auditor recommendations must be reviewed by Reviewer; the auditor cannot approve its own recommendations.
 - Integrate one patch at a time. Run regression tests after each integration before considering the next patch. The Lead owns integration; protected-main merge still requires exact owner authorization under ADR-0007.
-- No worktree has been created yet. `.agents/` must be committed first.
+- No Worktree has been created yet. `.agents/` is committed locally. All future Worktrees must be nested under `.worktrees/`, which is Git-ignored; test the fixed `PROJECT_ROOT` path policy against a real nested Worktree before granting writes.
 
 ### Measurement and evaluation
 
-The Task Ledger begins in Phase 1, before agent expansion, with a fixed schema:
+The Task Ledger begins before agent expansion, with a fixed schema:
 
 `task_id, agent, commit, APK hash, result, Reviewer findings`
 
-Record actual execution evidence, not inferred scores. Before a sufficient sample exists, use deterministic measurements only and do not score agents. Test Escape Rate requires deliberately seeded defects and a measured Reviewer benchmark.
+`result` must preserve the actual execution-tool payload, tool name, summary, and evidence; an exit code alone is invalid. The native `manage_task` tool is process control (`list`, `kill`, `status`, `send_input`), not task creation/update. The local append-only ledger assigns stable task IDs and records actual `invoke_subagent` responses plus completion messages. Initial acceptance: two real read-only tasks, both captured and validated (repo-auditor and device-qa); no APK was involved and no patch was submitted for Reviewer findings. Record actual execution evidence, not inferred scores. Before a sufficient sample exists, use deterministic measurements only and do not score agents. Test Escape Rate requires deliberately seeded defects and a measured Reviewer benchmark.
 
 Device performance evidence should combine Godot runtime monitors with supported Android battery/thermal telemetry. Do not infer FPS or CPU/GPU temperature from unavailable `dumpsys` fields. The QA-only harness must use a dedicated feature tag and CI must verify that the release APK does not contain it.
 
-### Approved implementation order
+### Approved implementation order — owner decision 2026-11-09
 
-1. Restrict Remote Desktop Commander and ensure agents cannot inherit it.
-2. Apply and verify the package-scoped Device Wrapper.
-3. Re-measure thermal status after the device has rested.
-4. Create and validate the Task Ledger.
-5. Build `puzzle-validator` around deterministic solver and existing test evidence.
+1. Commit `.agents/` — DONE.
+2. Create and validate the append-only Task Ledger on two real read-only tasks — DONE.
+3. Build and verify `puzzle-validator` using the Circuit solver, levels 15/17/19, a deliberately unsolvable fixture, and `UNKNOWN` on timeout.
+4. Create the first nested Worktree and complete one full Patch cycle: deterministic path/diff/test preflight, independent Reviewer verdict, one-patch integration, regression test.
+5. Run an acceptance test for each of the seven existing agents; do not add agents before the first Patch cycle passes.
+6. Only after these gates, expand toward 12 agents and Waves 2–4, based on measured bottlenecks.
 
-Subsequent agent waves require a measured development bottleneck. If an agent does not improve a measured outcome, stop expanding the fleet.
+The owner performs phone reading/control and the thermal recheck; ChatGPT reviews the resulting report and does not execute phone actions. If an agent does not improve a measured outcome, stop expanding the fleet.
 
 ## Current gate reconciliation — ADR-0006
 
-See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. The owner-approved infrastructure sequence dated 2026-11-09 supersedes the prior "no phone operations" sentence only for the bounded, read-only thermal recheck and the package-scoped wrapper described above. No gameplay/G5 implementation, APK install, uninstall, data wipe, global setting/permission change, service modification, or merge is authorized by that sequence.
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. The owner-approved infrastructure sequence dated 2026-11-09 supersedes the prior "no phone operations" sentence only for the package-scoped wrapper and bounded read-only checks. The owner performs phone reading/control and the thermal recheck; ChatGPT reviews the resulting reports and does not access or mutate the phone. No gameplay/G5 implementation, APK install, uninstall, data wipe, global setting/permission change, service modification, or merge is authorized by that sequence.
 
 ## Owner-authorized merge execution — ADR-0007
 
