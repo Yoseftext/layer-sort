@@ -1,0 +1,17 @@
+{
+  "layer-sort-agent-guard": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/policy.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
