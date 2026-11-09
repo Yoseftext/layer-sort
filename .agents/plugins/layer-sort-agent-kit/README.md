@@ -5,7 +5,7 @@ Workspace-scoped Antigravity customizations for the Layer Sort repository.
 ## Current components
 
 - **1 primary agent:** `layer-sort-lead`
-- **5 read-only specialist subagents:** repository audit, dependency audit, device QA planning, visual QA, independent review
+- **6 read-only specialist subagents:** repository audit, dependency audit, engineering audit, device QA planning, visual QA, independent review
 - **7 on-demand skills:** project context, typed GDScript, Android/Godot QA, dependency compatibility, security review, visual QA, engineering quality
 - **1 plugin-scoped PreToolUse guard:** `.agents/plugins/layer-sort-agent-kit/hooks.json`
 - **0 MCP servers**
@@ -13,9 +13,9 @@ Workspace-scoped Antigravity customizations for the Layer Sort repository.
 
 ## Write authority — currently disabled
 
-No agent currently receives file-write or file-edit tools. All specialist agents and the Lead are read-only. The PreToolUse guard denies file-write tools and Remote Desktop Commander MCP tools, restricts `view_file`/`list_dir`/`find_by_name`/`grep_search` to workspace paths, and blocks secret-file reads.
+No agent currently receives file-write or file-edit tools. All specialist agents and the Lead are read-only. The PreToolUse guard uses an explicit tool allowlist: every unregistered tool is denied. It restricts `view_file`/`list_dir`/`find_by_name`/`grep_search` to workspace paths, blocks secret-file reads, and denies Remote Desktop Commander MCP tools. The engineering-auditor is recommendations-only; the independent Reviewer must assess its findings.
 
-The Lead currently has no shell command tool. The PreToolUse guard retains a narrow command allowlist for a future, separately approved re-enable. Direct ADB/Appium, arbitrary interpreters, shell composition, path escape, secret-file reads, destructive commands, agent file writes, and RDC MCP calls are denied. The hook is policy enforcement, not an OS sandbox; Antigravity's terminal sandbox must be enabled and verified before granting any future command or write authority.
+The Lead currently has no shell command tool. The PreToolUse guard retains a narrow executable-and-flag allowlist for a future, separately approved re-enable. Unknown executables and options are denied. `rg --pre*`, `sed` write/execute/in-place commands, `find` file-output/execute/delete predicates, Git `--output`, direct ADB/Appium, arbitrary interpreters, shell composition, path escape, secret-file reads, destructive commands, agent file writes, and RDC MCP calls are denied. The hook is policy enforcement, not an OS sandbox. Antigravity's handling of a PreToolUse executable that cannot be spawned remains UNVERIFIED on installed CLI 1.5.3; empty hook output is a no-decision, not a deny. Therefore all agents remain read-only, `commandExecutionPolicy` stays `off`, and no worktree or write authority is permitted until spawn-failure behavior is proven and terminal sandbox isolation is independently verified.
 
 The owner approved Worktree + Patch for future specialist implementation. Write authority remains disabled until all prerequisites are verified: Remote Desktop Commander restrictions, the wrapper, a loaded command guard, a committed `.agents/`, confirmed terminal sandbox isolation, and a dedicated worktree. Each specialist will receive one disjoint path allowlist and return a patch. The Lead owns integration. Each patch must pass deterministic path/diff/test preflight, then independent Reviewer inspection. Integrate one patch at a time and run regression tests between patches.
 
