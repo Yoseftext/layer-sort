@@ -23,5 +23,5 @@ secrets/
 __pycache__/
 *.pyc
 
-# Nested isolated agent worktrees; create only after the owner selects sandbox mode.
+# Nested agent worktrees; all worktrees must remain under this ignored directory.
 .worktrees/

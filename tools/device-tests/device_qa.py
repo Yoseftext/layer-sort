@@ -242,26 +242,71 @@ def parse_thermal(output: str) -> dict[str, object]:
             sensor_status = re.search(r"mStatus\s*=\s*(\d+)", line)
             if value and name:
                 status_code = int(sensor_status.group(1)) if sensor_status else None
+                sensor_name = name.group(1)
+                is_soc = sensor_name.lower() == "soc"
+                reported_status_name = (
+                    THERMAL_NAMES.get(status_code, "UNKNOWN")
+                    if status_code is not None else "UNKNOWN"
+                )
                 sensors.append({
-                    "name": name.group(1),
+                    "name": sensor_name,
                     "value_c": float(value.group(1)),
                     "type_code": int(sensor_type.group(1)) if sensor_type else None,
                     "status_code": status_code,
-                    "status_name": THERMAL_NAMES.get(status_code, "UNKNOWN") if status_code is not None else "UNKNOWN",
+                    "reported_status_name": reported_status_name,
+                    "status_name": "UNVERIFIED" if is_soc else reported_status_name,
+                    "verification": "UNVERIFIED" if is_soc else "REPORTED",
                     "source": section,
                 })
         if diagnostic_pattern.search(line):
             diagnostic_lines.append(line.strip()[:240])
-    severe_sensor = any(
-        isinstance(sensor.get("status_code"), int) and int(sensor["status_code"]) >= 3
-        for sensor in sensors
+    current_hal_sensors = [
+        sensor for sensor in sensors
+        if sensor.get("source") == "hal" and sensor.get("verification") != "UNVERIFIED"
+    ]
+    cached_sensors = [
+        sensor for sensor in sensors
+        if sensor.get("source") == "cached" and sensor.get("verification") != "UNVERIFIED"
+    ]
+    current_hal_severe_sensors = [
+        sensor for sensor in current_hal_sensors
+        if isinstance(sensor.get("status_code"), int) and int(sensor["status_code"]) >= 3
+    ]
+    cached_severe_sensor_count = sum(
+        1
+        for sensor in cached_sensors
+        if isinstance(sensor.get("status_code"), int) and int(sensor["status_code"]) >= 3
+    )
+    soc_unverified_count = sum(
+        1 for sensor in sensors if sensor.get("verification") == "UNVERIFIED"
+    )
+    framework_severe = code >= 3
+    hal_non_soc_severe = bool(current_hal_severe_sensors)
+    performance_gate = "BLOCK" if framework_severe and hal_non_soc_severe else "ALLOW"
+    thermal_warning = (
+        code >= 1
+        or bool(current_hal_severe_sensors)
+        or cached_severe_sensor_count > 0
+        or soc_unverified_count > 0
     )
     return {
         "thermal_status_code": code,
         "thermal_status_name": THERMAL_NAMES.get(code, f"UNKNOWN_{code}"),
         "sensors": sensors,
+        "current_hal_severe_sensor_count": len(current_hal_severe_sensors),
+        "current_hal_severe_sensor_names": [
+            str(sensor["name"]) for sensor in current_hal_severe_sensors
+        ],
+        "cached_severe_sensor_count": cached_severe_sensor_count,
+        "soc_verification": "UNVERIFIED",
+        "thermal_warning": thermal_warning,
+        "performance_gate": performance_gate,
+        "performance_gate_sources": {
+            "android_framework_global_severe": framework_severe,
+            "current_hal_non_soc_sensor_severe": hal_non_soc_severe,
+            "soc_sensor_used": False,
+        },
         "diagnostic_lines": diagnostic_lines[:50],
-        "readiness": "FAIL" if code >= 3 or severe_sensor else "PASS",
     }
 
 
@@ -337,12 +382,24 @@ def execute(args: argparse.Namespace) -> int:
                 "PASS", action, device=device,
                 **parse_battery(shell_text(serial, "dumpsys", "battery")),
             )
-        if action == "thermal":
+        if action in {"thermal", "performance-check"}:
             data = parse_thermal(
                 shell_text(serial, "dumpsys", "thermalservice", timeout=15.0)
             )
-            readiness = str(data.pop("readiness"))
-            return emit(readiness, action, device=device, **data)
+            performance_gate = str(data["performance_gate"])
+            if action == "performance-check" and performance_gate == "BLOCK":
+                return emit(
+                    "FAIL", action, device=device,
+                    reason=(
+                        "Performance test blocked: Android framework thermal status "
+                        "and a current non-SoC HAL sensor both report SEVERE."
+                    ),
+                    **data,
+                )
+            return emit(
+                "PASS", action, device=device,
+                **data,
+            )
         if action == "screenshot":
             if focused_package(serial) != PACKAGE_ID:
                 return emit("SKIP", action, reason="Layer Sort is not verified in foreground.")
@@ -442,7 +499,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Allowlisted Layer Sort device QA; no arbitrary ADB shell."
     )
     commands = parser.add_subparsers(dest="action", required=True)
-    for name in ("status", "battery", "thermal", "screenshot", "logcat"):
+    for name in ("status", "battery", "thermal", "performance-check", "screenshot", "logcat"):
         commands.add_parser(name)
     for name in ("launch", "stop", "tap", "swipe"):
         command = commands.add_parser(name)

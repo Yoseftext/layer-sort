@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import subprocess
 import sys
 import unittest
@@ -141,32 +142,113 @@ class DeviceQaParsingTests(unittest.TestCase):
         self.assertEqual(parsed["battery_level_percent"], 88)
         self.assertEqual(parsed["battery_temperature_c"], 29.6)
 
-    def test_thermal_status_three_is_severe_and_not_ready(self) -> None:
+    def test_thermal_status_three_and_soc_severity_are_warning_only(self) -> None:
         parsed = device_qa.parse_thermal(
             "Thermal Status: 3\n"
             "Cached temperatures:\n"
             "Temperature{mValue=42.0, mType=0, mName=CPU, mStatus=0}\n"
             "Current temperatures from HAL:\n"
-            "Temperature{mValue=25.0, mType=8, mName=soc, mStatus=3}\n"
+            "Temperature{mValue=50.0, mType=8, mName=soc, mStatus=3}\n"
         )
         self.assertEqual(parsed["thermal_status_code"], 3)
         self.assertEqual(parsed["thermal_status_name"], "SEVERE")
-        self.assertEqual(parsed["readiness"], "FAIL")
+        self.assertTrue(parsed["thermal_warning"])
+        self.assertEqual(parsed["performance_gate"], "ALLOW")
+        self.assertEqual(parsed["performance_gate_sources"]["android_framework_global_severe"], True)
+        self.assertEqual(parsed["performance_gate_sources"]["current_hal_non_soc_sensor_severe"], False)
+        self.assertEqual(parsed["performance_gate_sources"]["soc_sensor_used"], False)
         self.assertEqual(len(parsed["sensors"]), 2)
         self.assertEqual(parsed["sensors"][0]["source"], "cached")
         self.assertEqual(parsed["sensors"][1]["source"], "hal")
-        self.assertEqual(parsed["sensors"][1]["value_c"], 25.0)
-        self.assertEqual(parsed["sensors"][1]["status_name"], "SEVERE")
+        self.assertEqual(parsed["sensors"][1]["value_c"], 50.0)
+        self.assertEqual(parsed["sensors"][1]["status_name"], "UNVERIFIED")
+        self.assertEqual(parsed["sensors"][1]["reported_status_name"], "SEVERE")
+        self.assertEqual(parsed["sensors"][1]["verification"], "UNVERIFIED")
+        self.assertEqual(parsed["soc_verification"], "UNVERIFIED")
         self.assertIn("Thermal Status: 3", parsed["diagnostic_lines"])
 
-    def test_sensor_severity_is_not_hidden_by_global_status(self) -> None:
+    def test_performance_gate_requires_framework_and_non_soc_hal_severity(self) -> None:
+        parsed = device_qa.parse_thermal(
+            "Thermal Status: 3\n"
+            "Current temperatures from HAL:\n"
+            "Temperature{mValue=67.0, mType=0, mName=CPU4, mStatus=3}\n"
+            "Temperature{mValue=28.0, mType=1, mName=GPU, mStatus=0}\n"
+            "Temperature{mValue=50.0, mType=8, mName=soc, mStatus=3}\n"
+        )
+        self.assertEqual(parsed["current_hal_severe_sensor_count"], 1)
+        self.assertEqual(parsed["current_hal_severe_sensor_names"], ["CPU4"])
+        self.assertEqual(parsed["performance_gate"], "BLOCK")
+        self.assertEqual(parsed["performance_gate_sources"]["soc_sensor_used"], False)
+
+    def test_soc_severity_alone_never_blocks_performance(self) -> None:
         parsed = device_qa.parse_thermal(
             "Thermal Status: 0\n"
             "Current temperatures from HAL:\n"
-            "Temperature{mValue=25.0, mType=8, mName=soc, mStatus=3}\n"
+            "Temperature{mValue=50.0, mType=8, mName=soc, mStatus=3}\n"
         )
         self.assertEqual(parsed["thermal_status_name"], "NONE")
-        self.assertEqual(parsed["readiness"], "FAIL")
+        self.assertEqual(parsed["current_hal_severe_sensor_count"], 0)
+        self.assertEqual(parsed["performance_gate"], "ALLOW")
+        self.assertTrue(parsed["thermal_warning"])
+
+    def test_stale_cached_sensor_severity_does_not_block_performance(self) -> None:
+        parsed = device_qa.parse_thermal(
+            "Thermal Status: 0\n"
+            "Cached temperatures:\n"
+            "Temperature{mValue=67.0, mType=0, mName=CPU, mStatus=3}\n"
+            "Current temperatures from HAL:\n"
+            "Temperature{mValue=32.0, mType=0, mName=CPU, mStatus=0}\n"
+        )
+        self.assertEqual(parsed["thermal_status_name"], "NONE")
+        self.assertEqual(parsed["cached_severe_sensor_count"], 1)
+        self.assertEqual(parsed["current_hal_severe_sensor_count"], 0)
+        self.assertEqual(parsed["performance_gate"], "ALLOW")
+        self.assertTrue(parsed["thermal_warning"])
+
+    def test_thermal_action_returns_pass_with_severe_warning(self) -> None:
+        thermal_output = (
+            "Thermal Status: 3\n"
+            "Current temperatures from HAL:\n"
+            "Temperature{mValue=50.0, mType=8, mName=soc, mStatus=3}\n"
+        )
+        args = device_qa.build_parser().parse_args(["thermal"])
+        output = io.StringIO()
+        with (
+            patch.object(device_qa, "phone_lock", return_value=contextlib.nullcontext()),
+            patch.object(device_qa, "connected_serial", return_value="approved-device"),
+            patch.object(device_qa, "validate_device", return_value={"model": "CPH1937"}),
+            patch.object(device_qa, "ensure_game_installed"),
+            patch.object(device_qa, "shell_text", return_value=thermal_output),
+            contextlib.redirect_stdout(output),
+        ):
+            result = device_qa.execute(args)
+        payload = json.loads(output.getvalue())
+        self.assertEqual(result, 0)
+        self.assertEqual(payload["status"], "PASS")
+        self.assertTrue(payload["thermal_warning"])
+        self.assertEqual(payload["performance_gate"], "ALLOW")
+
+    def test_performance_check_fails_only_when_two_channels_agree(self) -> None:
+        thermal_output = (
+            "Thermal Status: 3\n"
+            "Current temperatures from HAL:\n"
+            "Temperature{mValue=67.0, mType=0, mName=CPU4, mStatus=3}\n"
+        )
+        args = device_qa.build_parser().parse_args(["performance-check"])
+        output = io.StringIO()
+        with (
+            patch.object(device_qa, "phone_lock", return_value=contextlib.nullcontext()),
+            patch.object(device_qa, "connected_serial", return_value="approved-device"),
+            patch.object(device_qa, "validate_device", return_value={"model": "CPH1937"}),
+            patch.object(device_qa, "ensure_game_installed"),
+            patch.object(device_qa, "shell_text", return_value=thermal_output),
+            contextlib.redirect_stdout(output),
+        ):
+            result = device_qa.execute(args)
+        payload = json.loads(output.getvalue())
+        self.assertEqual(result, 1)
+        self.assertEqual(payload["status"], "FAIL")
+        self.assertEqual(payload["performance_gate"], "BLOCK")
 
     def test_missing_thermal_status_is_unknown(self) -> None:
         with self.assertRaises(device_qa.DeviceQaUnknown):
