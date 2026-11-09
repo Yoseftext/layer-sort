@@ -288,4 +288,136 @@ const hookWithoutNode = spawnSync("/usr/bin/bash", [hookScript], {
 assert.equal(hookWithoutNode.status, 0);
 assert.equal(JSON.parse(hookWithoutNode.stdout).decision, "deny");
 
+const worktreesBase = path.join(root, ".worktrees");
+fs.mkdirSync(worktreesBase, { recursive: true });
+const worktreeRoot = path.join(worktreesBase, `policy-test-${process.pid}`);
+const plainWorktreeRoot = path.join(worktreesBase, `not-a-worktree-${process.pid}`);
+assert.equal(fs.existsSync(worktreeRoot), false, "policy test Worktree path must be fresh");
+const addedWorktree = spawnSync(
+  "git",
+  ["worktree", "add", "--detach", worktreeRoot, "HEAD"],
+  { cwd: root, encoding: "utf8" }
+);
+assert.equal(
+  addedWorktree.status,
+  0,
+  "could not create temporary nested Git Worktree: " + (addedWorktree.stderr || addedWorktree.stdout)
+);
+
+try {
+  const ignoredWorktreePath = path.relative(root, path.join(worktreeRoot, "README.md"));
+  const ignoreCheck = spawnSync("git", ["check-ignore", "-q", ignoredWorktreePath], {
+    cwd: root,
+    encoding: "utf8"
+  });
+  assert.equal(ignoreCheck.status, 0, ".worktrees/ must be Git-ignored");
+
+  const allowedPath = path.join(worktreeRoot, "README.md");
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: allowedPath, Content: "policy-test-only" })).decision,
+    "allow",
+    "write_file should be allowed only for a verified nested Worktree path"
+  );
+  for (const toolName of ["write_to_file", "replace_file_content", "multi_replace_file_content"]) {
+    assert.equal(
+      evaluate(fileEvent(toolName, { Path: allowedPath, Content: "policy-test-only" })).decision,
+      "deny",
+      toolName + " must remain blocked until its exact path schema is verified"
+    );
+  }
+
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: path.join(root, "README.md") })).decision,
+    "deny",
+    "the main project checkout must remain read-only"
+  );
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: worktreeRoot })).decision,
+    "deny",
+    "Worktree root itself is not a file target"
+  );
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: "README.md" })).decision,
+    "deny",
+    "relative write paths must be rejected"
+  );
+  assert.equal(
+    evaluate(fileEvent("write_file", { Content: "missing path" })).decision,
+    "deny",
+    "write requests without an absolute Path must be rejected"
+  );
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: path.join(os.tmpdir(), "policy-outside.txt") })).decision,
+    "deny",
+    "external write paths must be rejected"
+  );
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: worktreeRoot + "/../outside.txt" })).decision,
+    "deny",
+    "explicit parent traversal must be rejected"
+  );
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: path.join(worktreeRoot, ".git", "config") })).decision,
+    "deny",
+    ".git paths must remain blocked inside a Worktree"
+  );
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: path.join(worktreeRoot, ".agents", "agents", "probe.md") })).decision,
+    "deny",
+    ".agents paths must remain blocked inside a Worktree"
+  );
+  assert.equal(
+    evaluate(fileEvent("delete_file", { Path: allowedPath })).decision,
+    "deny",
+    "destructive file tools must remain blocked even inside a Worktree"
+  );
+  assert.equal(
+    evaluate(fileEvent("apply_patch", { Patch: "not path-scoped" })).decision,
+    "deny",
+    "unscoped patch tools must remain blocked"
+  );
+
+  fs.mkdirSync(plainWorktreeRoot);
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: path.join(plainWorktreeRoot, "README.md") })).decision,
+    "deny",
+    "a plain directory under .worktrees is not a registered Git Worktree"
+  );
+
+  const escapeLink = path.join(worktreeRoot, "policy-escape");
+  fs.symlinkSync(os.tmpdir(), escapeLink, "dir");
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: path.join(escapeLink, "outside.txt") })).decision,
+    "deny",
+    "symlink escapes from a Worktree must be rejected"
+  );
+
+  const safeTarget = path.join(worktreeRoot, "policy-safe-target");
+  const safeLink = path.join(worktreeRoot, "policy-safe-link");
+  fs.mkdirSync(safeTarget);
+  fs.symlinkSync(safeTarget, safeLink, "dir");
+  assert.equal(
+    evaluate(fileEvent("write_file", { Path: path.join(safeLink, "inside.txt") })).decision,
+    "deny",
+    "all symlink traversal must be rejected, even when the target remains in the same Worktree"
+  );
+} finally {
+  fs.rmSync(plainWorktreeRoot, { recursive: true, force: true });
+  const removedWorktree = spawnSync(
+    "git",
+    ["worktree", "remove", "--force", worktreeRoot],
+    { cwd: root, encoding: "utf8" }
+  );
+  if (removedWorktree.status !== 0) {
+    fs.rmSync(worktreeRoot, { recursive: true, force: true });
+    spawnSync("git", ["worktree", "prune"], { cwd: root, encoding: "utf8" });
+  }
+  assert.equal(
+    removedWorktree.status,
+    0,
+    "could not clean up temporary nested Git Worktree: " +
+      (removedWorktree.stderr || removedWorktree.stdout)
+  );
+}
+
 process.stdout.write("POLICY_TESTS_PASS\n");
