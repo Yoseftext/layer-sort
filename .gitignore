@@ -10,6 +10,9 @@
 # CI log captures
 /logs/
 
+# Runtime device QA evidence is generated locally and may contain screenshots.
+/.runtime/
+
 # Debug signing material must never enter Git.
 *.keystore
 *.jks

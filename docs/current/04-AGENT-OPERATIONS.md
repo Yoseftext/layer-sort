@@ -94,9 +94,54 @@ Termux native environment is the supported location for the exported `rish`/DEX.
 
 A report is acceptable only when it has: inspected OpenCode version/schema; persisted project-scoped agent files; an auditable permissions matrix; tool inventory; at least two demonstrated workflows; deliberate negative-test evidence; a screenshot review report for the G1 scene (not a claim about the final UI); bounded device-lock behavior; Shizuku capability state/permissions and actual `rish id` proof **if enabled**; PR and rollback instructions. Do **not** claim a bridge, vision model or tool existed if it was not directly tested. At that historical gate G2 awaited separate owner authorization; ADR-0003 subsequently authorized it. This is not a present G2 blocker or permission to reopen accepted gameplay.
 
+## Owner-approved execution model — 2026-11-09
+
+This section supersedes historical G1.5 references to direct `phone-queue`, `game-test`, Appium, and the single-writer-only workflow.
+
+### Remote command and device boundary
+
+- Remote Desktop Commander file tools are scoped to `/root/projects/layer-sort`. Its shell command runner remains privileged and is **not** an OS sandbox.
+- Agent Kit agents use `inheritMcp: false`; the project plugin defines no MCP servers. Agents must not inherit or receive the ChatGPT Remote Desktop Commander connector.
+- RDC file operations are limited to the project root. Its generic shell runner remains privileged and is not constrained by `allowedDirectories`; `blockedCommands` is a denylist, not a sandbox.
+- The plugin-scoped `.agents/plugins/layer-sort-agent-kit/hooks.json` installs a PreToolUse guard for all tools. It denies file-write/edit tools and RDC MCP calls, restricts file-inspection paths to the active workspace, blocks secret-file reads, and restricts `run_command` to an explicit project allowlist. The policy script returns a deny decision if its input is malformed or its Node process fails. Hook activation must be verified in the CLI with `/hooks`; hook policy is not OS isolation.
+- Agent shell execution must use Antigravity terminal sandbox mode (`agy --sandbox`) only after a read-only isolation probe confirms the sandbox is active. `unshare -Ur` availability alone is not proof that the CLI sandbox is active.
+- The only approved device entrypoint is `tools/device-tests/agentctl`. It targets only `com.yoseftext.layersort.dev`, uses the existing shared phone lock and existing ADB server, and exposes no arbitrary shell, install, uninstall, clear-data, permissions, global settings, or service management.
+- Appium/UiAutomator2 are **Evaluated / Not Approved**. Do not start the service or use Appium without a new owner decision.
+- ADB `input tap/swipe` is synthetic input and measures in-game hit-testing, not physical touch accuracy. ADB timeouts or missing telemetry produce `UNKNOWN`.
+
+### Worktree + Patch governance
+
+- No agent currently has file-write or file-edit tools. The Lead's write tools are withheld; specialists remain read-only.
+- A named specialist may receive write authority only after `.agents/` is committed, the plugin guard is loaded, the Device Wrapper is verified, Antigravity sandbox isolation is confirmed, and that specialist's dedicated worktree exists.
+- Each implementation specialist receives one disjoint path allowlist and one task. It writes only in its own worktree and returns a patch; it never writes to `main`, pushes, merges, or rewrites history. The Lead receives integration write tools only after the same prerequisites and only for the integration step.
+- Before Reviewer inspection, deterministic preflight must verify the patch path allowlist, reject protected paths, run `git diff --check`, and run the relevant existing tests.
+- Reviewer independently inspects the exact diff, test evidence, scope, security, and rollback. Engineering-auditor recommendations must be reviewed by Reviewer; the auditor cannot approve its own recommendations.
+- Integrate one patch at a time. Run regression tests after each integration before considering the next patch. The Lead owns integration; protected-main merge still requires exact owner authorization under ADR-0007.
+- No worktree has been created yet. `.agents/` must be committed first.
+
+### Measurement and evaluation
+
+The Task Ledger begins in Phase 1, before agent expansion, with a fixed schema:
+
+`task_id, agent, commit, APK hash, result, Reviewer findings`
+
+Record actual execution evidence, not inferred scores. Before a sufficient sample exists, use deterministic measurements only and do not score agents. Test Escape Rate requires deliberately seeded defects and a measured Reviewer benchmark.
+
+Device performance evidence should combine Godot runtime monitors with supported Android battery/thermal telemetry. Do not infer FPS or CPU/GPU temperature from unavailable `dumpsys` fields. The QA-only harness must use a dedicated feature tag and CI must verify that the release APK does not contain it.
+
+### Approved implementation order
+
+1. Restrict Remote Desktop Commander and ensure agents cannot inherit it.
+2. Apply and verify the package-scoped Device Wrapper.
+3. Re-measure thermal status after the device has rested.
+4. Create and validate the Task Ledger.
+5. Build `puzzle-validator` around deterministic solver and existing test evidence.
+
+Subsequent agent waves require a measured development bottleneck. If an agent does not improve a measured outcome, stop expanding the fleet.
+
 ## Current gate reconciliation — ADR-0006
 
-See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. Current task is CI/documentation/merge readiness only; no gameplay, phone operations, merge or G5 implementation. No agent is authorized to modify Termux, Debian, ADB, Appium or Shizuku services in this task.
+See [00-START-HERE.md](00-START-HERE.md#current-accepted-checkpoint--2026-11-03) for the accepted PR15 checkpoint and owner-reported 10/10 device QA. Earlier gate-specific instructions are historical scope, not permission to restart those gates. The owner-approved infrastructure sequence dated 2026-11-09 supersedes the prior "no phone operations" sentence only for the bounded, read-only thermal recheck and the package-scoped wrapper described above. No gameplay/G5 implementation, APK install, uninstall, data wipe, global setting/permission change, service modification, or merge is authorized by that sequence.
 
 ## Owner-authorized merge execution — ADR-0007
 
