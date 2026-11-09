@@ -154,6 +154,23 @@ assert.equal(
   "allow"
 );
 assert.equal(
+  evaluate(fileEvent("read_file", { Path: path.join(root, "AGENTS.md"), StartLine: 1, EndLine: 5 })).decision,
+  "allow"
+);
+assert.equal(
+  evaluate(fileEvent("read_file", { Path: "/etc/passwd" })).decision,
+  "deny"
+);
+assert.equal(
+  evaluate(fileEvent("read_file", { Path: path.join(root, ".env") })).decision,
+  "deny"
+);
+assert.equal(
+  evaluate(fileEvent("read_file", { Path: "AGENTS.md" })).decision,
+  "deny"
+);
+assert.equal(decision("list_resources"), "deny");
+assert.equal(
   evaluate(fileEvent("list_dir", { DirectoryPath: root })).decision,
   "allow"
 );

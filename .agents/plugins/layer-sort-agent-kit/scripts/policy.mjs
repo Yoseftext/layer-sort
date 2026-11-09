@@ -3,7 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const ALLOWED_TOOLS = new Set([
-  "view_file", "list_dir", "find_by_name", "grep_search", "run_command",
+  "view_file", "read_file", "list_dir", "find_by_name", "grep_search", "run_command",
   "manage_task", "search_web", "invoke_subagent", "send_message",
   "manage_subagents", "ask_question"
 ]);
@@ -17,6 +17,7 @@ const BLOCKED_WRITE_TOOLS = new Set([
 
 const READ_PATH_FIELDS = Object.freeze({
   view_file: "AbsolutePath",
+  read_file: "Path",
   list_dir: "DirectoryPath",
   find_by_name: "SearchDirectory",
   grep_search: "SearchPath"
