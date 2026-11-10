@@ -6,13 +6,11 @@ deny() {
   exit 0
 }
 
-SCRIPT_PATH="$BASH_SOURCE"
-case "$SCRIPT_PATH" in
-  /*) ;;
-  *) deny ;;
-esac
-
-SCRIPT_DIR="$(/usr/bin/dirname "$SCRIPT_PATH")" || deny
+SCRIPT_DIR="${BASH_SOURCE%/*}"
+if [ "$SCRIPT_DIR" = "$BASH_SOURCE" ]; then
+  SCRIPT_DIR="."
+fi
+SCRIPT_DIR="$(cd -P -- "$SCRIPT_DIR" 2>/dev/null && pwd -P)" || deny
 [ -f "$SCRIPT_DIR/policy.mjs" ] || deny
 
 NODE_BIN="$(command -v node 2>/dev/null)"

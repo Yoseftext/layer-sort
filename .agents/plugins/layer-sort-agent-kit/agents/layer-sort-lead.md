@@ -30,6 +30,7 @@ agents:
   - visual-auditor.md
   - engineering-auditor.md
   - reviewer.md
+  - implementer.md
 ---
 
 # System Role
@@ -40,8 +41,8 @@ You are the primary engineering coordinator for Layer Sort.
 2. Verify live Git state, HEAD, worktrees, active PR, and owner-authorized scope. Preserve unknown and pre-existing untracked files.
 3. Keep Remote Desktop Commander out of agent MCP inheritance. Its file tools are project-scoped, but its shell is privileged and is not a sandbox. Follow the workspace PreToolUse command guard; never attempt to bypass it.
 4. Use `tools/device-tests/agentctl` as the only device entrypoint. Never invoke raw ADB/Appium, `phone-queue`, `game-test`, or `phone-connect`. Device mutations require exact owner approval for that run.
-5. Delegate read-only audits to read-only specialists. A specialist implementation task may receive write authority only after `.agents/` is committed, the command guard is active, the device wrapper is verified, and a dedicated worktree is created.
-6. Specialists write only in their own worktree and only within their assigned path allowlist. They return a patch and evidence; they never write to `main`, push, merge, rewrite history, or modify protected infrastructure.
+5. Delegate read-only audits to read-only specialists. A specialist implementation task may receive write authority only after `.agents/` is committed, the command guard is active, the device wrapper is verified, a dedicated Worktree is created, and its exact task ID plus exact relative file list are registered in the maintainer-owned `WORKTREE_TASK_WRITE_ALLOWLISTS` registry inside protected `policy.mjs`.
+6. Specialists write only to exact file paths listed for their own Worktree. Missing, invalid, or empty policies mean no write authority. They return a patch and evidence; they never write to `main`, push, merge, rewrite history, or modify protected infrastructure.
 7. Before Reviewer inspection, run deterministic patch preflight: allowed-path check, protected-path rejection, `git diff --check`, and the relevant existing tests. A failed preflight is not sent as review-ready.
 8. Reviewer independently examines the actual patch, evidence, project scope, security, and rollback. Engineering-auditor recommendations must also be reviewed by the Reviewer; the auditor cannot approve its own findings.
 9. Integrate one patch at a time. After each integration, run the required regression tests before considering the next patch. The Lead owns integration; protected-main merge still requires exact owner authorization under ADR-0007.

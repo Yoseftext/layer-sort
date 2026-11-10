@@ -8,7 +8,7 @@ import { evaluate } from "./policy.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const pluginRoot = path.resolve(scriptDirectory, "..");
-const root = path.resolve(pluginRoot, "../../..");
+const root = "/root/projects/layer-sort";
 const event = (name, command, cwd = root) => ({
   toolCall: {
     name,
@@ -55,6 +55,17 @@ assert.equal(decision("run_command", "tools/device-tests/device_qa.py status"), 
 assert.equal(decision("run_command", "adb devices -l"), "deny");
 assert.equal(decision("run_command", "/usr/bin/adb devices -l"), "deny");
 assert.equal(decision("run_command", "python3 -c print(1)"), "deny");
+
+// Executable identity must not be inferred from basename alone.
+assert.equal(decision("run_command", "./git status --short"), "deny");
+assert.equal(decision("run_command", "tools/subdir/git status --short"), "deny");
+assert.equal(decision("run_command", path.join(root, "tools", "subdir", "git") + " status --short"), "deny");
+assert.equal(decision("run_command", "GIT status --short"), "deny");
+assert.equal(decision("run_command", "agentctl status"), "deny");
+assert.equal(
+  decision("run_command", path.join(root, "tools", "device-tests", "agentctl") + " status"),
+  "allow"
+);
 
 assert.equal(decision("run_command", "git status --short"), "allow");
 assert.equal(decision("run_command", "git status --short --branch"), "allow");
@@ -236,7 +247,52 @@ assert.equal(guard.enabled, true);
 assert.equal(guard.PreToolUse.length, 1);
 assert.equal(guard.PreToolUse[0].matcher, ".*");
 assert.equal(guard.PreToolUse[0].hooks.length, 1);
-assert.equal(guard.PreToolUse[0].hooks[0].command, "/usr/bin/bash " + hookScript);
+assert.equal(guard.PreToolUse[0].hooks[0].command, "/usr/bin/bash ./scripts/policy.sh");
+
+const pluginHookAllowed = spawnSync("/usr/bin/bash", ["./scripts/policy.sh"], {
+  cwd: pluginRoot,
+  input: JSON.stringify(event("run_command", "git status --short")),
+  encoding: "utf8"
+});
+assert.equal(pluginHookAllowed.status, 0);
+assert.equal(JSON.parse(pluginHookAllowed.stdout).decision, "allow");
+
+const activeWorktreeRoot = path.join(root, ".worktrees", "agent-system-access");
+const workspaceHookConfigPath = path.join(activeWorktreeRoot, ".agents", "hooks.json");
+const workspaceHookConfig = JSON.parse(fs.readFileSync(workspaceHookConfigPath, "utf8"));
+const workspaceGuard = workspaceHookConfig["layer-sort-agent-guard"];
+assert.equal(workspaceGuard.enabled, true);
+const workspaceHookScript = path.join(
+  activeWorktreeRoot,
+  ".agents",
+  "plugins",
+  "layer-sort-agent-kit",
+  "scripts",
+  "policy.sh"
+);
+assert.equal(workspaceGuard.PreToolUse[0].hooks[0].command,
+  "/usr/bin/bash " + workspaceHookScript);
+
+const workspaceHookAllowed = spawnSync(
+  "/usr/bin/bash",
+  [workspaceHookScript],
+  {
+    cwd: os.tmpdir(),
+    input: JSON.stringify({
+      toolCall: {
+        name: "run_command",
+        args: {
+          CommandLine: "git status --short",
+          Cwd: activeWorktreeRoot
+        }
+      },
+      workspacePaths: [activeWorktreeRoot]
+    }),
+    encoding: "utf8"
+  }
+);
+assert.equal(workspaceHookAllowed.status, 0);
+assert.equal(JSON.parse(workspaceHookAllowed.stdout).decision, "allow");
 
 const engineeringAgentPath = path.join(pluginRoot, "agents", "engineering-auditor.md");
 const engineeringAgent = fs.readFileSync(engineeringAgentPath, "utf8");
@@ -279,6 +335,31 @@ const hookMalformed = spawnSync("/usr/bin/bash", [hookScript], {
 assert.equal(hookMalformed.status, 0);
 assert.equal(JSON.parse(hookMalformed.stdout).decision, "deny");
 
+const activePolicyWorktreeForHook = path.join(root, ".worktrees", "agent-system-access");
+if (fs.existsSync(activePolicyWorktreeForHook)) {
+  const hookWriteDenied = spawnSync("/usr/bin/bash", [hookScript], {
+    cwd: root,
+    input: JSON.stringify({
+      toolCall: {
+        name: "write_file",
+        args: {
+          Path: path.join(activePolicyWorktreeForHook, ".runtime", "policy-wrapper-deny-probe.txt"),
+          Content: "must-not-be-written"
+        }
+      },
+      workspacePaths: [activePolicyWorktreeForHook]
+    }),
+    encoding: "utf8"
+  });
+  assert.equal(hookWriteDenied.status, 0);
+  assert.equal(JSON.parse(hookWriteDenied.stdout).decision, "deny");
+  assert.equal(
+    fs.existsSync(path.join(activePolicyWorktreeForHook, ".runtime", "policy-wrapper-deny-probe.txt")),
+    false,
+    "the PreToolUse wrapper denial must not create the requested file"
+  );
+}
+
 const hookWithoutNode = spawnSync("/usr/bin/bash", [hookScript], {
   cwd: os.tmpdir(),
   env: { ...process.env, PATH: "/nonexistent" },
@@ -313,56 +394,206 @@ try {
   assert.equal(ignoreCheck.status, 0, ".worktrees/ must be Git-ignored");
 
   const allowedPath = path.join(worktreeRoot, "README.md");
+  const taskWriteAllowlists = Object.freeze({
+    [path.basename(worktreeRoot)]: Object.freeze({
+      taskId: "POLICY-TEST",
+      files: Object.freeze([
+        "README.md",
+        "worktree-only-write.txt",
+        "missing/file.txt",
+        "policy-escape/outside.txt",
+        "policy-safe-link/inside.txt",
+        "policy-hardlink.txt",
+        "policy-safe-target"
+      ])
+    })
+  });
+  const worktreeWriteEvent = (candidate, workspacePaths = [worktreeRoot]) => ({
+    toolCall: {
+      name: "write_file",
+      args: { Path: candidate, Content: "policy-test-only" }
+    },
+    workspacePaths
+  });
+
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: allowedPath, Content: "policy-test-only" })).decision,
+    evaluate(worktreeWriteEvent(allowedPath), taskWriteAllowlists).decision,
     "allow",
-    "write_file should be allowed only for a verified nested Worktree path"
+    "an exact allowlisted file must be writable from its dedicated Worktree"
+  );
+  assert.equal(
+    evaluate(
+      worktreeWriteEvent(path.join(worktreeRoot, "worktree-only-write.txt")),
+      taskWriteAllowlists
+    ).decision,
+    "allow",
+    "a second explicitly listed file must be writable"
+  );
+  assert.equal(
+    evaluate(worktreeWriteEvent(allowedPath)).decision,
+    "deny",
+    "an unregistered Worktree must not inherit a write allowlist"
+  );
+  assert.equal(
+    evaluate(worktreeWriteEvent(path.join(worktreeRoot, "not-allowlisted.txt")), taskWriteAllowlists).decision,
+    "deny",
+    "a file outside the task's exact allowlist must be denied"
+  );
+  assert.equal(
+    evaluate(worktreeWriteEvent(path.join(worktreeRoot, "README.md.bak")), taskWriteAllowlists).decision,
+    "deny",
+    "a filename prefix or suffix must not inherit an exact file grant"
+  );
+  assert.equal(
+    evaluate(
+      worktreeWriteEvent(allowedPath.replace("/README.md", "\\README.md")),
+      taskWriteAllowlists
+    ).decision,
+    "deny",
+    "backslash path aliases must be rejected on this POSIX runtime"
+  );
+  assert.equal(
+    evaluate(worktreeWriteEvent(allowedPath, [root]), taskWriteAllowlists).decision,
+    "deny",
+    "the main checkout workspace must not write into a nested Worktree"
+  );
+  assert.equal(
+    evaluate(worktreeWriteEvent(allowedPath, [root, worktreeRoot]), taskWriteAllowlists).decision,
+    "deny",
+    "multiple active workspaces must not widen the write boundary"
+  );
+  assert.equal(
+    evaluate(
+      worktreeWriteEvent(allowedPath),
+      {
+        [path.basename(worktreeRoot)]: {
+          taskId: "POLICY-TEST",
+          files: []
+        }
+      }
+    ).decision,
+    "deny",
+    "an empty task allowlist must deny every write"
+  );
+  assert.equal(
+    evaluate(
+      worktreeWriteEvent(path.join(worktreeRoot, "missing", "file.txt")),
+      taskWriteAllowlists
+    ).decision,
+    "deny",
+    "a task may not create missing parent directories"
+  );
+
+  for (const invalidFiles of [
+    ["../README.md"],
+    [".agents/agents/lead.md"],
+    [".git/config"],
+    ["/tmp/outside.txt"],
+    ["src//game.gd"],
+    ["src/./game.gd"],
+    ["src/*.gd"],
+    ["bad\nname.md"],
+    ["README.md", "README.md"]
+  ]) {
+    assert.equal(
+      evaluate(
+        worktreeWriteEvent(allowedPath),
+        {
+          [path.basename(worktreeRoot)]: {
+            taskId: "POLICY-TEST",
+            files: invalidFiles
+          }
+        }
+      ).decision,
+      "deny",
+      "invalid or duplicate allowlist entries must invalidate the entire task policy: " + JSON.stringify(invalidFiles)
+    );
+  }
+
+  const activePolicyWorktree = path.join(root, ".worktrees", "agent-system-access");
+  if (fs.existsSync(activePolicyWorktree)) {
+    assert.equal(
+      evaluate({
+        toolCall: {
+          name: "write_file",
+          args: { Path: path.join(activePolicyWorktree, "README.md"), Content: "must-not-write" }
+        },
+        workspacePaths: [activePolicyWorktree]
+      }).decision,
+      "deny",
+      "the infrastructure Worktree remains write-disabled until a task is explicitly assigned"
+    );
+    assert.equal(
+      evaluate(
+        worktreeWriteEvent(path.join(activePolicyWorktree, "README.md")),
+        taskWriteAllowlists
+      ).decision,
+      "deny",
+      "an active task cannot write into a different registered Worktree"
+    );
+  }
+  assert.equal(
+    evaluate({
+      toolCall: {
+        name: "view_file",
+        args: { AbsolutePath: path.join(root, "README.md") }
+      },
+      workspacePaths: [worktreeRoot]
+    }).decision,
+    "deny",
+    "a Worktree-only session must not read the main checkout"
   );
   for (const toolName of ["write_to_file", "replace_file_content", "multi_replace_file_content"]) {
     assert.equal(
-      evaluate(fileEvent(toolName, { Path: allowedPath, Content: "policy-test-only" })).decision,
+      evaluate({
+        toolCall: { name: toolName, args: { Path: allowedPath, Content: "policy-test-only" } },
+        workspacePaths: [worktreeRoot]
+      }).decision,
       "deny",
       toolName + " must remain blocked until its exact path schema is verified"
     );
   }
 
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: path.join(root, "README.md") })).decision,
+    evaluate(worktreeWriteEvent(path.join(root, "README.md")), taskWriteAllowlists).decision,
     "deny",
     "the main project checkout must remain read-only"
   );
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: worktreeRoot })).decision,
+    evaluate(worktreeWriteEvent(worktreeRoot), taskWriteAllowlists).decision,
     "deny",
     "Worktree root itself is not a file target"
   );
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: "README.md" })).decision,
+    evaluate(worktreeWriteEvent("README.md"), taskWriteAllowlists).decision,
     "deny",
     "relative write paths must be rejected"
   );
   assert.equal(
-    evaluate(fileEvent("write_file", { Content: "missing path" })).decision,
+    evaluate({
+      toolCall: { name: "write_file", args: { Content: "missing path" } },
+      workspacePaths: [worktreeRoot]
+    }, taskWriteAllowlists).decision,
     "deny",
     "write requests without an absolute Path must be rejected"
   );
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: path.join(os.tmpdir(), "policy-outside.txt") })).decision,
+    evaluate(worktreeWriteEvent(path.join(os.tmpdir(), "policy-outside.txt")), taskWriteAllowlists).decision,
     "deny",
     "external write paths must be rejected"
   );
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: worktreeRoot + "/../outside.txt" })).decision,
+    evaluate(worktreeWriteEvent(worktreeRoot + "/../outside.txt"), taskWriteAllowlists).decision,
     "deny",
     "explicit parent traversal must be rejected"
   );
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: path.join(worktreeRoot, ".git", "config") })).decision,
+    evaluate(worktreeWriteEvent(path.join(worktreeRoot, ".git", "config")), taskWriteAllowlists).decision,
     "deny",
     ".git paths must remain blocked inside a Worktree"
   );
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: path.join(worktreeRoot, ".agents", "agents", "probe.md") })).decision,
+    evaluate(worktreeWriteEvent(path.join(worktreeRoot, ".agents", "agents", "probe.md")), taskWriteAllowlists).decision,
     "deny",
     ".agents paths must remain blocked inside a Worktree"
   );
@@ -379,7 +610,7 @@ try {
 
   fs.mkdirSync(plainWorktreeRoot);
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: path.join(plainWorktreeRoot, "README.md") })).decision,
+    evaluate(worktreeWriteEvent(path.join(plainWorktreeRoot, "README.md")), taskWriteAllowlists).decision,
     "deny",
     "a plain directory under .worktrees is not a registered Git Worktree"
   );
@@ -387,9 +618,9 @@ try {
   const escapeLink = path.join(worktreeRoot, "policy-escape");
   fs.symlinkSync(os.tmpdir(), escapeLink, "dir");
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: path.join(escapeLink, "outside.txt") })).decision,
+    evaluate(worktreeWriteEvent(path.join(escapeLink, "outside.txt")), taskWriteAllowlists).decision,
     "deny",
-    "symlink escapes from a Worktree must be rejected"
+    "symlink escapes from a Worktree must be rejected even when the relative path is listed"
   );
 
   const safeTarget = path.join(worktreeRoot, "policy-safe-target");
@@ -397,9 +628,22 @@ try {
   fs.mkdirSync(safeTarget);
   fs.symlinkSync(safeTarget, safeLink, "dir");
   assert.equal(
-    evaluate(fileEvent("write_file", { Path: path.join(safeLink, "inside.txt") })).decision,
+    evaluate(worktreeWriteEvent(path.join(safeLink, "inside.txt")), taskWriteAllowlists).decision,
     "deny",
     "all symlink traversal must be rejected, even when the target remains in the same Worktree"
+  );
+  assert.equal(
+    evaluate(worktreeWriteEvent(safeTarget), taskWriteAllowlists).decision,
+    "deny",
+    "an explicitly listed directory path must not be accepted as a file target"
+  );
+
+  const hardLinkPath = path.join(worktreeRoot, "policy-hardlink.txt");
+  fs.linkSync(allowedPath, hardLinkPath);
+  assert.equal(
+    evaluate(worktreeWriteEvent(hardLinkPath), taskWriteAllowlists).decision,
+    "deny",
+    "hard-linked files must be rejected to prevent writes through an alias"
   );
 } finally {
   fs.rmSync(plainWorktreeRoot, { recursive: true, force: true });
