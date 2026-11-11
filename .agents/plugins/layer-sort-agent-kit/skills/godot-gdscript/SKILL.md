@@ -11,6 +11,7 @@ description: Use when inspecting, editing, debugging, or testing Layer Sort Godo
 - Do not change engine version, export templates, Android identity, signing, target SDK, or build contract without an approved decision and a reviewed change.
 - Follow existing project architecture and code patterns. Do not introduce a new framework or abstraction without a concrete need.
 - Keep game-state transitions deterministic and separate from animation/audio presentation. Preserve undo/save invariants.
+- During current agent-system completion, do not invoke Godot, import projects, run game tests, or operate the Android editor. Godot integration begins only after the owner explicitly accepts the core agent system.
 - Inspect existing tests and workflow commands before choosing a test command. Never invent test names or assume an unverified script exists.
 - Use local ARM64 checks only as supplemental evidence unless the exact local engine binary and export templates match the pinned toolchain.
 - The authoritative Android build and pinned toolchain are in GitHub Actions. Do not attempt to run the CI x86_64 Godot archive directly in the ARM64 PRoot environment.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3.13 -I
 """Allowlisted Layer Sort Android QA. No arbitrary ADB shell is exposed."""
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ EXPECTED_DEVICE = {
     "product": "OP4B80L1",
     "android_api": "30",
 }
-ADB = Path("/usr/bin/adb")
+ADB = Path("/usr/lib/android-sdk/platform-tools/adb")
 ADB_HOST = "127.0.0.1"
 ADB_PORT = "5037"
 PHONE_LOCK = Path("/root/device-tests/test.lock")

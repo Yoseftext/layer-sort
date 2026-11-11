@@ -290,6 +290,21 @@ class DeviceQaParsingTests(unittest.TestCase):
         self.assertEqual(result, "FAIL")
         self.assertIn('"status": "FAIL"', output.getvalue())
 
+    def test_agentctl_entrypoint_uses_pinned_interpreters(self) -> None:
+        agentctl_path = ROOT / "tools" / "device-tests" / "agentctl"
+        agentctl_source = agentctl_path.read_text(encoding="utf-8")
+        self.assertTrue(agentctl_source.startswith("#!/usr/bin/bash\n"))
+        self.assertIn("exec /usr/bin/python3.13 -I ", agentctl_source)
+        self.assertNotIn("/usr/bin/env", agentctl_source)
+
+    def test_device_qa_uses_pinned_python_and_adb(self) -> None:
+        source = MODULE_PATH.read_text(encoding="utf-8")
+        self.assertTrue(source.startswith("#!/usr/bin/python3.13 -I\n"))
+        self.assertEqual(
+            device_qa.ADB,
+            Path("/usr/lib/android-sdk/platform-tools/adb")
+        )
+
     def test_unsafe_commands_are_not_exposed(self) -> None:
         parser = device_qa.build_parser()
         for command in ("phone", "shell", "install", "uninstall", "clear", "pm"):

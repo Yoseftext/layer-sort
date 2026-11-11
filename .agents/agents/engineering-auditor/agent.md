@@ -6,7 +6,7 @@ subagent: true
 model: inherit
 commandExecutionPolicy: off
 tools:
-  - view_file
+  - read_file
   - send_message
 inheritMcp: false
 inheritCustomizations: true

@@ -1,1 +1,17 @@
-{}
+{
+  "layer-sort-agent-guard": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/bash /root/projects/layer-sort/.worktrees/agent-write-e2e/.agents/plugins/layer-sort-agent-kit/scripts/policy.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

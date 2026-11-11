@@ -35,6 +35,7 @@ description: Use for Layer Sort implementation planning, root-cause debugging, a
 - Inspect the existing test catalog, test source, and CI workflow before selecting commands.
 - Run the narrowest relevant tests first, then required regression checks. Include negative tests for important rejection paths.
 - Distinguish headless/unit tests, CI builds, local ARM64 checks, physical-device tests, and owner-reported evidence.
+- `run_command` may be subject to CLI-level `request-review`. If permission review denies a command before PreToolUse, mark command execution `UNVERIFIED`; never switch to `eager` or `--dangerously-skip-permissions`.
 - Use only `PASS`, `FAIL`, `SKIP`, or `UNVERIFIED`; a successful command is not proof of unrelated behavior.
 - Never install tools, run phone mutations, change services, or merge/publish without the required explicit authorization.
 

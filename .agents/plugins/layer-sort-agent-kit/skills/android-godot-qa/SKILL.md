@@ -26,21 +26,22 @@ The verified target is OPPO CPH1937 / product OP4B80L1 / Android 11 / API 30. Th
 
 Use only `tools/device-tests/agentctl`. It uses the existing ADB server at `127.0.0.1:5037` and the shared lock `/root/device-tests/test.lock`. It does not start/restart ADB, connect/disconnect devices, start Appium, or create a replacement lock.
 
-Supported commands:
-- `status`, `battery`, `thermal`
+Currently exposed through the agent policy:
+- Read-only: `status`, `battery`, `thermal`, `performance-check`, `screenshot`, and `logcat`
 - `screenshot` only when Layer Sort is verified in the foreground
 - `logcat` filtered to the Layer Sort process PID and selected markers
-- `launch`, `stop`, `tap`, `swipe` only with exact owner approval and an approval ID
+
+`launch`, `stop`, `tap`, `swipe`, install, uninstall, clear-data, permission changes, and arbitrary ADB are not exposed to agents. Any future mutating action requires a separately reviewed wrapper extension and exact owner approval for that run.
 
 The wrapper does not expose arbitrary shell, arbitrary ADB arguments, package selection, install, uninstall, clear-data, permission changes, global settings, or service management. Unsupported commands must fail closed.
 
-The device-qa specialist is read-only and has no command execution tool. The Lead executes wrapper commands. Mutating actions require the owner's explicit approval for that exact run; use `--owner-approved --approval-id <ID>` only after approval is recorded. A flag is audit metadata, not proof of owner identity.
+The `device-qa` specialist is read-only and has no command execution tool. The Lead is also read-only and does not execute device commands. The operator runs approved read-only `agentctl` actions through Remote Desktop Commander; agents do not access RDC. Do not invent or invoke an alternate device-control path.
 
 ## Input semantics and thermal readings
 
 - ADB `input tap/swipe` is synthetic input. It measures in-game hit-testing only; it does not measure finger/touchscreen accuracy.
 - Input is rejected unless the exact game package is foreground and coordinates are inside the current display bounds.
-- ADB timeouts and unavailable thermal data produce `UNKNOWN`, never an invented `FAIL` or `PASS`.
+- ADB timeouts and unavailable thermal data are classified `UNVERIFIED`, never an invented `FAIL` or `PASS`. Preserve a literal wrapper output of `UNKNOWN` as raw evidence, but do not use it as a test-status category.
 - Android thermal status 3 or higher is not ready for performance baseline. Re-measure only after the device has rested.
 - Performance claims must use Godot runtime monitors plus supported Android battery/thermal diagnostics. Do not infer FPS or CPU temperature from unavailable `dumpsys` fields.
 
@@ -52,4 +53,4 @@ Appium 3.8.0, UiAutomator2 8.7.0, Appium Python Client 6.0.8, and Selenium 4.51.
 
 Use test IDs and report fields from `docs/current/05-QA-TEST-CATALOG.md`.
 
-A valid report distinguishes CI, local supplemental tests, physical-device QA, and owner-reported QA. Use `PASS`, `FAIL`, `SKIP`, `UNVERIFIED`, and `UNKNOWN` where the wrapper explicitly returns UNKNOWN. Preserve failed attempts and evidence; a later pass does not erase a prior failure.
+A valid report distinguishes CI, local supplemental tests, physical-device QA, and owner-reported QA. Use only `PASS`, `FAIL`, `SKIP`, and `UNVERIFIED` as test statuses. Preserve literal wrapper output such as `UNKNOWN` in raw evidence and classify the result as `UNVERIFIED`. Preserve failed attempts and evidence; a later pass does not erase a prior failure.

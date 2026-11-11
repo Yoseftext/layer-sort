@@ -24,7 +24,7 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - The G0–G2 bullets below summarize historical gate scope; they do not revoke subsequent explicit owner authorizations.
 - G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
 - G1: Godot Standard portrait smoke scene, pinned engine + export templates (`ENGINE_VERSION.lock`), APK built by GitHub Actions, installed on the connected OPPO via `agentctl` / `phone-queue` / Appium, with screenshot + logcat. Done criteria are in `03-PRODUCTION.md` section 2.
-- G1.5: project-scoped OpenCode agents (`.opencode/agents/`), QA workflows under `tools/qa/`, dependency inventory, negative-test evidence, screenshot review, and optional Shizuku preparation. Policy: `docs/current/04`–`06`, `docs/adr/ADR-0001`. No gameplay, Firebase, signing, or paid services.
+- G1.5: historical OpenCode bootstrap (`.opencode/agents/`) superseded for active agent execution by owner-approved [ADR-0008](docs/adr/ADR-0008-antigravity-primary-agent-runtime.md), which establishes **Antigravity CLI (`1.5.5`)** and `.agents/` (`layer-sort-agent-kit`) as the primary agent runtime, with PreToolUse Hook enforcement, multi-file explicit Worktree grants, QA workflows under `tools/qa/`, dependency inventory, negative-test evidence, screenshot review, and optional Shizuku preparation. Policy: `docs/current/04`–`06`, `docs/adr/ADR-0001`, `docs/adr/ADR-0008`. No gameplay, Firebase, signing, or paid services.
 - G2: Classic domain, minimal playable portrait scene, individually versioned fixture levels, unit tests and **separate** CI versus locked real-device evidence; G15-QA-001 remains OPEN.
 
 ## Hard rules

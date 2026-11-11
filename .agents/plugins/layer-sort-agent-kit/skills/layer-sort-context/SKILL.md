@@ -29,6 +29,8 @@ At kit creation, root `README.md` still describes the older PR15 checkpoint, whi
 
 ## Scope discipline
 
+The current owner request explicitly defers Godot. Do not execute Godot, run puzzle-validator, or begin G5 gameplay work until the owner accepts the core agent system.
+
 The current game-code authorization recorded in root `AGENTS.md` is the bounded G5-Final P2 HUD/board/Circuit presentation/original-audio slice. It does not authorize a merge, main modification, G6, production release, menu/map redesign, external assets, new dependencies, signing changes, or device-service changes.
 
 A request to configure this workspace agent kit does not authorize unrelated game-code or CI changes.
