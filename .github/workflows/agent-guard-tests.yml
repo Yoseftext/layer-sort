@@ -1,10 +1,11 @@
 name: agent-guard-tests
 
-# Verifies the agent system shipped in this PR, on the PR head itself:
-# 1) policy unit tests on the in-repo policy, 2) guard tests (preflight pin check,
-# scope/commit/.agents post-checks, fail-closed behaviour) against a pinned copy built
-# from HEAD and a simulated install. Uploads no artifacts, so it is independent of the
-# GitHub Actions artifact storage quota.
+# Verifies the agent system shipped in this PR, on the PR head itself.
+# 1) guard tests: preflight pin check, scope/commit/.agents post-checks, fail-closed
+#    behaviour, run against a pinned copy built from HEAD and a simulated install.
+# 2) policy unit tests: in-repo policy. Currently host-coupled (see PR notes), so this
+#    step is expected to fail in CI until the policy test suite is made hermetic.
+# Uploads no artifacts, so it is independent of the GitHub Actions artifact quota.
 
 "on":
   pull_request:
@@ -21,7 +22,7 @@ permissions:
 
 jobs:
   agent-guard-tests:
-    name: Agent system — policy and guard tests
+    name: Agent system — guard and policy tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -46,8 +47,8 @@ jobs:
             echo "GUARD_TEST_ROOT=$BASE"
           } >> "$GITHUB_ENV"
 
-      - name: Policy unit tests (in-repo policy)
-        run: bash .agents/plugins/layer-sort-agent-kit/scripts/test-policy.sh
-
       - name: Guard tests (preflight, scope, commit and .agents checks, fail-closed)
         run: bash tools/agent-guard/test-guard.sh
+
+      - name: Policy unit tests (in-repo policy; host-coupled, see PR notes)
+        run: bash .agents/plugins/layer-sort-agent-kit/scripts/test-policy.sh
