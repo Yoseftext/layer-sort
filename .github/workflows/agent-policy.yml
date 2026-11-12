@@ -69,6 +69,23 @@ jobs:
           test "$(/usr/bin/node --version)" = "$node_version"
           printf 'POLICY_NODE_RUNTIME=%s (%s)\n' /usr/bin/node "$node_version"
 
+      - name: Install trusted ripgrep for policy tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -x /usr/bin/rg ]]; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends ripgrep
+          fi
+
+          test -f /usr/bin/rg
+          test ! -L /usr/bin/rg
+          test "$(/usr/bin/stat -c '%u' /usr/bin/rg)" = "0"
+          test "$(/usr/bin/stat -c '%a' /usr/bin/rg)" = "755"
+          test "$(/usr/bin/stat -c '%h' /usr/bin/rg)" = "1"
+          /usr/bin/rg --version
+
       - name: Prepare trusted device wrapper for policy tests
         shell: bash
         run: |
