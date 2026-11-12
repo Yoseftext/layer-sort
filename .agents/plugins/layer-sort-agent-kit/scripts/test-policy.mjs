@@ -4,11 +4,102 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { evaluate } from "./policy.mjs";
+import { evaluate, PROJECT_ROOT, resolveProjectRoot } from "./policy.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const pluginRoot = path.resolve(scriptDirectory, "..");
-const root = "/root/projects/layer-sort";
+const workspaceRoot = path.resolve(pluginRoot, "../../..");
+const root = PROJECT_ROOT;
+const policyScript = path.join(pluginRoot, "scripts", "policy.mjs");
+const policyWrapperScript = path.join(pluginRoot, "scripts", "policy.sh");
+
+assert.equal(
+  resolveProjectRoot(workspaceRoot),
+  root,
+  "the active workspace must resolve to its Git common repository root"
+);
+
+const rootResolutionFixture = fs.mkdtempSync(
+  path.join(os.tmpdir(), "layer-sort-policy-root-")
+);
+try {
+  const fixturePluginRoot = path.join(
+    rootResolutionFixture,
+    ".agents",
+    "plugins",
+    "layer-sort-agent-kit"
+  );
+  const fixtureScriptsDirectory = path.join(fixturePluginRoot, "scripts");
+  const fixturePolicyPath = path.join(fixtureScriptsDirectory, "policy.mjs");
+  const fixturePolicyWrapperPath = path.join(fixtureScriptsDirectory, "policy.sh");
+  fs.mkdirSync(fixtureScriptsDirectory, { recursive: true });
+  fs.mkdirSync(path.join(rootResolutionFixture, ".git"));
+  fs.writeFileSync(path.join(rootResolutionFixture, ".git", "HEAD"), "ref: refs/heads/main\n");
+  fs.copyFileSync(policyScript, fixturePolicyPath);
+  fs.copyFileSync(policyWrapperScript, fixturePolicyWrapperPath);
+
+  assert.equal(
+    resolveProjectRoot(rootResolutionFixture, {
+      pluginRoot: fixturePluginRoot,
+      policyScriptDirectory: fixtureScriptsDirectory,
+      policyScriptPath: fixturePolicyPath
+    }),
+    rootResolutionFixture,
+    "a normal CI checkout with a .git directory must resolve without a machine-specific path"
+  );
+
+  const fixtureHook = spawnSync(
+    "/usr/bin/bash",
+    ["plugins/layer-sort-agent-kit/scripts/policy.sh"],
+    {
+      cwd: path.join(rootResolutionFixture, ".agents"),
+      input: JSON.stringify({
+        toolCall: {
+          name: "run_command",
+          args: {
+            CommandLine: "/usr/bin/git status --short",
+            Cwd: rootResolutionFixture
+          }
+        },
+        workspacePaths: [rootResolutionFixture]
+      }),
+      encoding: "utf8"
+    }
+  );
+  assert.equal(fixtureHook.status, 0);
+  assert.equal(
+    JSON.parse(fixtureHook.stdout).decision,
+    "allow",
+    "the relative policy wrapper must work from a normal checkout with a .git directory"
+  );
+
+  const symlinkWorkspaceRoot = path.join(rootResolutionFixture, "symlink-checkout");
+  const symlinkPluginRoot = path.join(
+    symlinkWorkspaceRoot,
+    ".agents",
+    "plugins",
+    "layer-sort-agent-kit"
+  );
+  const symlinkScriptsDirectory = path.join(symlinkPluginRoot, "scripts");
+  const symlinkPolicyPath = path.join(symlinkScriptsDirectory, "policy.mjs");
+  fs.mkdirSync(symlinkScriptsDirectory, { recursive: true });
+  fs.symlinkSync(path.join(rootResolutionFixture, ".git"), path.join(symlinkWorkspaceRoot, ".git"), "dir");
+  fs.writeFileSync(symlinkPolicyPath, "// policy-root symlink fixture\\n");
+
+  assert.throws(
+    () =>
+      resolveProjectRoot(symlinkWorkspaceRoot, {
+        pluginRoot: symlinkPluginRoot,
+        policyScriptDirectory: symlinkScriptsDirectory,
+        policyScriptPath: symlinkPolicyPath
+      }),
+    /must not be a symlink/,
+    "a symlinked .git marker must fail closed"
+  );
+} finally {
+  fs.rmSync(rootResolutionFixture, { recursive: true, force: true });
+}
+
 const event = (name, command, cwd = root) => ({
   toolCall: {
     name,
@@ -290,7 +381,6 @@ assert.equal(
   "deny"
 );
 
-const policyScript = path.join(pluginRoot, "scripts", "policy.mjs");
 const allowed = spawnSync(process.execPath, [policyScript], {
   input: JSON.stringify(event("run_command", "/usr/bin/git status --short")),
   encoding: "utf8"
@@ -313,8 +403,10 @@ const malformed = spawnSync(process.execPath, [policyScript], {
 assert.equal(malformed.status, 0);
 assert.equal(JSON.parse(malformed.stdout).decision, "deny");
 
-const hookScript = path.join(pluginRoot, "scripts", "policy.sh");
-const workspaceRoot = path.resolve(pluginRoot, "../../..");
+const hookScript = policyWrapperScript;
+const hookWorkingDirectory = path.join(workspaceRoot, ".agents");
+const relativeHookScript = path.relative(hookWorkingDirectory, hookScript);
+const configuredHookCommand = String.raw`/usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/bash --noprofile --norc ${relativeHookScript} || printf '%s' '{"decision":"deny","reason":"Policy hook failed to start; request denied closed."}'`;
 const hookConfigPath = path.join(workspaceRoot, ".agents", "hooks.json");
 const hookConfig = JSON.parse(fs.readFileSync(hookConfigPath, "utf8"));
 const guard = hookConfig["layer-sort-agent-guard"];
@@ -324,8 +416,21 @@ assert.equal(guard.PreToolUse[0].matcher, ".*");
 assert.equal(guard.PreToolUse[0].hooks.length, 1);
 assert.equal(
   guard.PreToolUse[0].hooks[0].command,
-  `/usr/bin/bash ${hookScript}`,
-  "Active workspace Hook must invoke this workspace's own policy.sh"
+  configuredHookCommand,
+  "Active workspace Hook must use the workspace-relative policy.sh path with a fail-closed startup fallback"
+);
+assert.equal(
+  relativeHookScript,
+  "plugins/layer-sort-agent-kit/scripts/policy.sh",
+  "Hook path must be stable relative to the workspace hooks directory"
+);
+assert.equal(fs.readFileSync(policyScript, "utf8").includes("/root/projects/layer-sort"), false);
+assert.equal(fs.readFileSync(hookScript, "utf8").includes("/root/projects/layer-sort"), false);
+assert.equal(
+  fs.readFileSync(path.join(pluginRoot, "scripts", "test-policy.sh"), "utf8").includes(
+    "/root/projects/layer-sort"
+  ),
+  false
 );
 
 const engineeringAgentPath = path.join(pluginRoot, "agents", "engineering-auditor", "agent.md");
@@ -369,6 +474,89 @@ const hookAllowed = spawnSync("/usr/bin/bash", [hookScript], {
 });
 assert.equal(hookAllowed.status, 0);
 assert.equal(JSON.parse(hookAllowed.stdout).decision, "allow");
+
+const hookRelativeAllowed = spawnSync("/usr/bin/bash", ["-c", configuredHookCommand], {
+  cwd: hookWorkingDirectory,
+  input: JSON.stringify({
+    toolCall: {
+      name: "run_command",
+      args: {
+        CommandLine: "/usr/bin/git status --short",
+        Cwd: workspaceRoot
+      }
+    },
+    workspacePaths: [workspaceRoot]
+  }),
+  encoding: "utf8"
+});
+assert.equal(hookRelativeAllowed.status, 0);
+assert.equal(
+  JSON.parse(hookRelativeAllowed.stdout).decision,
+  "allow",
+  "workspace-relative Hook invocation must resolve the active Worktree"
+);
+
+const bashEnvFixture = fs.mkdtempSync(path.join(os.tmpdir(), "layer-sort-bash-env-"));
+try {
+  const bashEnvPath = path.join(bashEnvFixture, "bash-env");
+  const bashEnvMarker = path.join(bashEnvFixture, "executed");
+  fs.writeFileSync(bashEnvPath, 'printf "executed" > "$BASH_ENV_MARKER"');
+
+  const hookWithBashEnv = spawnSync("/bin/sh", ["-c", configuredHookCommand], {
+    cwd: hookWorkingDirectory,
+    env: {
+      ...process.env,
+      PATH: "/nonexistent",
+      BASH_ENV: bashEnvPath,
+      BASH_ENV_MARKER: bashEnvMarker
+    },
+    input: JSON.stringify({
+      toolCall: {
+        name: "run_command",
+        args: {
+          CommandLine: "/usr/bin/git status --short",
+          Cwd: workspaceRoot
+        }
+      },
+      workspacePaths: [workspaceRoot]
+    }),
+    encoding: "utf8"
+  });
+
+  assert.equal(hookWithBashEnv.status, 0);
+  assert.equal(
+    JSON.parse(hookWithBashEnv.stdout).decision,
+    "allow",
+    "the sanitized Hook launcher must still execute the policy"
+  );
+  assert.equal(
+    fs.existsSync(bashEnvMarker),
+    false,
+    "inherited BASH_ENV must not execute before the policy wrapper"
+  );
+} finally {
+  fs.rmSync(bashEnvFixture, { recursive: true, force: true });
+}
+
+const missingHookFallbackPayload = JSON.stringify({
+  decision: "deny",
+  reason: "Policy hook failed to start; request denied closed."
+});
+const missingHookCommand =
+  `/usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/bash --noprofile --norc plugins/layer-sort-agent-kit/scripts/missing-policy.sh || printf '%s' '${missingHookFallbackPayload}'`;
+const hookStartupFallback = spawnSync("/usr/bin/bash", ["-c", missingHookCommand], {
+  cwd: hookWorkingDirectory,
+  encoding: "utf8"
+});
+assert.equal(hookStartupFallback.status, 0);
+assert.deepEqual(
+  JSON.parse(hookStartupFallback.stdout),
+  {
+    decision: "deny",
+    reason: "Policy hook failed to start; request denied closed."
+  },
+  "a missing policy script must still produce a fail-closed Hook decision"
+);
 
 const hookDenied = spawnSync("/usr/bin/bash", [hookScript], {
   cwd: os.tmpdir(),

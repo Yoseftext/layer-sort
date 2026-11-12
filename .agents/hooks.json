@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/bash /root/projects/layer-sort/.worktrees/agent-write-e2e/.agents/plugins/layer-sort-agent-kit/scripts/policy.sh",
+            "command": "/usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/bash --noprofile --norc plugins/layer-sort-agent-kit/scripts/policy.sh || printf '%s' '{\"decision\":\"deny\",\"reason\":\"Policy hook failed to start; request denied closed.\"}'",
             "timeout": 10
           }
         ]

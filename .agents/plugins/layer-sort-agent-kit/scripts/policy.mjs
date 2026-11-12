@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ALLOWED_TOOLS = new Set([
   "view_file", "read_file", "list_dir", "find_by_name", "grep_search", "run_command",
@@ -37,7 +37,11 @@ const SENSITIVE_PATH =
 const WORKTREE_PROTECTED_PATH = /(^|\/)(?:AGENTS\.md$|\.agents(?:\/|$)|tools\/device-tests(?:\/|$)|docs\/adr(?:\/|$)|docs\/current\/(?:00-START-HERE|04-AGENT-OPERATIONS|05-QA-TEST-CATALOG)\.md$)/i;
 
 const SHELL_META = /[;&|><$(){}\[\]\r\n\\'"!#*?~]/;
-const PROJECT_ROOT = "/root/projects/layer-sort";
+const POLICY_SCRIPT_PATH = path.resolve(fileURLToPath(import.meta.url));
+const POLICY_SCRIPT_DIRECTORY = path.dirname(POLICY_SCRIPT_PATH);
+const PLUGIN_ROOT = path.resolve(POLICY_SCRIPT_DIRECTORY, "..");
+const WORKSPACE_ROOT = path.resolve(PLUGIN_ROOT, "../../..");
+export const PROJECT_ROOT = resolveProjectRoot(WORKSPACE_ROOT);
 const WORKTREE_BASE = path.join(PROJECT_ROOT, ".worktrees");
 
 // Maintainer-owned task registry. Keys are exact Worktree directory names.
@@ -95,6 +99,139 @@ function canonicalPath(candidate) {
       current = parent;
     }
   }
+}
+
+function assertRealDirectory(candidate, label) {
+  const stat = fs.lstatSync(candidate);
+  if (
+    !stat.isDirectory() ||
+    stat.isSymbolicLink() ||
+    canonicalPath(candidate) !== candidate
+  ) {
+    throw new Error(label + " must be a canonical, non-symlink directory.");
+  }
+}
+
+function assertRegularFile(candidate, label) {
+  const stat = fs.lstatSync(candidate);
+  if (
+    !stat.isFile() ||
+    stat.isSymbolicLink() ||
+    canonicalPath(candidate) !== candidate
+  ) {
+    throw new Error(label + " must be a canonical, non-symlink regular file.");
+  }
+}
+
+export function resolveProjectRoot(
+  workspaceRoot,
+  {
+    pluginRoot = PLUGIN_ROOT,
+    policyScriptDirectory = POLICY_SCRIPT_DIRECTORY,
+    policyScriptPath = POLICY_SCRIPT_PATH
+  } = {}
+) {
+  if (path.resolve(workspaceRoot) !== workspaceRoot) {
+    throw new Error("Workspace root must be an absolute, normalized path.");
+  }
+
+  const expectedPluginRoot = path.join(
+    workspaceRoot,
+    ".agents",
+    "plugins",
+    "layer-sort-agent-kit"
+  );
+  if (pluginRoot !== expectedPluginRoot) {
+    throw new Error("Policy must run from the expected workspace plugin path.");
+  }
+
+  for (const [candidate, label] of [
+    [workspaceRoot, "Workspace root"],
+    [path.join(workspaceRoot, ".agents"), "Workspace .agents directory"],
+    [path.join(workspaceRoot, ".agents", "plugins"), "Workspace plugins directory"],
+    [pluginRoot, "Layer Sort Agent Kit directory"],
+    [policyScriptDirectory, "Policy scripts directory"]
+  ]) {
+    assertRealDirectory(candidate, label);
+  }
+  assertRegularFile(policyScriptPath, "Policy module");
+
+  const gitMarker = path.join(workspaceRoot, ".git");
+  const markerStat = fs.lstatSync(gitMarker);
+  if (markerStat.isSymbolicLink()) {
+    throw new Error("Workspace Git marker must not be a symlink.");
+  }
+
+  if (markerStat.isDirectory()) {
+    assertRealDirectory(gitMarker, "Workspace Git directory");
+    assertRegularFile(path.join(gitMarker, "HEAD"), "Git HEAD");
+    return workspaceRoot;
+  }
+
+  if (!markerStat.isFile()) {
+    throw new Error("Workspace Git marker must be a directory or worktree file.");
+  }
+
+  assertRegularFile(gitMarker, "Workspace Git worktree marker");
+  const markerMatch = /^gitdir:\s*(.+)$/i.exec(
+    fs.readFileSync(gitMarker, "utf8").trim()
+  );
+  if (!markerMatch) {
+    throw new Error("Workspace Git worktree marker is malformed.");
+  }
+
+  const adminDirectory = path.resolve(workspaceRoot, markerMatch[1]);
+  assertRealDirectory(adminDirectory, "Git worktree admin directory");
+
+  const commonDirectoryFile = path.join(adminDirectory, "commondir");
+  assertRegularFile(commonDirectoryFile, "Git worktree commondir");
+  const commonDirectoryText = fs.readFileSync(commonDirectoryFile, "utf8").trim();
+  if (!commonDirectoryText) {
+    throw new Error("Git worktree commondir is empty.");
+  }
+
+  const commonGitDirectory = path.resolve(adminDirectory, commonDirectoryText);
+  assertRealDirectory(commonGitDirectory, "Git common directory");
+  if (path.basename(commonGitDirectory) !== ".git") {
+    throw new Error("Git common directory must be the repository .git directory.");
+  }
+
+  const adminRoot = path.join(commonGitDirectory, "worktrees");
+  assertRealDirectory(adminRoot, "Git worktrees admin root");
+  if (path.dirname(adminDirectory) !== adminRoot) {
+    throw new Error("Git worktree admin directory is outside the repository worktrees root.");
+  }
+  assertRegularFile(path.join(commonGitDirectory, "HEAD"), "Git common HEAD");
+
+  const backlinkFile = path.join(adminDirectory, "gitdir");
+  assertRegularFile(backlinkFile, "Git worktree backlink");
+  const backlinkText = fs.readFileSync(backlinkFile, "utf8").trim();
+  if (!backlinkText) {
+    throw new Error("Git worktree backlink is empty.");
+  }
+
+  const expectedBacklink = gitMarker;
+  const actualBacklink = path.resolve(adminDirectory, backlinkText);
+  if (
+    actualBacklink !== expectedBacklink ||
+    canonicalPath(actualBacklink) !== expectedBacklink
+  ) {
+    throw new Error("Git worktree backlink does not match this workspace.");
+  }
+
+  const repositoryRoot = path.dirname(commonGitDirectory);
+  assertRealDirectory(repositoryRoot, "Git repository root");
+  if (path.join(repositoryRoot, ".git") !== commonGitDirectory) {
+    throw new Error("Git common directory does not belong to the resolved repository root.");
+  }
+
+  const expectedWorktreeParent = path.join(repositoryRoot, ".worktrees");
+  assertRealDirectory(expectedWorktreeParent, "Repository Worktrees directory");
+  if (path.dirname(workspaceRoot) !== expectedWorktreeParent) {
+    throw new Error("Linked Worktrees must be direct children of the repository .worktrees directory.");
+  }
+
+  return repositoryRoot;
 }
 
 function isTrustedSystemExecutable(token, executable) {

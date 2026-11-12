@@ -1,0 +1,110 @@
+name: agent-policy
+
+"on":
+  push:
+    paths:
+      - ".agents/**"
+      - ".gitignore"
+      - ".github/workflows/agent-policy.yml"
+      - "docs/adr/**"
+      - "docs/current/04-AGENT-OPERATIONS.md"
+  pull_request:
+    paths:
+      - ".agents/**"
+      - ".gitignore"
+      - ".github/workflows/agent-policy.yml"
+      - "docs/adr/**"
+      - "docs/current/04-AGENT-OPERATIONS.md"
+  workflow_dispatch:
+
+concurrency:
+  group: agent-policy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    name: Agent policy and Hook regression tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up pinned Node.js 22.23.4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22.23.4
+          package-manager-cache: false
+
+      - name: Prepare pinned policy runtime (Node.js 22.23.4)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          node_bin="$(readlink -f "$(command -v node)")"
+          node_version="$("$node_bin" --version)"
+          if [[ "$node_version" != "v22.23.4" ]]; then
+            echo "::error::Agent policy requires Node.js v22.23.4; runner provided $node_version."
+            exit 1
+          fi
+
+          # policy.sh executes this fixed path and checks that it is a regular,
+          # executable, non-symlink file. Keep the CI copy root-owned and not
+          # writable by the unprivileged runner after installation.
+          if [[ "$node_bin" != /usr/bin/node ]]; then
+            sudo install -o root -g root -m 0755 "$node_bin" /usr/bin/node
+          fi
+          test -f /usr/bin/node
+          test ! -L /usr/bin/node
+          test -x /usr/bin/node
+          test "$(/usr/bin/stat -c '%u' /usr/bin/node)" = "0"
+          test "$(/usr/bin/stat -c '%a' /usr/bin/node)" = "755"
+          test "$(/usr/bin/node --version)" = "$node_version"
+          printf 'POLICY_NODE_RUNTIME=%s (%s)\n' /usr/bin/node "$node_version"
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n \
+            .agents/plugins/layer-sort-agent-kit/scripts/policy.sh \
+            .agents/plugins/layer-sort-agent-kit/scripts/test-policy.sh
+
+      - name: Run Agent Policy regression suite
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          /usr/bin/bash .agents/plugins/layer-sort-agent-kit/scripts/test-policy.sh
+
+      - name: Check changed-file whitespace
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+
+          case "$EVENT_NAME" in
+            pull_request)
+              git diff --check "${PR_BASE_SHA}...${CURRENT_SHA}"
+              ;;
+            push)
+              if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+                git diff --check "${CURRENT_SHA}^..${CURRENT_SHA}"
+              else
+                git diff --check "${BEFORE_SHA}..${CURRENT_SHA}"
+              fi
+              ;;
+            *)
+              git diff --check "${CURRENT_SHA}^..${CURRENT_SHA}"
+              ;;
+          esac

@@ -25,12 +25,14 @@ require("node:fs").writeFileSync(process.env.NODE_ATTACK_MARKER, "NODE_OPTIONS p
 PRELOAD
 /usr/bin/chmod 700 "$TEMP_DIR/node"
 
-PAYLOAD='{"toolCall":{"name":"send_message","args":{}},"workspacePaths":["/root/projects/layer-sort"]}'
+WORKSPACE_ROOT="$(cd -- "$PLUGIN_DIR/../../.." && pwd -P)"
+PAYLOAD="$(/usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/node -e 'process.stdout.write(JSON.stringify({toolCall:{name:"run_command",args:{CommandLine:"/usr/bin/git status --short",Cwd:process.argv[1]}},workspacePaths:[process.argv[1]]}));' "$WORKSPACE_ROOT")"
 OUTPUT="$(
+  cd -- "$WORKSPACE_ROOT/.agents" &&
   PATH="$TEMP_DIR:/usr/bin:/bin" \
   NODE_OPTIONS="--require=$TEMP_DIR/preload.cjs" \
   NODE_ATTACK_MARKER="$MARKER" \
-  /usr/bin/bash "$SCRIPT_DIR/policy.sh" <<< "$PAYLOAD"
+  /usr/bin/bash plugins/layer-sort-agent-kit/scripts/policy.sh <<< "$PAYLOAD"
 )"
 
 if [[ "$OUTPUT" != '{"decision":"allow"}' ]]; then
