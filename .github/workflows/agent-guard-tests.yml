@@ -1,0 +1,53 @@
+name: agent-guard-tests
+
+# Verifies the agent system shipped in this PR, on the PR head itself:
+# 1) policy unit tests on the in-repo policy, 2) guard tests (preflight pin check,
+# scope/commit/.agents post-checks, fail-closed behaviour) against a pinned copy built
+# from HEAD and a simulated install. Uploads no artifacts, so it is independent of the
+# GitHub Actions artifact storage quota.
+
+"on":
+  pull_request:
+  push:
+    branches: ["feat/agent-system-clean"]
+  workflow_dispatch:
+
+concurrency:
+  group: agent-guard-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  agent-guard-tests:
+    name: Agent system — policy and guard tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build pinned policy snapshot and simulated install from HEAD
+        run: |
+          set -euo pipefail
+          BASE="$RUNNER_TEMP/lsa"
+          SNAP="$BASE/snap"
+          INST="$BASE/inst"
+          mkdir -p "$SNAP"
+          git archive HEAD .agents/plugins/layer-sort-agent-kit | tar -x -C "$SNAP" --strip-components=3
+          (cd "$SNAP" && find . -type f ! -name MANIFEST.sha256 | sort | xargs sha256sum > MANIFEST.sha256)
+          cp -r "$SNAP" "$INST"
+          printf '{"layer-sort-agent-guard":{"enabled":true,"PreToolUse":[{"matcher":".*","hooks":[{"type":"command","command":"/usr/bin/bash %s/scripts/policy.sh","timeout":10}]}]}}\n' "$SNAP" > "$INST/hooks.json"
+          {
+            echo "SNAP_DIR=$SNAP"
+            echo "INST_DIR=$INST"
+            echo "PLUGIN_HOOKS=$INST/hooks.json"
+            echo "GUARD_TEST_ROOT=$BASE"
+          } >> "$GITHUB_ENV"
+
+      - name: Policy unit tests (in-repo policy)
+        run: bash .agents/plugins/layer-sort-agent-kit/scripts/test-policy.sh
+
+      - name: Guard tests (preflight, scope, commit and .agents checks, fail-closed)
+        run: bash tools/agent-guard/test-guard.sh

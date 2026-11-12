@@ -5,7 +5,7 @@ set -u
 DIR="$(cd "$(dirname "$0")" && pwd)"
 SAFE="$DIR/safe-agy.sh"
 FAKES="$DIR/fakes"
-ROOT="/root/agent-policy/guard-tests-$(date +%s)"
+ROOT="${GUARD_TEST_ROOT:-/root/agent-policy}/guard-tests-$(date +%s)"
 TR="$ROOT/repo"
 mkdir -p "$TR"
 git -C "$TR" init -q
