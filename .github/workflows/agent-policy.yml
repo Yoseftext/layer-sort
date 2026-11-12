@@ -69,6 +69,20 @@ jobs:
           test "$(/usr/bin/node --version)" = "$node_version"
           printf 'POLICY_NODE_RUNTIME=%s (%s)\n' /usr/bin/node "$node_version"
 
+      - name: Prepare trusted device wrapper for policy tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          wrapper="tools/device-tests/agentctl"
+          test -f "$wrapper"
+          test ! -L "$wrapper"
+          sudo chown root:root "$wrapper"
+          sudo chmod 0755 "$wrapper"
+          test "$(/usr/bin/stat -c '%u' "$wrapper")" = "0"
+          test "$(/usr/bin/stat -c '%a' "$wrapper")" = "755"
+          test "$(/usr/bin/stat -c '%h' "$wrapper")" = "1"
+
       - name: Validate shell syntax
         shell: bash
         run: |

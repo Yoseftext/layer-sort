@@ -11,7 +11,7 @@ Workspace-scoped Antigravity customizations for the Layer Sort repository.
 - **1 workspace-scoped PreToolUse guard:** `.agents/hooks.json` (the plugin's own `hooks.json` is intentionally empty to avoid duplicate hook execution)
 - **0 MCP servers**
 - **0 external package dependencies**
-- **1 focused GitHub Actions workflow:** `.github/workflows/agent-policy.yml` (Node.js v22.23.4 via pinned setup-node v7.1.0, read-only permissions, no secrets; runs on relevant pushes/PRs and manual dispatch)
+- **1 focused GitHub Actions workflow:** `.github/workflows/agent-policy.yml` (Node.js v22.23.4 via pinned setup-node v7.1.0; prepares the trusted device-wrapper fixture as root-owned mode 0755; read-only permissions, no secrets; runs on relevant pushes/PRs and manual dispatch)
 
 ## Execution model and write authority — 2026-11-11
 
