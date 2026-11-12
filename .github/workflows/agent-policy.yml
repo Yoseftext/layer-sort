@@ -86,6 +86,31 @@ jobs:
           test "$(/usr/bin/stat -c '%h' /usr/bin/rg)" = "1"
           /usr/bin/rg --version
 
+      - name: Prepare metadata-only Godot and Antigravity fixtures
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          # The policy suite evaluates allow/deny decisions only; it never
+          # executes Godot or Antigravity CLI. Empty executable files provide
+          # the trusted-path metadata required by those policy-only assertions.
+          sudo install -d -o root -g root -m 0755 /usr/local/bin /root/.local/bin
+
+          if [[ ! -e /usr/local/bin/godot ]]; then
+            sudo install -o root -g root -m 0755 /dev/null /usr/local/bin/godot
+          fi
+          if [[ ! -e /root/.local/bin/agy ]]; then
+            sudo install -o root -g root -m 0755 /dev/null /root/.local/bin/agy
+          fi
+
+          for executable in /usr/local/bin/godot /root/.local/bin/agy; do
+            test -f "$executable"
+            test ! -L "$executable"
+            test "$(/usr/bin/stat -c '%u' "$executable")" = "0"
+            test "$(/usr/bin/stat -c '%a' "$executable")" = "755"
+            test "$(/usr/bin/stat -c '%h' "$executable")" = "1"
+          done
+
       - name: Prepare trusted device wrapper for policy tests
         shell: bash
         run: |
