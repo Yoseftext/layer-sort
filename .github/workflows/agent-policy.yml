@@ -101,6 +101,14 @@ jobs:
           sudo install -o root -g root -m 0755 /dev/null /usr/local/bin/godot
           sudo install -o root -g root -m 0755 /dev/null /root/.local/bin/agy
 
+          # Grant only path traversal on /root to the runner identity. It cannot
+          # list the directory; this is required for lstat/realpath of the pinned
+          # /root/.local/bin/agy fixture without making root's home world-readable.
+          runner_user="$(id -un)"
+          test -x /usr/bin/setfacl
+          sudo /usr/bin/setfacl -m "u:${runner_user}:--x" /root
+          /usr/bin/getfacl -cp /root | grep -F "user:${runner_user}:--x" >/dev/null
+
           for executable in /usr/local/bin/godot /root/.local/bin/agy; do
             /usr/bin/stat -c 'CI_POLICY_FIXTURE uid=%u mode=%a links=%h path=%n' "$executable"
             test -f "$executable"
