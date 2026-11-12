@@ -6,7 +6,7 @@
 # escaped scope.
 set -u
 
-SNAP_DIR="${SNAP_DIR:-/root/agent-policy/layer-sort-agent-kit@cf402cc-20261112-112951}"
+SNAP_DIR="${SNAP_DIR:-/root/agent-policy/layer-sort-agent-kit@pr-0b41410}"
 INST_DIR="${INST_DIR:-/root/.gemini/config/plugins/layer-sort-agent-kit}"
 PLUGIN_HOOKS="${PLUGIN_HOOKS:-$INST_DIR/hooks.json}"
 
