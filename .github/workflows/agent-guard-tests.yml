@@ -3,8 +3,8 @@ name: agent-guard-tests
 # Verifies the agent system shipped in this PR, on the PR head itself.
 # 1) guard tests: preflight pin check, scope/commit/.agents post-checks, fail-closed
 #    behaviour, run against a pinned copy built from HEAD and a simulated install.
-# 2) policy unit tests: in-repo policy. Currently host-coupled (see PR notes), so this
-#    step is expected to fail in CI until the policy test suite is made hermetic.
+# 2) policy unit tests: in-repo policy, hermetic on a fresh checkout (local-worktree
+#    fixtures are skipped explicitly and reported as SKIP).
 # Uploads no artifacts, so it is independent of the GitHub Actions artifact quota.
 
 "on":
@@ -50,5 +50,7 @@ jobs:
       - name: Guard tests (preflight, scope, commit and .agents checks, fail-closed)
         run: bash tools/agent-guard/test-guard.sh
 
-      - name: Policy unit tests (in-repo policy; host-coupled, see PR notes)
+      - name: Policy unit tests (in-repo policy, hermetic checkout)
+        env:
+          LS_PROJECT_ROOT: ${{ github.workspace }}
         run: bash .agents/plugins/layer-sort-agent-kit/scripts/test-policy.sh
