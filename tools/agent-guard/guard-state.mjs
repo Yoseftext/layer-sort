@@ -7,6 +7,9 @@ import { pathToFileURL } from "node:url";
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 
 export function hashFile(filePath, bufferSize = 64 * 1024) {
+  if (typeof bufferSize !== "number" || !Number.isInteger(bufferSize) || bufferSize <= 0) {
+    throw new RangeError("bufferSize must be a positive integer");
+  }
   const fd = fs.openSync(filePath, "r");
   try {
     const hasher = createHash("sha256");

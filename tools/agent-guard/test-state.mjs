@@ -92,4 +92,37 @@ test("hashes multi-megabyte files with bounded buffers matching expected SHA-256
   assert.equal(state.files["large-file.bin"]?.[4], expectedSha256);
 });
 
+test("hashFile rejects invalid buffer sizes with RangeError before opening file", () => {
+  const nonExistentPath = path.join(base, "non-existent-file-" + Date.now() + ".bin");
+  assert.ok(!fs.existsSync(nonExistentPath), "Fixture file must not exist");
+
+  const invalidSizes = [0, -1, 1.5, NaN, Infinity, -Infinity];
+  for (const invalidSize of invalidSizes) {
+    assert.throws(
+      () => hashFile(nonExistentPath, invalidSize),
+      {
+        name: "RangeError",
+        message: "bufferSize must be a positive integer",
+      },
+      `Expected RangeError for invalid bufferSize: ${invalidSize}`
+    );
+  }
+});
+
+test("hashFile correctly computes SHA-256 with small streaming chunk sizes", () => {
+  const { root } = fixture();
+  const filePath = path.join(root, "small-chunks.bin");
+  const content = Buffer.from("LayerSort test content for streaming chunks across various buffer sizes.");
+  fs.writeFileSync(filePath, content);
+  const expectedHash = createHash("sha256").update(content).digest("hex");
+
+  for (const chunkSize of [1, 7, 64]) {
+    assert.equal(
+      hashFile(filePath, chunkSize),
+      expectedHash,
+      `Hash mismatch for buffer size ${chunkSize}`
+    );
+  }
+});
+
 console.log("Guard fixture directory: " + base);
