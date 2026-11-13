@@ -47,6 +47,9 @@ jobs:
             echo "GUARD_TEST_ROOT=$BASE"
           } >> "$GITHUB_ENV"
 
+      - name: Snapshot and Hook structure regression tests
+        run: node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs
+
       - name: Guard tests (preflight, scope, commit and .agents checks, fail-closed)
         run: bash tools/agent-guard/test-guard.sh
 

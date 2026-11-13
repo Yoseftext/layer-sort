@@ -8,6 +8,8 @@
 #    It does NOT auto-revert: the operator decides.
 # SAFE_TOGGLE=0 disables step 2 (used by the test suite only).
 set -u
+# Bash parses the complete function before execution, even if this source is edited later.
+main() {
 DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$DIR/guard-lib.sh"
 
@@ -37,29 +39,33 @@ if [ "$TOGGLE" = 1 ]; then
   plugin_enabled || fail "plugin not enabled after enable"
 fi
 
-TMP="$(mktemp -d)"
-state "$W" > "$TMP/before"
+TMP="$(mktemp -d)" || fail "could not create snapshot directory"
+cat -- "$ALLOW" > "$TMP/allow" || fail "could not freeze allowlist"
+# Both snapshots and comparison must use the operator-reviewed code from session start.
+cat -- "$GUARD_STATE" > "$TMP/guard-state.mjs" || fail "could not freeze state helper"
+GUARD_STATE="$TMP/guard-state.mjs"
+state "$W" > "$TMP/before" || fail "before-state collection failed; agent not started"
 
 AGY_CMD="${AGY_BIN:-agy}"
 ( cd "$W" && "$AGY_CMD" "$@" )
 RC=$?
 
-state "$W" > "$TMP/after"
-CHANGED="$(changed_paths "$TMP/before" "$TMP/after")"
+state "$W" > "$TMP/after" || fail "after-state collection failed; evidence retained in $TMP"
+CHANGED="$(changed_paths "$TMP/before" "$TMP/after")" || fail "state comparison failed; evidence retained in $TMP"
 
 BAD=""
 while IFS= read -r p; do
   [ -z "$p" ] && continue
-  if [ "$p" = "HEAD" ]; then
+  if [ "$p" = "HEAD" ] || [ "$p" = "INDEX" ]; then
     BAD="$BAD
-  - HEAD moved (a commit was created or history rewritten)"
+  - Git HEAD or index changed: $p"
     continue
   fi
   case "$p" in
     .agents/*) BAD="$BAD
   - protected path changed: $p"; continue ;;
   esac
-  grep -qxF -- "$p" "$ALLOW" || BAD="$BAD
+  grep -qxF -- "$p" "$TMP/allow" || BAD="$BAD
   - out of scope: $p"
 done <<EOF
 $CHANGED
@@ -71,5 +77,7 @@ if [ -n "$BAD" ]; then
   exit 2
 fi
 echo "GUARD_OK (agent exit $RC, changed paths: $(printf '%s' "$CHANGED" | grep -c . || true))"
-rm -rf "$TMP" 2>/dev/null
+echo "State snapshots retained in $TMP for audit; remove them through normal operator housekeeping."
 exit "$RC"
+}
+main "$@"
