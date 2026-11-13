@@ -43,6 +43,10 @@ const WORKTREE_TASK_WRITE_ALLOWLISTS = Object.freeze({
   "agent-system-access": Object.freeze({
     taskId: "AGENT-SYSTEM-ACCESS",
     files: Object.freeze([])
+  }),
+  "agent-system-clean": Object.freeze({
+    taskId: "AGENT-SYSTEM-DOCS",
+    files: Object.freeze(["tools/agent-guard/README.md"])
   })
 });
 
