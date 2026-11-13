@@ -8,7 +8,7 @@ import { evaluate } from "./policy.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const pluginRoot = path.resolve(scriptDirectory, "..");
-const root = "/root/projects/layer-sort";
+const root = process.env.LS_PROJECT_ROOT ?? "/root/projects/layer-sort";
 const event = (name, command, cwd = root) => ({
   toolCall: {
     name,
@@ -257,6 +257,7 @@ const pluginHookAllowed = spawnSync("/usr/bin/bash", ["./scripts/policy.sh"], {
 assert.equal(pluginHookAllowed.status, 0);
 assert.equal(JSON.parse(pluginHookAllowed.stdout).decision, "allow");
 
+if (fs.existsSync(path.join(root, ".worktrees", "agent-system-access"))) {
 const activeWorktreeRoot = path.join(root, ".worktrees", "agent-system-access");
 const workspaceHookConfigPath = path.join(activeWorktreeRoot, ".agents", "hooks.json");
 const workspaceHookConfig = JSON.parse(fs.readFileSync(workspaceHookConfigPath, "utf8"));
@@ -293,6 +294,9 @@ const workspaceHookAllowed = spawnSync(
 );
 assert.equal(workspaceHookAllowed.status, 0);
 assert.equal(JSON.parse(workspaceHookAllowed.stdout).decision, "allow");
+} else {
+  process.stdout.write("SKIP local-fixture: .worktrees/agent-system-access not present (hermetic run)\n");
+}
 
 const engineeringAgentPath = path.join(pluginRoot, "agents", "engineering-auditor.md");
 const engineeringAgent = fs.readFileSync(engineeringAgentPath, "utf8");

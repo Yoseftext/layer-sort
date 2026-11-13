@@ -33,7 +33,7 @@ const SENSITIVE_PATH =
 const WORKTREE_PROTECTED_PATH = /(^|\/)\.agents(?:\/|$)/i;
 
 const SHELL_META = /[;&|><$(){}\[\]\r\n\\'"!#*?~]/;
-const PROJECT_ROOT = "/root/projects/layer-sort";
+const PROJECT_ROOT = process.env.LS_PROJECT_ROOT ?? "/root/projects/layer-sort";
 const WORKTREE_BASE = path.join(PROJECT_ROOT, ".worktrees");
 
 // Maintainer-owned task registry. Keys are exact Worktree directory names.
