@@ -10,6 +10,9 @@
 # CI log captures
 /logs/
 
+# Runtime device QA evidence is generated locally and may contain screenshots.
+/.runtime/
+
 # Debug signing material must never enter Git.
 *.keystore
 *.jks
@@ -19,3 +22,6 @@ secrets/
 # Python bytecode from local syntax checks
 __pycache__/
 *.pyc
+
+# Nested agent worktrees; all worktrees must remain under this ignored directory.
+.worktrees/
