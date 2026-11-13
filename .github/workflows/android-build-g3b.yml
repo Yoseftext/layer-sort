@@ -444,15 +444,16 @@ jobs:
           cp "$RUNNER_TEMP/layersort-cloud-captures/capture-index.json" logs/cloud-capture-index.json
 
       - name: Upload debug APK artifact
+        if: github.event_name != "pull_request"
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: layer-sort-g3b-debug-apk
           path: build/layer-sort-g3b-debug.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload build and verification logs (also on failed runs)
-        if: always()
+        if: always() && github.event_name != "pull_request"
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: layer-sort-g3b-build-logs
@@ -467,4 +468,4 @@ jobs:
             logs/screenshots/*.png
             logs/cloud-screenshots/*.png
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 3
