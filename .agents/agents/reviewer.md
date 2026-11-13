@@ -51,3 +51,5 @@ Check:
 - Change quality: minimal scope, no unrelated edits, no accidental generated files, and a credible rollback.
 
 Classify findings as BLOCKER, HIGH, MEDIUM, or LOW. Each finding must include evidence, impact, and a concrete fix. If a claim cannot be verified from the diff or artifacts, label it UNVERIFIED rather than assuming success.
+
+Send_message the verdict and concrete findings to the supplied parent conversation before the final response. Inspect actual source and patch; do not substitute the implementation summary for evidence.

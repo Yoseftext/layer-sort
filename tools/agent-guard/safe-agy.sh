@@ -1,83 +1,69 @@
 #!/usr/bin/env bash
-# Usage: safe-agy.sh <worktree> <allowlist-file> -- <agy args...>
-# 1) preflight: refuse to start if the pinned policy is missing, altered, or not wired.
-# 2) enable the plugin for THIS session only (so the PreToolUse guard is active during it),
-#    and restore its previous state on exit, even on failure (trap).
-# 3) snapshot the worktree state, run agy, snapshot again.
-# 4) fail (exit 2) on out-of-allowlist changes, a moved HEAD, or any change under .agents/.
-#    It does NOT auto-revert: the operator decides.
-# SAFE_TOGGLE=0 disables step 2 (used by the test suite only).
+# Usage: safe-agy.sh <registered-task-worktree> -- <agy arguments>
 set -u
-# Bash parses the complete function before execution, even if this source is edited later.
 main() {
-DIR="$(cd "$(dirname "$0")" && pwd)"
-. "$DIR/guard-lib.sh"
+  DIR="$(cd "$(dirname "$0")" && pwd)"
+  . "$DIR/guard-lib.sh"
+  W="${1:-}"; [ -n "$W" ] || fail "worktree is required"
+  shift
+  [ "${1:-}" = "--" ] || fail "usage: safe-agy.sh <worktree> -- <agy arguments>"
+  shift
 
-PLUGIN="${PLUGIN_NAME:-layer-sort-agent-kit}"
-TOGGLE="${SAFE_TOGGLE:-1}"
-W="${1:-}"; ALLOW="${2:-}"
-[ -n "$W" ] && [ -n "$ALLOW" ] || fail "usage: safe-agy.sh <worktree> <allowlist> -- <agy args>"
-shift 2
-[ "${1:-}" = "--" ] && shift
-git -C "$W" rev-parse --git-dir >/dev/null 2>&1 || fail "not a git worktree: $W"
-[ -f "$ALLOW" ] || fail "allowlist missing: $ALLOW"
-
-preflight
-
-plugin_enabled() { agy plugin list 2>/dev/null | grep -q "^- $PLUGIN (enabled"; }
-WAS_ENABLED=no
-[ "$TOGGLE" = 1 ] && plugin_enabled && WAS_ENABLED=yes
-restore() {
-  if [ "$TOGGLE" = 1 ] && [ "$WAS_ENABLED" = no ]; then
-    agy plugin disable "$PLUGIN" >/dev/null 2>&1
+  TMP="$(mktemp -d)" || fail "could not create session directory"
+  cat "$DIR/guard-state.mjs" > "$TMP/guard-state.mjs" || fail "could not freeze state helper"
+  cat "$DIR/runtime-config.mjs" > "$TMP/runtime-config.mjs" || fail "could not freeze runtime helper"
+  STATE_HELPER="$TMP/guard-state.mjs"
+  RUNTIME_HELPER="$TMP/runtime-config.mjs"
+  node "$RUNTIME_HELPER" args "$@" || fail "invalid launch arguments"
+  PROJECT_ROOT="$(node "$RUNTIME_HELPER" project "$W")" || fail "invalid task worktree"
+  if [ -z "${SNAP_DIR:-}" ]; then
+    SNAP_DIR="$(node "$RUNTIME_HELPER" active "$W")" || fail "prepare a task before launching"
   fi
-}
-trap restore EXIT
+  export LS_PROJECT_ROOT="$PROJECT_ROOT" LS_POLICY_SNAPSHOT="$SNAP_DIR"
+  preflight
+  node "$RUNTIME_HELPER" session "$SNAP_DIR" "$W" "$TMP" || fail "task grant unavailable"
+  on_exit() {
+    local rc=$?
+    if ! node "$RUNTIME_HELPER" revoke "$SNAP_DIR"; then
+      echo "GUARD_FAIL: could not revoke task grant; inspect $SNAP_DIR" >&2
+      rc=3
+    fi
+    exit "$rc"
+  }
+  trap on_exit EXIT
 
-if [ "$TOGGLE" = 1 ]; then
-  agy plugin enable "$PLUGIN" >/dev/null 2>&1 || fail "could not enable plugin"
-  plugin_enabled || fail "plugin not enabled after enable"
-fi
-
-TMP="$(mktemp -d)" || fail "could not create snapshot directory"
-cat -- "$ALLOW" > "$TMP/allow" || fail "could not freeze allowlist"
-# Both snapshots and comparison must use the operator-reviewed code from session start.
-cat -- "$GUARD_STATE" > "$TMP/guard-state.mjs" || fail "could not freeze state helper"
-GUARD_STATE="$TMP/guard-state.mjs"
-state "$W" > "$TMP/before" || fail "before-state collection failed; agent not started"
-
-AGY_CMD="${AGY_BIN:-agy}"
-( cd "$W" && "$AGY_CMD" "$@" )
-RC=$?
-
-state "$W" > "$TMP/after" || fail "after-state collection failed; evidence retained in $TMP"
-CHANGED="$(changed_paths "$TMP/before" "$TMP/after")" || fail "state comparison failed; evidence retained in $TMP"
-
-BAD=""
-while IFS= read -r p; do
-  [ -z "$p" ] && continue
-  if [ "$p" = "HEAD" ] || [ "$p" = "INDEX" ]; then
-    BAD="$BAD
-  - Git HEAD or index changed: $p"
-    continue
-  fi
-  case "$p" in
-    .agents/*) BAD="$BAD
-  - protected path changed: $p"; continue ;;
-  esac
-  grep -qxF -- "$p" "$TMP/allow" || BAD="$BAD
+  AGY_CMD="${AGY_BIN:-agy}"
+    VERSION="$(timeout 15s "$AGY_CMD" --version)" || fail "could not inspect CLI version"
+    [ "$VERSION" = "1.5.8" ] || fail "untested CLI version $VERSION; compatibility review required"
+    PLUGINS="$(cd "$W" && timeout 20s "$AGY_CMD" --settings "$TMP/settings.json" plugin list)" || fail "could not inspect plugins"
+    printf '%s\n' "$PLUGINS" | grep -q '^- layer-sort-agent-kit (disabled' || fail "disable the overlapping layer-sort-agent-kit plugin once before using workspace agents"
+  state "$W" > "$TMP/before" || fail "before-state collection failed; agent not started"
+  BUDGET="$(cat "$TMP/timeout")" || fail "missing session deadline"
+    (cd "$W" && timeout --kill-after=10s "${BUDGET}s" "$AGY_CMD" --settings "$TMP/settings.json" --mode accept-edits "$@")
+  RC=$?
+  node "$RUNTIME_HELPER" manifest "$SNAP_DIR" || fail "policy changed during the session"
+  node "$RUNTIME_HELPER" revoke "$SNAP_DIR" || fail "could not close task write authority"
+  state "$W" > "$TMP/after" || fail "after-state collection failed; evidence retained in $TMP"
+  CHANGED="$(changed_paths "$TMP/before" "$TMP/after")" || fail "state comparison failed; evidence retained in $TMP"
+  BAD=""
+  while IFS= read -r p; do
+    [ -z "$p" ] && continue
+    case "$p" in
+      HEAD|INDEX|.agents/*) BAD="$BAD
+  - protected state changed: $p"; continue ;;
+    esac
+    grep -qxF -- "$p" "$TMP/allow" || BAD="$BAD
   - out of scope: $p"
-done <<EOF
+  done <<EOF
 $CHANGED
 EOF
-
-if [ -n "$BAD" ]; then
-  echo "GUARD_VIOLATION (agent exit $RC):$BAD" >&2
-  echo "State snapshots kept in $TMP. Nothing was reverted automatically." >&2
-  exit 2
-fi
-echo "GUARD_OK (agent exit $RC, changed paths: $(printf '%s' "$CHANGED" | grep -c . || true))"
-echo "State snapshots retained in $TMP for audit; remove them through normal operator housekeeping."
-exit "$RC"
+  if [ -n "$BAD" ]; then
+    echo "GUARD_VIOLATION (agent exit $RC):$BAD" >&2
+    echo "Evidence retained in $TMP. No automatic rollback." >&2
+    exit 2
+  fi
+  echo "GUARD_OK (agent exit $RC, changed paths: $(printf '%s' "$CHANGED" | grep -c . || true))"
+  echo "Evidence retained in $TMP; task grant revoked."
+  exit "$RC"
 }
 main "$@"

@@ -28,6 +28,8 @@ function git(root, args) {
 }
 
 export function captureState(root) {
+  const actualRoot = git(root, ["rev-parse", "--show-toplevel"]).trim();
+  if (actualRoot !== path.resolve(root) || fs.realpathSync(root) !== actualRoot) throw new Error("Snapshot requires the exact worktree root");
   const head = git(root, ["rev-parse", "--verify", "HEAD"]).trim();
   const index = hash(git(root, ["ls-files", "--stage", "-z"]));
   const records = git(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]).split("\0");
@@ -74,17 +76,6 @@ export function changedPaths(before, after) {
   return changed.sort();
 }
 
-export function validateHook(hooks, snapshot) {
-  const groups = Object.values(hooks);
-  const active = groups.flatMap((group) => group?.enabled === true ? group.PreToolUse ?? [] : []);
-  if (active.length !== 1) throw new Error("Exactly one enabled PreToolUse entry required");
-  const entry = active[0];
-  const expected = "/usr/bin/bash " + snapshot + "/scripts/policy.sh";
-  if (entry.matcher !== ".*" || entry.hooks?.length !== 1 ||
-      entry.hooks[0].type !== "command" || entry.hooks[0].command !== expected ||
-      !Number.isFinite(entry.hooks[0].timeout) || entry.hooks[0].timeout <= 0 ||
-      entry.hooks[0].timeout > 30) throw new Error("Hook configuration does not match pinned policy");
-}
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {
@@ -93,7 +84,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     else if (action === "compare") process.stdout.write(changedPaths(
       JSON.parse(fs.readFileSync(first, "utf8")), JSON.parse(fs.readFileSync(second, "utf8"))
     ).join("\n"));
-    else if (action === "hook") validateHook(JSON.parse(fs.readFileSync(first, "utf8")), second);
     else throw new Error("Unknown guard-state action");
   } catch (error) {
     console.error("GUARD_STATE_FAIL: " + error.message);

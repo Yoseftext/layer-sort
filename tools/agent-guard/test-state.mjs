@@ -5,7 +5,8 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { test } from "node:test";
-import { captureState, changedPaths, hashFile, validateHook } from "./guard-state.mjs";
+import { captureState, changedPaths, hashFile } from "./guard-state.mjs";
+import { validateHook } from "./runtime-config.mjs";
 
 // Retain bounded fixtures for diagnosis; no device/runtime configuration is touched.
 const base = fs.mkdtempSync(path.join(process.env.GUARD_TEST_ROOT ?? os.tmpdir(), "guard-state-"));
@@ -63,7 +64,7 @@ test("validates active hook structure, rejecting disabled and ambiguous wiring",
   const hooks = { guard: { enabled: true, PreToolUse: [
     { matcher: ".*", hooks: [{ type: "command", command, timeout: 10 }] }
   ] } };
-  assert.doesNotThrow(() => validateHook(hooks, "/pin"));
+  assert.doesNotThrow(() => validateHook(hooks, command));
   assert.throws(() => validateHook({ guard: { ...hooks.guard, enabled: false }, note: command }, "/pin"));
   assert.throws(() => validateHook({ ...hooks, duplicate: hooks.guard }, "/pin"));
   assert.throws(() => validateHook(hooks, "/other"));

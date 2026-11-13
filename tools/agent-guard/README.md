@@ -1,80 +1,99 @@
-# Guard operation and current acceptance limits
+# Antigravity task workflow
 
-The primary runtime remains Antigravity CLI. These scripts provide startup checks
-and post-execution detection, not an operating-system sandbox. This repair does
-not certify the complete agent workflow or physical-device QA.
+Antigravity 1.5.8 is the primary runtime. Workspace agent definitions in
+.agents/agents are authoritative. The packaged agent copies are historical;
+do not enable the global layer-sort-agent-kit plugin alongside workspace agents.
+The policy source remains in .agents/plugins/layer-sort-agent-kit/scripts.
+No new framework, service, or dependency is required.
 
-## Authority and scope
+## Run a task
 
-- Agent definitions and policy source are version-controlled in the agent kit.
-- The installed plugin's enabled PreToolUse Hook must point to one reviewed,
-  frozen policy snapshot. The manifest proves consistency, not independent authenticity.
-- The task registry in that pinned policy is the write authority. Editing another
-  worktree's policy source does not update the running Hook.
-- A task needs one registered nested Git worktree and exact file grants.
-  The launcher's allowlist is an additional post-check and must match that grant.
-  Automatic agreement checking and grant expiry are not implemented.
-- In this repair worktree, workspace hooks.json is empty; the installed plugin
-  owns enforcement. Other historical worktrees have not been migrated.
-- Source, private runtime pins, session evidence and credentials are separate.
-  Never commit private runtime state or credentials.
+Use a reviewed infrastructure checkout (INFRA) and a dedicated registered
+worktree (TASK) immediately under the primary repository's .worktrees directory.
+Preserve existing changes. One writer owns each task; the Reviewer is read-only.
+The operator prepares grants; agents cannot grant themselves new paths.
 
-## Start a bounded task
+One-time migration: run agy plugin disable layer-sort-agent-kit. Other global
+plugins are unchanged. The launcher checks the kit is disabled and establishes
+workspace trust for this session only; global CLI settings are never rewritten.
 
-1. Use a reviewed infrastructure checkout for the launcher. Do not start from
-   an unreviewed task worktree containing an agent-modified verifier.
-2. Inspect dirty/untracked changes and preserve them. Create a dedicated task
-   worktree under the primary repository's .worktrees directory.
-3. Have the maintainer register exact task paths in the policy, review/test it,
-   deploy a new snapshot, verify its manifest, and wire the installed plugin to it.
-   Preserve the previous snapshot/configuration for rollback.
-4. Create an operator-owned file containing exactly one granted relative path per
-   line. Do not include secrets, directories, globs, Git metadata or .agents paths.
-5. Supply the actual pin explicitly when it differs from the legacy default:
+Example (replace task name and exact files with the requested work):
 
-```sh
-SNAP_DIR=/absolute/path/to/reviewed/policy-snapshot \
-  bash /trusted/infrastructure/tools/agent-guard/safe-agy.sh \
-  /root/projects/layer-sort/.worktrees/TASK /operator/task-paths.txt -- \
-  --agent layer-sort-lead --mode accept-edits --print-timeout 300s \
-  --output-format stream-json -p 'Bounded task, paths and acceptance criteria'
-```
+~~~sh
+INFRA=/root/projects/layer-sort/.worktrees/agent-runtime-audit
+TASK=/root/projects/layer-sort/.worktrees/TASK
+node "$INFRA/tools/agent-guard/prepare-task.mjs" "$TASK" TASK-ID path/to/file.gd tests/task_test.gd
+bash "$INFRA/tools/agent-guard/safe-agy.sh" "$TASK" -- \
+  --agent layer-sort-lead --output-format stream-json \
+  -p 'Requirement, allowed paths, acceptance tests, independent review and handoff'
+~~~
 
-Do not use --dangerously-skip-permissions. A successful CLI exit or GUARD_OK is
-not task acceptance: inspect denied_actions, actual changes, tests and reviewer
-evidence. Headless CLI 1.5.8 may end a Lead turn while a specialist is still active.
-Check specialist completion before treating any post-check as final; unattended
-headless lifecycle completion remains unverified.
+The worktree must contain the reviewed workspace Hook template. Preparation
+validates exact relative files and existing parent directories; directories and
+wildcards are not grants. It creates a private content-addressed snapshot under
+the primary .git/agent-runtime-policy, never in version-controlled source.
+The snapshot contains policy plus task ID, exact files, base HEAD, session ID,
+and a 30-minute expiry. Only one active task pointer exists per worktree.
+An open task must be explicitly closed before replacement.
+
+The launcher derives CLI permissions and its post-check from that same snapshot,
+uses accept-edits mode, and defaults to a 600-second session limit (override
+LS_SESSION_TIMEOUT up to 1800 seconds within remaining grant lifetime).
+Task prompts, model, effort and output options are supported; authority-changing
+flags and resume across task leases are rejected. New CLI versions require a
+compatibility check before this version gate is updated.
+
+Writes and partial edits use native write_file/edit_file with absolute Path.
+Read-only inspection, scoped Git patch output, existing Godot headless scripts
+under res://tests, and selected deterministic project tests pass the Hook.
+Shell chaining, unrestricted interpreters, network commands, Git mutations,
+protected paths and device mutation are outside normal agent authority.
+To add a necessary test command, review a scoped policy change rather than give
+blanket shell access. Executing project tests runs project code with the host
+user's privileges: this is not an OS sandbox.
+
+## Completion and recovery
+
+The Lead must obtain implementation, actual test outputs and an explicit
+independent review verdict before delivery. A CLI success or GUARD_OK alone is
+not engineering acceptance. A timeout or unfinished specialist is BLOCKED.
+Integration and committing the reviewed patch remain operator actions; merging
+main requires the owner's exact authorization.
+
+Every completed launch revokes its grant, including failure paths after lease
+acceptance. To abandon a prepared task or recover after a process crash:
+
+~~~sh
+node "$INFRA/tools/agent-guard/runtime-config.mjs" close "$TASK"
+~~~
+
+Then inspect state and prepare a fresh task. Concurrent prepare is serialized by
+a per-worktree lock. If preparation is forcibly killed, inspect the task pointer
+and lock before manually clearing that stale lock; never race a live preparer.
+
+Exit 2 detects scope/index/HEAD changes. Exit 3 means verification or startup
+failed. Other nonzero agent exits propagate. Evidence directories are retained;
+no automatic rollback discards work. Helpers are frozen before the session,
+snapshots are checked before and after, and grant revocation precedes the final
+state comparison. Keep private evidence out of commits and clean it deliberately.
+
+The Hook prevents supported tool requests. The post-check detects persistent
+Git-visible changes, including quoted names, modes, links, index and HEAD.
+Neither prevents arbitrary same-user tampering, TOCTOU races, ignored-file writes,
+transient reverted changes, or writes outside the inspected worktree. A manifest
+proves consistency, not independent authenticity. Use OS isolation for untrusted
+code; worktrees alone do not provide it.
 
 ## Verify
 
-Operator commands (not blanket permissions granted to agents):
-
-```sh
+~~~sh
 node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs
 bash tools/agent-guard/test-guard.sh
 LS_PROJECT_ROOT=/root/projects/layer-sort node .agents/plugins/layer-sort-agent-kit/scripts/test-policy.mjs
 git diff --check
-```
+~~~
 
-test-guard.sh requires the installed pin and plugin wiring to agree, or explicit
-SNAP_DIR, INST_DIR and PLUGIN_HOOKS fixture settings as used in CI.
-
-## Failure and recovery
-
-Exit 2 means a detected scope/index/HEAD violation; exit 3 means startup,
-collection or comparison could not be verified. Preserve evidence and inspect
-the changes. No automatic rollback occurs. The agent's nonzero exit also
-propagates even when scope checks finish.
-
-The launcher freezes its helper and allowlist before execution. It detects
-changed file contents, Git-visible mode changes, symlink targets, staged index entries and HEAD.
-Control characters in filenames fail closed because the allowlist is line-based.
-Ignored files, paths outside the task worktree, transient reverted changes,
-same-user tampering and TOCTOU races remain outside this detector's guarantee.
-
-Session snapshots and bounded test fixtures are retained for diagnosis. Review
-and remove old evidence through ordinary operator housekeeping; do not publish it.
-Restore backed-up plugin configuration if reverting a runtime deployment. Close
-or revoke a temporary task grant after completion. Merge and device installation
-remain separate owner-controlled gates.
+Tests use isolated disposable Git repositories and emulate the actual CLI
+metadata/settings protocol. They never replace real Antigravity E2E acceptance.
+Godot/Android CI and physical-device QA are separate gates. Device operations use
+tools/device-tests/agentctl only, with exact authorization for mutations.

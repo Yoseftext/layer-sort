@@ -1,117 +1,81 @@
-# Agent runtime audit and bounded guard repair — 2026-11-13
+# Layer Sort runtime repair evidence
 
-Verdict: **NOT_READY** for the full autonomous workflow. This patch fixes
-reproduced guard defects; it is not full production or device acceptance.
+This report distinguishes the phone runtime from cloud CI. The primary device
+is Linux ARM64 Debian/PRoot on Android. Antigravity 1.5.8 and Node 24.22.0 were
+observed directly. No main merge is authorized or performed.
 
 ## Baseline and scope
 
-- Actual device: Linux ARM64, Debian/Android PRoot; Antigravity CLI 1.5.8,
-  Node v24.22.0.
-- Repair branch: repair/agent-runtime-audit, based on
-  cdf49968ec5705434eb6616135f6af23c9a3ff2b (the PR20 head).
-- PR20 was already merged at 4aa223fc9575a9d25c3cb0d00bddb6161fca243b.
-- The primary checkout remains feat/g5-p1-layer-circuit at c48e6185, with its
-  pre-existing inventory and puzzle-validator changes preserved.
-- No gameplay, levels, signing identities, merge, release or phone operation
-  is part of this patch. Historical worktrees were not deleted or migrated.
+The primary checkout was feat/g5-p1-layer-circuit at c48e6185, ahead eight, with
+owner changes in tools/inventory.md, tests/g5/puzzle_validator_test.gd and
+untracked content tooling. These are preserved. Competing worktrees include
+agent-system-access, agent-system-clean, integration and agent-write-e2e.
+PR20 was already merged. Repair branch repair/agent-runtime-audit starts from
+agent-system-clean cdf49968; review is PR22. The remote main observed was
+4aa223fc9575a9d25c3cb0d00bddb6161fca243b.
 
-## Findings and repairs
+## Findings register
 
-| Severity | Root cause and evidence | Result |
+| Severity | Observed problem and root cause | Repair and evidence |
 |---|---|---|
-| HIGH | Git display porcelain was sliced as a literal filename. A pre-existing filename containing a double quote hashed as GONE before and after a real content change. | Use NUL-delimited status records and structured snapshots. Quote/rename/type/mode/index tests pass. |
-| HIGH | Failed collection/comparison could be lost in shell pipelines/substitutions. | Explicitly check collection and comparison exits. Failure before launch prevents execution; failure afterward cannot print GUARD_OK. |
-| HIGH | Hook preflight matched a command substring rather than enabled JSON structure. | Validate one enabled PreToolUse entry, exact matcher/command and bounded timeout. |
-| HIGH | A newly introduced helper was agent-writable and then executed after the session. Independent review caught this before acceptance. | Freeze reviewed helper before launch; verifier replacement cannot run injected code or conceal an outside write in the regression. |
-| HIGH | Agent could modify the original post-check allowlist during execution. | Freeze the allowlist before launch; regression rejects the added path. |
-| MEDIUM | Each changed file was allocated completely for hashing. | Actual Antigravity Implementer added bounded synchronous SHA-256 reads and finally-closes the descriptor; multi-megabyte regression passes. |
+| High | Human Git status parsing missed changes in a pre-existing quoted filename. | NUL-delimited records, content/mode/link/index/HEAD snapshots; quoted-file regression. |
+| High | Unchecked collection/comparison failures could report GUARD_OK. | Explicit failure propagation and exact repository-root checks; before/after failure regressions. |
+| High | Agent could replace a verifier later executed by the launcher. | Freeze both helpers before execution; replacement/injection regression. |
+| High | Workspace/plugin/pinned policy sources disagreed; missing-grant denials persisted despite source edits. | Workspace-only Hook, disabled overlapping kit, private content-addressed task snapshots, one task pointer. |
+| High | A worktree absent from trustedWorkspaces did not discover the project Lead. | Session-only trust; actual agy agents probe discovers layer-sort-lead. Global settings unchanged. |
+| High | Actual edit_file uses Path but was unconditionally blocked. | Same exact path validation for write_file and edit_file; positive/negative policy probes. |
+| High | Lead ended before its worker delivered; command policy contradicted its duties. | Coordinator command tools and explicit native wait/inbox and reviewer handoff protocol; real E2E is a separate required gate. |
+| High | Proposed launcher allowed alternate executable names to skip checks. | Independent review caught it; all executables use the same version/plugin/settings protocol. |
+| High | Proposed prepare replaced pointers while older grants remained live. | Independent review caught it; serialized preparation, explicit close, active-pointer agreement. |
+| Medium | CLI authority flags had alternate spellings. | Positive allowlist for task-facing flags; single-dash/compound override regressions. |
+| Medium | Policy grants were duplicated and never expired. | CLI scopes and post-check derive from the same 30-minute lease; launch always revokes accepted grants. |
 
-The launcher also detects index changes and parses its complete main function
-before execution. One diagnostic was invalidated by editing the old launcher
-while Bash was reading it; its results were excluded. Another scope violation
-was caused by concurrent maintainer edits and is not evidence of agent escape.
+## Chosen architecture
 
-## Verification and review
+Use workspace .agents/agents and skills, one workspace PreToolUse dispatcher,
+and the policy source in the kit scripts directory. The global kit is disabled;
+other plugins remain untouched. Historical packaged agent definitions are not
+an additional authority. A reviewed infrastructure checkout prepares and runs
+one dedicated nested worktree. No external framework or service was added.
 
-Operator validation on the actual device:
+Private .git/agent-runtime-policy contains snapshots, manifests, task pointers
+and revocation markers. Credentials, CLI settings and session logs are never
+committed. The Hook prevents supported tool requests; the post-check detects
+persistent Git-visible deviations; worktrees support recovery and review.
+Neither is OS isolation. Same-user attacks, TOCTOU, ignored or transient changes
+and paths outside the task worktree remain limitations.
 
-- node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs:
-  **PASS**, 10 tests, exit 0.
-- bash tools/agent-guard/test-guard.sh with the inspected pin/fixture environment:
-  **PASS**, 9 tests, exit 0.
-- LS_PROJECT_ROOT=/root/projects/layer-sort node
-  .agents/plugins/layer-sort-agent-kit/scripts/test-policy.mjs:
-  **PASS**, exit 0.
-- git diff --check: **PASS**, exit 0.
-- Plugin strict validation: PASS; informational generic-logo note.
+See [operating instructions](../tools/agent-guard/README.md).
 
-Raw validation and file hashes are retained privately in the worktree's ignored
-.runtime/agent-audit-validation.json. The independent Codex reviewer inspected
-this record and matched all five code/test hashes before returning scoped
-**ACCEPT**. That acceptance does not cover full runtime readiness or a merge.
+## Verification record
 
-## Real execution and remaining acceptance gaps
+First repair a18b7a8 passed local state/launcher, guard and policy checks and
+independent review. PR22 CI succeeded for that head:
+- guard run 43491964706
+- Godot/Android run 43491964795
 
-Lead session afac19f2-6b1d-4c4b-b9a9-b3473546ee41 delegated the hashing task
-to Implementer 76994b7d-e557-4dfb-baee-6af51c51e045. Real helper/test changes,
-operator-run tests and independent review were observed. The Lead initially
-returned SUCCESS after delegation, before delivery; subsequent timeouts and
-stale partial summaries mean unattended end-to-end completion remains unverified.
+Those runs do not validate subsequent protocol changes. During protocol work,
+an intermediate Bash syntax failure was caught by tests and independent review,
+then corrected (bash -n exit 0). Retained private logs distinguish that failure
+from the corrected focused run: launcher 11/11 PASS; policy PASS; state 6/6 PASS.
+Final protocol, native agent E2E and new-head CI evidence must be recorded before
+claiming the workflow accepted.
 
-Default-runtime session 43d840fb-a3d1-425a-88d2-41b57a327965 actually attempted
-node --version and an ungranted file write. PreToolUse denied both; the command
-error explicitly blocked node. The launcher then reported agent exit 0 and no
-changed paths. However, the write denial cited a missing task grant while the
-installed pin inspected by preflight contained one. **The active loading and
-precedence issue remains OPEN; preflight of one file does not prove runtime
-authority.** Automatic agreement between task registry and launcher allowlist
-also remains unimplemented.
+## APK and device gate
 
-Disabling the global Layer Sort plugin removed Lead from discovery despite
-workspace agent files being present. The workspace-only experiment was not
-accepted. Original installed-plugin files and activation were restored, the
-temporary installed task grant revoked, and the experimental workspace Hook
-cleared. Lead discovery returned. The current bounded architecture keeps the
-existing installed plugin as the runtime and removes this repair worktree's
-stale cross-worktree Hook; other loading sources still need investigation.
-Partial-edit acceptance and independent native Reviewer handoff remain NOT RUN.
+An earlier PR20 CI artifact was retrieved and hashed. It contains package
+com.yoseftext.layersort.dev, versionCode 5, versionName 0.3.2-g3b according to CI.
+APK SHA256 a66dbcffd95763bb1cc6536a4a2b61c1659d7020b42a28e9b1058f0c8bf73395.
+Extracted certificate SHA256 de1faa3e10dbcc058f3f1b13c34fb1eb929140bbbe0a7499b348f75d8a1c095e matches CI.
+The workflow checked out synthetic merge 29312d8eb541807cd15e0e367293ed3b3ce4cb00,
+not the PR head alone. Full signature-scheme validation, reproducible identical
+build bytes, installation and physical QA are NOT RUN. Cloud artifacts and
+physical-device verification are separate. No Sentry authenticated project
+access was available; absence of runtime errors cannot be inferred.
 
-## Cloud CI and device gate
+## Current acceptance
 
-Previous PR20 runs, inspected directly through GitHub:
-
-- Guard: https://github.com/Yoseftext/layer-sort/actions/runs/43366243163 — PASS.
-- Android: https://github.com/Yoseftext/layer-sort/actions/runs/43366243144 — PASS,
-  including export and artifact uploads.
-
-Those jobs actually checked out synthetic merge
-29312d8eb541807cd15e0e367293ed3b3ce4cb00, combining cdf49968 with base 144c744b.
-Do not attribute that APK solely to the head SHA or the later main merge.
-
-Artifact 14024137085 was retrieved into the separate Cloud workspace. Downloaded
-ZIP SHA-256 matched GitHub metadata:
-c585b237489550b6339c335834d31db1599f8184dadcaa749bcb20ca1b046fa6.
-Contained APK hash matched CI:
-a66dbcffd95763bb1cc6536a4a2b61c1659d7020b42a28e9b1058f0c8bf73395.
-CI reports com.yoseftext.layersort.dev, versionCode 5, versionName 0.3.2-g3b.
-Extracted certificate SHA-256 matched CI:
-de1faa3e10dbcc058f3f1b13c34fb1eb929140bbbe0a7499b348f75d8a1c095e.
-This is certificate metadata verification, not independent verification of every
-APK signature scheme or a bit-for-bit build reproducibility experiment.
-
-New-repair CI is separate from these earlier results. Physical install, device
-connectivity, screenshots, logcat and physical QA were NOT RUN. The existing
-agentctl has no install command. The device gate is BLOCKED / NOT IMPLEMENTED.
-
-## Limits and next steps
-
-These are application checks and post-run detection, not OS isolation. Ignored
-files, outside paths, reverted transient writes, same-UID tampering and TOCTOU
-races remain outside the detector's guarantee. Mode coverage concerns paths
-surfaced by Git, not every permission bit on otherwise clean tracked files.
-
-Resolve actual Hook/agent discovery authority, partial edits and complete
-headless handoff before claiming readiness. Keep native runtime evidence distinct
-from Cloud CI and owner-reported device QA. Sentry could not be queried without
-configured authentication/project context. No secrets or private transcripts
-are included here. See tools/agent-guard/README.md for operation and recovery.
+Infrastructure regression checks are not full-cycle acceptance. Native useful
+task completion, independent patch review, new-head CI, Godot runtime checks and
+physical-device QA must each be reported from actual evidence. Until those
+required runtime gates are proven, the system is NOT_READY.
