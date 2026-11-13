@@ -22,11 +22,17 @@ Example (replace task name and exact files with the requested work):
 ~~~sh
 INFRA=/root/projects/layer-sort/.worktrees/agent-runtime-audit
 TASK=/root/projects/layer-sort/.worktrees/TASK
-node "$INFRA/tools/agent-guard/prepare-task.mjs" "$TASK" TASK-ID path/to/file.gd tests/task_test.gd
+git -C "$INFRA" worktree add -b task/TASK "$TASK" HEAD
+node "$INFRA/tools/agent-guard/prepare-task.mjs" "$TASK" TASK-ID scripts/domain/move_rules.gd tests/g2/classic_rules_test.gd
 bash "$INFRA/tools/agent-guard/safe-agy.sh" "$TASK" -- \
   --agent layer-sort-lead --output-format stream-json \
   -p 'Requirement, allowed paths, acceptance tests, independent review and handoff'
 ~~~
+
+Start tasks from the reviewed infrastructure branch. For another game branch,
+integrate the reviewed tooling into an isolated branch first; preserve owner
+changes and do not reuse stale Hooks from historical worktrees. Bare agy in an
+old checkout is not the supported entrypoint.
 
 The worktree must contain the reviewed workspace Hook template. Preparation
 validates exact relative files and existing parent directories; directories and
@@ -97,3 +103,13 @@ Tests use isolated disposable Git repositories and emulate the actual CLI
 metadata/settings protocol. They never replace real Antigravity E2E acceptance.
 Godot/Android CI and physical-device QA are separate gates. Device operations use
 tools/device-tests/agentctl only, with exact authorization for mutations.
+
+## Verified operating boundary
+
+The actual CLI1.5.8 Lead/Implementer/Reviewer cycle passed with native partial
+edits, focused tests, two negative controls and grant closure. See
+docs/AGENT_RUNTIME_E2E.md. Local Godot import currently aborts even for a minimal
+project; use verified CI for Godot validation until that environment fault is
+resolved. Do not report a local Godot pass. Physical device QA remains blocked
+by the approved-device identity mismatch. Sentry has no authenticated project
+access in this session. These gates are explicit, not implied by GUARD_OK.
