@@ -943,7 +943,7 @@ function evaluateRunCommand(payload, taskWriteAllowlists) {
   const commandArgs = tokens.slice(1);
 
   // A fixed project test command is executable code, not an OS sandbox.
-  if (executable === "node" && command === "node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs") {
+  if (executable === "node" && ["node --test tools/agent-guard/test-state.mjs", "node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs"].includes(command)) {
     const active = getActiveWorktreeRoot(payload);
     const grant = active && getTaskWritePolicy(active, taskWriteAllowlists);
     return active === cwd && grant && grant.files.length > 0

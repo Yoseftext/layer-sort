@@ -98,11 +98,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     else if (action === "close") revoke(activeSnapshot(first));
     else if (action === "session") {
       const grant = await taskGrant(first, second);
-      const budget = Number(process.env.LS_SESSION_TIMEOUT ?? 600);
+      const budget = Number(process.env.LS_SESSION_TIMEOUT ?? 1200);
       if (!Number.isInteger(budget) || budget < 1 || budget > 1800) throw Error("Session timeout must be 1..1800 seconds");
       const seconds = Math.min(budget, Math.floor((Date.parse(grant.expiresAt) - Date.now()) / 1000) - 1);
       const settings = { trustedWorkspaces: [second], toolPermission: "request-review", permissions: {
-        allow: [...["git", "godot", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)",
+        allow: [...["git", "godot", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)",
           ...grant.files.map((name) => "write_file(" + path.join(second, name) + ")")]
       } };
       fs.writeFileSync(path.join(third, "allow"), grant.files.join("\n") + (grant.files.length ? "\n" : ""), { mode: 0o600 });

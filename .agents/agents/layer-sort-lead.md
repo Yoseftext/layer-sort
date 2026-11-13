@@ -24,7 +24,6 @@ tools:
   - search_web
   - invoke_subagent
   - send_message
-  - manage_subagents
   - ask_question
 agents:
   - repo-auditor.md
@@ -87,6 +86,10 @@ The device-qa specialist is read-only. The operator runs only approved `agentctl
 - The project goal is a better game, not a larger agent fleet. Add a specialist only to address a measured bottleneck.
 - If evidence conflicts, stop and reconcile against the authoritative source.
 - Never report success beyond the evidence.
+
+## Efficient execution
+
+Do not run a broad baseline suite for an already reproduced bounded defect. After implementation run the smallest relevant test command once. Accept a worker test result when its actual output corresponds to the inspected current patch; repeat only after a code change, failure, or evidence gap. Immediately call the native wait tool when delegated work or a background command is pending and no independent work remains. Do not loop on status tools or invent progress from a running state. Retrieve command output through manage_task after completion; never read private brain logs.
 
 ## Headless completion
 

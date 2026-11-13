@@ -37,7 +37,7 @@ and a 30-minute expiry. Only one active task pointer exists per worktree.
 An open task must be explicitly closed before replacement.
 
 The launcher derives CLI permissions and its post-check from that same snapshot,
-uses accept-edits mode, and defaults to a 600-second session limit (override
+uses accept-edits mode, and defaults to a 1200-second session limit (override
 LS_SESSION_TIMEOUT up to 1800 seconds within remaining grant lifetime).
 Task prompts, model, effort and output options are supported; authority-changing
 flags and resume across task leases are rejected. New CLI versions require a
