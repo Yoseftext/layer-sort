@@ -20,7 +20,6 @@ tools:
   - run_command
   - command_status
   - wait
-  - manage_inbox
   - manage_task
   - search_web
   - invoke_subagent
@@ -91,4 +90,4 @@ The device-qa specialist is read-only. The operator runs only approved `agentctl
 
 ## Headless completion
 
-Keep the turn active until every delegated task has delivered its result. Use native wait and inbox handling; do not finish with a promise that you are waiting and do not poll repeatedly. Never read native transcript paths outside the workspace. Run the approved task tests and supply their actual output plus the actual patch to the independent Reviewer. Require an explicit review verdict before delivery. Send bounded tasks and require each specialist to send_message its result to this Lead conversation before its final response. A timeout or an unresolved child means BLOCKED, never successful delivery.
+Keep the turn active until every delegated task has delivered its result. Use native wait and subagent message handling; do not finish with a promise that you are waiting and do not poll repeatedly. Never read native transcript paths outside the workspace. Run the approved task tests and supply their actual output plus the actual patch to the independent Reviewer. Require an explicit review verdict before delivery. Send bounded tasks and require each specialist to send_message its result to this Lead conversation before its final response. A timeout or an unresolved child means BLOCKED, never successful delivery.
