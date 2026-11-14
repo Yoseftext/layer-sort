@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/bash /root/projects/layer-sort/.worktrees/agent-system-access/.agents/plugins/layer-sort-agent-kit/scripts/policy.sh",
+            "command": "/usr/bin/bash -c 'if [ -n \"${LS_POLICY_SNAPSHOT:-}\" ] && [ -f \"$LS_POLICY_SNAPSHOT/scripts/policy.sh\" ]; then /usr/bin/bash \"$LS_POLICY_SNAPSHOT/scripts/policy.sh\" || printf \"%s\\n\" \"{\\\"decision\\\":\\\"deny\\\",\\\"reason\\\":\\\"Start through safe-agy; pinned policy unavailable.\\\"}\"; else printf \"%s\\n\" \"{\\\"decision\\\":\\\"deny\\\",\\\"reason\\\":\\\"Start through safe-agy; pinned policy unavailable.\\\"}\"; fi'",
             "timeout": 10
           }
         ]

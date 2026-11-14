@@ -420,6 +420,14 @@ try {
     workspacePaths
   });
 
+  const edit = worktreeWriteEvent(allowedPath);
+  edit.toolCall.name = "edit_file";
+  assert.equal(evaluate(edit, taskWriteAllowlists).decision, "allow");
+  edit.toolCall.args.Path = path.join(worktreeRoot, "not-allowlisted.txt");
+  assert.equal(evaluate(edit, taskWriteAllowlists).decision, "deny");
+  delete edit.toolCall.args.Path;
+  assert.equal(evaluate(edit, taskWriteAllowlists).decision, "deny");
+
   assert.equal(
     evaluate(worktreeWriteEvent(allowedPath), taskWriteAllowlists).decision,
     "allow",

@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 const ALLOWED_TOOLS = new Set([
   "view_file", "read_file", "list_dir", "find_by_name", "grep_search", "run_command",
   "manage_task", "search_web", "invoke_subagent", "send_message",
-  "manage_subagents", "ask_question"
+  "manage_subagents", "ask_question", "wait", "manage_inbox", "command_status"
 ]);
 
 const BLOCKED_WRITE_TOOLS = new Set([
@@ -17,7 +17,8 @@ const BLOCKED_WRITE_TOOLS = new Set([
 
 // Only these content-writing tools may write, and only into a verified nested Git Worktree.
 const WORKTREE_WRITE_PATH_FIELDS = Object.freeze({
-  write_file: "Path"
+  write_file: "Path",
+  edit_file: "Path"
 });
 
 const READ_PATH_FIELDS = Object.freeze({
@@ -36,19 +37,13 @@ const SHELL_META = /[;&|><$(){}\[\]\r\n\\'"!#*?~]/;
 const PROJECT_ROOT = process.env.LS_PROJECT_ROOT ?? "/root/projects/layer-sort";
 const WORKTREE_BASE = path.join(PROJECT_ROOT, ".worktrees");
 
-// Maintainer-owned task registry. Keys are exact Worktree directory names.
-// "files" contains exact POSIX paths relative to that Worktree; no globs or directories.
-// Keep the infrastructure Worktree empty: policy/configuration work is maintainer-only.
-const WORKTREE_TASK_WRITE_ALLOWLISTS = Object.freeze({
-  "agent-system-access": Object.freeze({
-    taskId: "AGENT-SYSTEM-ACCESS",
-    files: Object.freeze([])
-  }),
-  "agent-system-clean": Object.freeze({
-    taskId: "AGENT-SYSTEM-DOCS",
-    files: Object.freeze(["tools/agent-guard/README.md"])
-  })
-});
+// Task data lives beside the frozen runtime policy, outside agent-writable worktrees.
+// A source checkout without task data is read-only by default.
+function loadTaskGrants() {
+  try { return Object.freeze(JSON.parse(fs.readFileSync(new URL("./task-grants.json", import.meta.url), "utf8"))); }
+  catch (error) { if (error.code === "ENOENT") return Object.freeze({}); throw error; }
+}
+const WORKTREE_TASK_WRITE_ALLOWLISTS = loadTaskGrants();
 
 const MAX_COMMAND_LENGTH = 2048;
 const MAX_COMMAND_TOKENS = 64;
@@ -232,7 +227,8 @@ function isSafeTaskRelativeFile(candidate) {
   return !SENSITIVE_PATH.test(candidate) && !WORKTREE_PROTECTED_PATH.test(candidate);
 }
 
-function getTaskWritePolicy(worktreeRoot, taskWriteAllowlists) {
+export function getTaskWritePolicy(worktreeRoot, taskWriteAllowlists = WORKTREE_TASK_WRITE_ALLOWLISTS) {
+  if (!isRegisteredGitWorktree(worktreeRoot)) return null;
   if (
     !taskWriteAllowlists ||
     typeof taskWriteAllowlists !== "object" ||
@@ -247,6 +243,8 @@ function getTaskWritePolicy(worktreeRoot, taskWriteAllowlists) {
   }
 
   const taskPolicy = taskWriteAllowlists[worktreeKey];
+  if (fs.existsSync(new URL("../REVOKED", import.meta.url))) return null;
+  if (taskPolicy?.expiresAt !== undefined && (!Number.isFinite(Date.parse(taskPolicy.expiresAt)) || Date.parse(taskPolicy.expiresAt) <= Date.now())) return null;
   if (
     !taskPolicy ||
     typeof taskPolicy.taskId !== "string" ||
@@ -691,7 +689,7 @@ function isSafeRevision(token) {
   return token === "HEAD" || /^[0-9a-f]{7,40}$/i.test(token);
 }
 
-function evaluateGit(args, cwd, roots) {
+function evaluateGit(args, cwd, roots, taskWriteAllowlists) {
   const subcommand = args[0] ?? "";
   const rest = args.slice(1);
 
@@ -725,6 +723,11 @@ function evaluateGit(args, cwd, roots) {
   }
 
   if (subcommand === "diff") {
+    if (beforeSeparator.length === 2 && beforeSeparator.includes("--no-ext-diff") && beforeSeparator.includes("--no-textconv") && pathspecs.length > 0) {
+      const grant = getTaskWritePolicy(roots[0], taskWriteAllowlists);
+      const exact = cwd === roots[0] && grant && pathspecs.every((item) => grant.files.includes(item));
+      return exact ? validatePathspecs() ?? allow() : deny("Patch output is limited to exact active task files.");
+    }
     const allowed = new Set([
       "--check", "--stat", "--name-only", "--name-status",
       "--cached", "--no-ext-diff", "--no-color", "--color=never", "--no-renames"
@@ -899,7 +902,7 @@ function isApprovedAgentctlExecutable(token, cwd, workspaceRoot) {
   }
 }
 
-function evaluateRunCommand(payload) {
+function evaluateRunCommand(payload, taskWriteAllowlists) {
   const args = payload?.toolCall?.args ?? {};
   const command = args.CommandLine;
 
@@ -938,6 +941,14 @@ function evaluateRunCommand(payload) {
   }
 
   const commandArgs = tokens.slice(1);
+
+  // A fixed project test command is executable code, not an OS sandbox.
+  if (executable === "node" && ["node --test tools/agent-guard/test-state.mjs", "node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs"].includes(command)) {
+    const active = getActiveWorktreeRoot(payload);
+    const grant = active && getTaskWritePolicy(active, taskWriteAllowlists);
+    return active === cwd && grant && grant.files.length > 0
+      ? allow() : deny("Guard tests require a live task grant in the exact worktree.");
+  }
 
   const blockedExecutables = new Set([
     "adb", "appium", "phone-queue", "game-test", "phone-connect",
@@ -978,7 +989,7 @@ function evaluateRunCommand(payload) {
   }
 
   if (executable === "godot") return evaluateGodot(tokens, roots);
-  if (executable === "git") return evaluateGit(commandArgs, cwd, roots);
+  if (executable === "git") return evaluateGit(commandArgs, cwd, roots, taskWriteAllowlists);
   if (executable === "agy") return evaluateAgy(tokens, cwd, roots);
   if (executable === "rg") return evaluateRg(commandArgs, cwd, roots);
   if (executable === "grep") return evaluateGrep(commandArgs, cwd, roots);
@@ -1019,7 +1030,7 @@ export function evaluate(payload, taskWriteAllowlists = WORKTREE_TASK_WRITE_ALLO
   if (readPathDecision) return readPathDecision;
 
   if (toolName !== "run_command") return allow();
-  return evaluateRunCommand(payload);
+  return evaluateRunCommand(payload, taskWriteAllowlists);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
