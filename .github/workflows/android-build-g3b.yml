@@ -289,6 +289,13 @@ jobs:
             exit 1
           fi
 
+      - name: Run camera discovery runtime regression
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . --script res://tests/runtime/godot_runtime_test.gd 2>&1 | tee logs/godot-runtime.log
+          grep -q 'GODOT_RUNTIME_TESTS PASS' logs/godot-runtime.log
+          if grep -Eq 'SCRIPT ERROR|RUNTIME_FAIL' logs/godot-runtime.log; then exit 1; fi
+
       - name: Run G2 Classic rules unit suite
         run: |
           set -o pipefail
