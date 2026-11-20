@@ -35,6 +35,9 @@ jobs:
       - name: Guard tests (preflight, scope, commit and .agents checks, fail-closed)
         run: bash tools/agent-guard/test-guard.sh
 
+      - name: Godot runtime compatibility and executable integrity
+        run: node --test tools/godot-runtime/test-compat.mjs
+
       - name: Policy unit tests (in-repo policy, hermetic checkout)
         env:
           LS_PROJECT_ROOT: ${{ github.workspace }}

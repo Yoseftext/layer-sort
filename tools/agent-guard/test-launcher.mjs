@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { createFixture, launcher } from "./fakes/create-fixture.mjs";
-import { WORKSPACE_HOOK_COMMAND, verifySnapshot } from "./runtime-config.mjs";
+import { WORKSPACE_HOOK_COMMAND, verifySnapshot, godotBin, freezeCli, verifyFrozenCli, approvedCli, releaseFrozenCli } from "./runtime-config.mjs";
 
 test("before-state failure prevents agent execution and closes the grant", () => {
   const f = createFixture();
@@ -129,4 +130,60 @@ test("preparation cannot replace a live grant and launch rejects an inactive sna
   assert.equal(run.status, 3, run.stderr);
   assert.match(run.stderr, /not the active/);
   assert.equal(fs.existsSync(path.join(f.root, "ran")), false);
+});
+
+test("private Godot binding rejects runtime tampering and extra PATH executables", () => {
+  const f = createFixture();
+  assert.equal(godotBin(f.project), "");
+  const base = path.join(f.project, ".git/agent-runtime-tools");
+  const bin = path.join(base, "godot47-fixture/bin");
+  fs.mkdirSync(bin, { recursive: true });
+  const executable = path.join(bin, "godot");
+  fs.writeFileSync(executable, "reviewed fixture", { mode: 0o700 });
+  const digest = createHash("sha256").update(fs.readFileSync(executable)).digest("hex");
+  fs.writeFileSync(path.join(base, "godot-runtime.json"), JSON.stringify({ bin, runnerHash: digest }));
+  assert.equal(godotBin(f.project), bin);
+  fs.appendFileSync(executable, "modified");
+  assert.throws(() => godotBin(f.project), /integrity mismatch/);
+  fs.writeFileSync(path.join(bin, "node"), "unexpected executable");
+  assert.throws(() => godotBin(f.project), /only Godot/);
+});
+
+test("CLI snapshots survive installed updates and detect changed session executables", async () => {
+  const f = createFixture(), source = path.join(f.base, "installed-cli");
+  fs.writeFileSync(source, "original CLI", { mode: 0o700 });
+  const temporary = path.join(f.base, "session");
+  fs.mkdirSync(temporary);
+  const frozen = await freezeCli(source, temporary);
+  fs.writeFileSync(source, "installed auto-update");
+  await assert.doesNotReject(() => verifyFrozenCli(temporary));
+  assert.equal(fs.readFileSync(frozen, "utf8"), "original CLI");
+  fs.appendFileSync(frozen, "tampered");
+  await assert.rejects(() => verifyFrozenCli(temporary), /Pinned CLI changed/);
+});
+
+test("approved CLI remains available while disposable session copies are released", async () => {
+  const f = createFixture();
+  assert.equal(await approvedCli(f.project), "agy");
+  const base = path.join(f.project, ".git/agent-runtime-tools"), cache = path.join(base, "agy-fixture");
+  fs.mkdirSync(cache, { recursive: true });
+  const executable = path.join(cache, "agy");
+  fs.writeFileSync(executable, "approved CLI bytes", { mode: 0o700 });
+  const digest = createHash("sha256").update(fs.readFileSync(executable)).digest("hex");
+  fs.writeFileSync(path.join(base, "antigravity-runtime.json"), JSON.stringify({ executable, sha256: digest }));
+  assert.equal(await approvedCli(f.project), executable);
+  const temporary = path.join(f.base, "cached-session");
+  fs.mkdirSync(temporary);
+  const copy = await freezeCli(executable, temporary);
+  await releaseFrozenCli(f.project, temporary);
+  assert.equal(fs.existsSync(copy), false);
+  assert.equal(fs.existsSync(path.join(temporary, "cli.json")), true);
+  assert.equal(fs.existsSync(executable), true);
+  const second = path.join(f.base, "changed-source-session");
+  fs.mkdirSync(second);
+  const evidence = await freezeCli(executable, second);
+  fs.appendFileSync(executable, "changed");
+  await releaseFrozenCli(f.project, second);
+  assert.equal(fs.existsSync(evidence), true);
+  await assert.rejects(() => approvedCli(f.project), /integrity mismatch/);
 });

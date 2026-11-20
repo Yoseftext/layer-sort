@@ -1,6 +1,6 @@
 # Antigravity task workflow
 
-Antigravity 1.5.8 is the primary runtime. Workspace agent definitions in
+Antigravity 1.5.13 is the current locally validated runtime; 1.5.8 remains recognized for the earlier accepted workflow. Workspace agent definitions in
 .agents/agents are authoritative. The packaged agent copies are historical;
 do not enable the global layer-sort-agent-kit plugin alongside workspace agents.
 The policy source remains in .agents/plugins/layer-sort-agent-kit/scripts.
@@ -20,7 +20,7 @@ workspace trust for this session only; global CLI settings are never rewritten.
 Example (replace task name and exact files with the requested work):
 
 ~~~sh
-INFRA=/root/projects/layer-sort/.worktrees/agent-runtime-audit
+INFRA=/root/projects/layer-sort/.worktrees/godot-runtime-repair
 TASK=/root/projects/layer-sort/.worktrees/TASK
 git -C "$INFRA" worktree add -b task/TASK "$TASK" HEAD
 node "$INFRA/tools/agent-guard/prepare-task.mjs" "$TASK" TASK-ID scripts/domain/move_rules.gd tests/g2/classic_rules_test.gd
@@ -106,10 +106,37 @@ tools/device-tests/agentctl only, with exact authorization for mutations.
 
 ## Verified operating boundary
 
-The actual CLI1.5.8 Lead/Implementer/Reviewer cycle passed with native partial
+The actual CLI1.5.13 Lead/Implementer/Reviewer Godot cycle passed with native partial
 edits, focused tests, two negative controls and grant closure. See
-docs/AGENT_RUNTIME_E2E.md. Local Godot import currently aborts even for a minimal
-project; use verified CI for Godot validation until that environment fault is
-resolved. Do not report a local Godot pass. Physical device QA remains blocked
+docs/GODOT_RUNTIME_REPAIR.md (the earlier cycle is in docs/AGENT_RUNTIME_E2E.md). The maintained local runner now passes cold project import and actual Godot
+regressions while preserving denied /dev access. Use the prepared runner; the
+original binary still contains the upstream camera-scan bug. Physical device QA remains blocked
 by the approved-device identity mismatch. Sentry has no authenticated project
 access in this session. These gates are explicit, not implied by GUARD_OK.
+
+## Stable executable selection
+
+The launcher freezes one CLI executable per session and disables its background
+updater only for that invocation (AGY_CLI_DISABLE_AUTO_UPDATE=true). It verifies
+that same executable before and after execution. The operator may approve the
+exact binary from a completed independently reviewed session:
+
+~~~sh
+node tools/agent-guard/approve-cli.mjs "$TASK" "$SESSION_EVIDENCE_DIRECTORY" "$LEAD_CONVERSATION_ID"
+~~~
+
+The approved binary and backed-up pointer live in private .git/agent-runtime-tools.
+Normal launches select it even if the globally installed CLI changes. AGY_BIN=agy
+explicitly selects the global candidate for a maintainer compatibility test; the
+version gate and all other checks still apply. Do not approve a candidate based
+only on --version or delegation. Session metadata identifies the exact executed
+binary; an agent command agy --version may instead resolve the global install.
+Verified disposable copies from an approved cache are removed on exit, retaining
+metadata and the approved source. Changed or diagnostic copies remain for audit.
+To roll back selection, preserve and move the private antigravity-runtime.json
+pointer aside, or restore its saved predecessor outside a live task.
+
+For a fresh Godot task worktree, run a headless import through the returned
+private Godot runner before registering the task lease. This initializes class
+caches and UID/import metadata before scope snapshots. See
+[Godot runtime instructions](../godot-runtime/README.md).

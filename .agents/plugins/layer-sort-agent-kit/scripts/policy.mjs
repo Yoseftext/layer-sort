@@ -749,7 +749,13 @@ function evaluateGit(args, cwd, roots, taskWriteAllowlists) {
       "--stat", "--name-only", "--name-status", "--no-patch", "--no-color",
       "--format=%h", "--format=%s", "--format=%h-%s", "--pretty=oneline"
     ]);
-    for (const token of beforeSeparator) {
+    for (let index = 0; index < beforeSeparator.length; index += 1) {
+      const token = beforeSeparator[index];
+      if (token === "-n" || token === "--max-count") {
+        if (!/^[1-9][0-9]?$/.test(beforeSeparator[++index] ?? "")) return deny("Git metadata count must be 1..99.");
+        continue;
+      }
+      if (/^-n[1-9][0-9]?$/.test(token) || /^--max-count=[1-9][0-9]?$/.test(token)) continue;
       if (allowed.has(token) || /^-[1-9][0-9]?$/.test(token)) continue;
       if (!isSafeRevision(token)) {
         return deny("Git revision arguments must be HEAD or a hexadecimal commit ID.");
@@ -843,6 +849,7 @@ function evaluateAgy(tokens, cwd, roots) {
 }
 
 function evaluateGodot(tokens, roots) {
+  if (tokens.length === 2 && ["--version", "--help"].includes(tokens[1])) return allow();
   let headless = false;
   let projectPath = null;
   let script = null;
@@ -941,6 +948,10 @@ function evaluateRunCommand(payload, taskWriteAllowlists) {
   }
 
   const commandArgs = tokens.slice(1);
+  if (executable === "which") {
+    return commandArgs.length === 1 && ["godot", "agy", "git", "node", "cc"].includes(commandArgs[0])
+      ? allow() : deny("which is limited to the known project toolchain.");
+  }
 
   // A fixed project test command is executable code, not an OS sandbox.
   if (executable === "node" && ["node --test tools/agent-guard/test-state.mjs", "node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs"].includes(command)) {
