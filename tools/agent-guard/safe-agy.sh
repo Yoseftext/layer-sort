@@ -30,12 +30,18 @@ main() {
       echo "GUARD_FAIL: could not revoke task grant; inspect $SNAP_DIR" >&2
       rc=3
     fi
+    if ! node "$RUNTIME_HELPER" release-cli "$PROJECT_ROOT" "$TMP"; then
+      echo "GUARD_FAIL: could not verify disposable CLI cleanup" >&2
+      rc=3
+    fi
     exit "$rc"
   }
   trap on_exit EXIT
 
   export AGY_CLI_DISABLE_AUTO_UPDATE=true
-  AGY_CMD="$(node "$RUNTIME_HELPER" freeze-cli "${AGY_BIN:-agy}" "$TMP")" || fail "could not pin CLI executable"
+  CLI_SOURCE="${AGY_BIN:-}"
+  if [ -z "$CLI_SOURCE" ]; then CLI_SOURCE="$(node "$RUNTIME_HELPER" cli-source "$PROJECT_ROOT")" || fail "invalid approved CLI runtime"; fi
+  AGY_CMD="$(node "$RUNTIME_HELPER" freeze-cli "$CLI_SOURCE" "$TMP")" || fail "could not pin CLI executable"
     VERSION="$(timeout 15s "$AGY_CMD" --version)" || fail "could not inspect CLI version"
     case "$VERSION" in 1.5.8|1.5.13) ;; *) fail "untested CLI version $VERSION; compatibility review required" ;; esac
     PLUGINS="$(cd "$W" && timeout 20s "$AGY_CMD" --settings "$TMP/settings.json" plugin list)" || fail "could not inspect plugins"

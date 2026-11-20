@@ -81,7 +81,7 @@ export function validateLaunchArgs(args) {
   }
 }
 
-async function executableHash(file) {
+export async function executableHash(file) {
   const digest = createHash("sha256");
   for await (const bytes of fs.createReadStream(file)) digest.update(bytes);
   return digest.digest("hex");
@@ -103,6 +103,31 @@ export async function freezeCli(command, temporary) {
 export async function verifyFrozenCli(temporary) {
   const metadata = JSON.parse(fs.readFileSync(path.join(temporary, "cli.json"), "utf8"));
   if (metadata.target !== path.join(temporary, "agy") || await executableHash(metadata.target) !== metadata.sha256) throw Error("Pinned CLI changed during the session");
+}
+
+export async function approvedCli(project) {
+  const base = path.join(project, ".git/agent-runtime-tools");
+  const pointer = path.join(base, "antigravity-runtime.json");
+  if (!fs.existsSync(pointer)) return "agy";
+  const stat = fs.lstatSync(pointer);
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 8192) throw Error("Invalid approved CLI pointer");
+  const metadata = JSON.parse(fs.readFileSync(pointer, "utf8"));
+  const executable = metadata.executable;
+  if (typeof executable !== "string" || !executable.startsWith(base + "/agy-") || path.basename(executable) !== "agy" || fs.realpathSync(executable) !== executable) throw Error("Approved CLI must be in the private project runtime");
+  const binary = fs.lstatSync(executable);
+  if (!binary.isFile() || binary.nlink !== 1 || binary.size > 512 * 1024 * 1024 || !(binary.mode & 0o111) || await executableHash(executable) !== metadata.sha256) throw Error("Approved CLI integrity mismatch");
+  return executable;
+}
+
+export async function releaseFrozenCli(project, temporary) {
+  const file = path.join(temporary, "cli.json");
+  if (!fs.existsSync(file)) return;
+  const metadata = JSON.parse(fs.readFileSync(file, "utf8"));
+  const prefix = path.join(project, ".git/agent-runtime-tools/agy-");
+  if (!metadata.source.startsWith(prefix) || !fs.existsSync(metadata.source)) return;
+  if (await executableHash(metadata.source) !== metadata.sha256) return;
+  await verifyFrozenCli(temporary);
+  fs.unlinkSync(metadata.target); // only the verified disposable copy; approved bytes remain
 }
 
 export function godotBin(project) {
@@ -129,6 +154,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   try {
     const [action, first, second, third] = process.argv.slice(2);
     if (action === "args") validateLaunchArgs(process.argv.slice(3));
+    else if (action === "cli-source") console.log(await approvedCli(first));
+    else if (action === "release-cli") await releaseFrozenCli(first, second);
     else if (action === "freeze-cli") console.log(await freezeCli(first, second));
     else if (action === "verify-cli") await verifyFrozenCli(first);
     else if (action === "godot-bin") console.log(godotBin(first));
@@ -144,7 +171,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       if (!Number.isInteger(budget) || budget < 1 || budget > 1800) throw Error("Session timeout must be 1..1800 seconds");
       const seconds = Math.min(budget, Math.floor((Date.parse(grant.expiresAt) - Date.now()) / 1000) - 1);
       const settings = { trustedWorkspaces: [second], toolPermission: "request-review", permissions: {
-        allow: [...["git", "godot", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)",
+        allow: [...["git", "godot", "which", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)",
           ...grant.files.map((name) => "write_file(" + path.join(second, name) + ")")]
       } };
       fs.writeFileSync(path.join(third, "allow"), grant.files.join("\n") + (grant.files.length ? "\n" : ""), { mode: 0o600 });

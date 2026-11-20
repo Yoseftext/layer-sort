@@ -76,6 +76,8 @@ assert.equal(decision("run_command", "git diff --check"), "allow");
 assert.equal(decision("run_command", "git diff --stat"), "allow");
 assert.equal(decision("run_command", "git ls-files --cached"), "allow");
 assert.equal(decision("run_command", "git log -5 --oneline"), "allow");
+for (const command of ["git log -n 3 --oneline", "git log -n3 --oneline", "git log --max-count=3 --oneline", "git log --max-count 3 --oneline", "which godot", "which agy", "godot --version", "godot --help"]) assert.equal(decision("run_command", command), "allow", command);
+for (const command of ["git log -n 0 --oneline", "git log -n -1 --oneline", "git log -n 1000 --oneline", "git log --max-count=1000 --oneline", "git log -n 3 --output=secret", "which --all godot", "which bash", "which godot node", "godot --version --path /tmp"]) assert.equal(decision("run_command", command), "deny", command);
 assert.equal(decision("run_command", "git show --stat HEAD"), "allow");
 assert.equal(decision("run_command", "git cat-file -t HEAD"), "allow");
 

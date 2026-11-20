@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { createFixture, launcher } from "./fakes/create-fixture.mjs";
-import { WORKSPACE_HOOK_COMMAND, verifySnapshot, godotBin, freezeCli, verifyFrozenCli } from "./runtime-config.mjs";
+import { WORKSPACE_HOOK_COMMAND, verifySnapshot, godotBin, freezeCli, verifyFrozenCli, approvedCli, releaseFrozenCli } from "./runtime-config.mjs";
 
 test("before-state failure prevents agent execution and closes the grant", () => {
   const f = createFixture();
@@ -160,4 +160,30 @@ test("CLI snapshots survive installed updates and detect changed session executa
   assert.equal(fs.readFileSync(frozen, "utf8"), "original CLI");
   fs.appendFileSync(frozen, "tampered");
   await assert.rejects(() => verifyFrozenCli(temporary), /Pinned CLI changed/);
+});
+
+test("approved CLI remains available while disposable session copies are released", async () => {
+  const f = createFixture();
+  assert.equal(await approvedCli(f.project), "agy");
+  const base = path.join(f.project, ".git/agent-runtime-tools"), cache = path.join(base, "agy-fixture");
+  fs.mkdirSync(cache, { recursive: true });
+  const executable = path.join(cache, "agy");
+  fs.writeFileSync(executable, "approved CLI bytes", { mode: 0o700 });
+  const digest = createHash("sha256").update(fs.readFileSync(executable)).digest("hex");
+  fs.writeFileSync(path.join(base, "antigravity-runtime.json"), JSON.stringify({ executable, sha256: digest }));
+  assert.equal(await approvedCli(f.project), executable);
+  const temporary = path.join(f.base, "cached-session");
+  fs.mkdirSync(temporary);
+  const copy = await freezeCli(executable, temporary);
+  await releaseFrozenCli(f.project, temporary);
+  assert.equal(fs.existsSync(copy), false);
+  assert.equal(fs.existsSync(path.join(temporary, "cli.json")), true);
+  assert.equal(fs.existsSync(executable), true);
+  const second = path.join(f.base, "changed-source-session");
+  fs.mkdirSync(second);
+  const evidence = await freezeCli(executable, second);
+  fs.appendFileSync(executable, "changed");
+  await releaseFrozenCli(f.project, second);
+  assert.equal(fs.existsSync(evidence), true);
+  await assert.rejects(() => approvedCli(f.project), /integrity mismatch/);
 });
