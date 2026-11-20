@@ -20,6 +20,8 @@ main() {
     SNAP_DIR="$(node "$RUNTIME_HELPER" active "$W")" || fail "prepare a task before launching"
   fi
   export LS_PROJECT_ROOT="$PROJECT_ROOT" LS_POLICY_SNAPSHOT="$SNAP_DIR"
+  GODOT_BIN_DIR="$(node "$RUNTIME_HELPER" godot-bin "$PROJECT_ROOT")" || fail "invalid private Godot runtime"
+  if [ -n "$GODOT_BIN_DIR" ]; then export PATH="$GODOT_BIN_DIR:$PATH"; fi
   preflight
   node "$RUNTIME_HELPER" session "$SNAP_DIR" "$W" "$TMP" || fail "task grant unavailable"
   on_exit() {
@@ -34,7 +36,7 @@ main() {
 
   AGY_CMD="${AGY_BIN:-agy}"
     VERSION="$(timeout 15s "$AGY_CMD" --version)" || fail "could not inspect CLI version"
-    [ "$VERSION" = "1.5.8" ] || fail "untested CLI version $VERSION; compatibility review required"
+    case "$VERSION" in 1.5.8|1.5.10) ;; *) fail "untested CLI version $VERSION; compatibility review required" ;; esac
     PLUGINS="$(cd "$W" && timeout 20s "$AGY_CMD" --settings "$TMP/settings.json" plugin list)" || fail "could not inspect plugins"
     printf '%s\n' "$PLUGINS" | grep -q '^- layer-sort-agent-kit (disabled' || fail "disable the overlapping layer-sort-agent-kit plugin once before using workspace agents"
   state "$W" > "$TMP/before" || fail "before-state collection failed; agent not started"

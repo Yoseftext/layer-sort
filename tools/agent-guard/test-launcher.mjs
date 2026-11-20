@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { createFixture, launcher } from "./fakes/create-fixture.mjs";
-import { WORKSPACE_HOOK_COMMAND, verifySnapshot } from "./runtime-config.mjs";
+import { WORKSPACE_HOOK_COMMAND, verifySnapshot, godotBin } from "./runtime-config.mjs";
 
 test("before-state failure prevents agent execution and closes the grant", () => {
   const f = createFixture();
@@ -129,4 +130,21 @@ test("preparation cannot replace a live grant and launch rejects an inactive sna
   assert.equal(run.status, 3, run.stderr);
   assert.match(run.stderr, /not the active/);
   assert.equal(fs.existsSync(path.join(f.root, "ran")), false);
+});
+
+test("private Godot binding rejects runtime tampering and extra PATH executables", () => {
+  const f = createFixture();
+  assert.equal(godotBin(f.project), "");
+  const base = path.join(f.project, ".git/agent-runtime-tools");
+  const bin = path.join(base, "godot47-fixture/bin");
+  fs.mkdirSync(bin, { recursive: true });
+  const executable = path.join(bin, "godot");
+  fs.writeFileSync(executable, "reviewed fixture", { mode: 0o700 });
+  const digest = createHash("sha256").update(fs.readFileSync(executable)).digest("hex");
+  fs.writeFileSync(path.join(base, "godot-runtime.json"), JSON.stringify({ bin, runnerHash: digest }));
+  assert.equal(godotBin(f.project), bin);
+  fs.appendFileSync(executable, "modified");
+  assert.throws(() => godotBin(f.project), /integrity mismatch/);
+  fs.writeFileSync(path.join(bin, "node"), "unexpected executable");
+  assert.throws(() => godotBin(f.project), /only Godot/);
 });

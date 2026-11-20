@@ -81,6 +81,21 @@ export function validateLaunchArgs(args) {
   }
 }
 
+export function godotBin(project) {
+  const base = path.join(project, ".git/agent-runtime-tools");
+  const file = path.join(base, "godot-runtime.json");
+  if (!fs.existsSync(file)) return "";
+  const stat = fs.lstatSync(file);
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 4096) throw Error("Invalid private Godot pointer");
+  const pointer = JSON.parse(fs.readFileSync(file, "utf8"));
+  const bin = pointer.bin;
+  if (typeof bin !== "string" || !bin.startsWith(base + "/godot47-") || path.basename(bin) !== "bin" || fs.realpathSync(bin) !== bin) throw Error("Godot bin must be in the private project runtime");
+  if (fs.readdirSync(bin).join() !== "godot") throw Error("Private bin must contain only Godot");
+  const executable = path.join(bin, "godot"), binary = fs.lstatSync(executable);
+  if (!binary.isFile() || binary.isSymbolicLink() || binary.nlink !== 1 || binary.size > 1024 * 1024 || !(binary.mode & 0o111) || sha(fs.readFileSync(executable)) !== pointer.runnerHash) throw Error("Godot runner integrity mismatch");
+  return bin;
+}
+
 export function revoke(pin) {
   try { fs.writeFileSync(path.join(pin, "REVOKED"), new Date().toISOString() + "\n", { flag: "wx", mode: 0o600 }); }
   catch (error) { if (error.code !== "EEXIST") throw error; }
@@ -90,6 +105,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   try {
     const [action, first, second, third] = process.argv.slice(2);
     if (action === "args") validateLaunchArgs(process.argv.slice(3));
+    else if (action === "godot-bin") console.log(godotBin(first));
     else if (action === "project") console.log(projectRoot(first));
     else if (action === "active") console.log(activeSnapshot(first));
     else if (action === "manifest") verifySnapshot(first);
