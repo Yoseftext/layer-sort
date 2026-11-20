@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { createFixture, launcher } from "./fakes/create-fixture.mjs";
-import { WORKSPACE_HOOK_COMMAND, verifySnapshot, godotBin } from "./runtime-config.mjs";
+import { WORKSPACE_HOOK_COMMAND, verifySnapshot, godotBin, freezeCli, verifyFrozenCli } from "./runtime-config.mjs";
 
 test("before-state failure prevents agent execution and closes the grant", () => {
   const f = createFixture();
@@ -147,4 +147,17 @@ test("private Godot binding rejects runtime tampering and extra PATH executables
   assert.throws(() => godotBin(f.project), /integrity mismatch/);
   fs.writeFileSync(path.join(bin, "node"), "unexpected executable");
   assert.throws(() => godotBin(f.project), /only Godot/);
+});
+
+test("CLI snapshots survive installed updates and detect changed session executables", async () => {
+  const f = createFixture(), source = path.join(f.base, "installed-cli");
+  fs.writeFileSync(source, "original CLI", { mode: 0o700 });
+  const temporary = path.join(f.base, "session");
+  fs.mkdirSync(temporary);
+  const frozen = await freezeCli(source, temporary);
+  fs.writeFileSync(source, "installed auto-update");
+  await assert.doesNotReject(() => verifyFrozenCli(temporary));
+  assert.equal(fs.readFileSync(frozen, "utf8"), "original CLI");
+  fs.appendFileSync(frozen, "tampered");
+  await assert.rejects(() => verifyFrozenCli(temporary), /Pinned CLI changed/);
 });

@@ -34,15 +34,18 @@ main() {
   }
   trap on_exit EXIT
 
-  AGY_CMD="${AGY_BIN:-agy}"
+  export AGY_CLI_DISABLE_AUTO_UPDATE=true
+  AGY_CMD="$(node "$RUNTIME_HELPER" freeze-cli "${AGY_BIN:-agy}" "$TMP")" || fail "could not pin CLI executable"
     VERSION="$(timeout 15s "$AGY_CMD" --version)" || fail "could not inspect CLI version"
-    case "$VERSION" in 1.5.8|1.5.10) ;; *) fail "untested CLI version $VERSION; compatibility review required" ;; esac
+    case "$VERSION" in 1.5.8|1.5.13) ;; *) fail "untested CLI version $VERSION; compatibility review required" ;; esac
     PLUGINS="$(cd "$W" && timeout 20s "$AGY_CMD" --settings "$TMP/settings.json" plugin list)" || fail "could not inspect plugins"
     printf '%s\n' "$PLUGINS" | grep -q '^- layer-sort-agent-kit (disabled' || fail "disable the overlapping layer-sort-agent-kit plugin once before using workspace agents"
+  node "$RUNTIME_HELPER" verify-cli "$TMP" || fail "CLI changed during preflight"
   state "$W" > "$TMP/before" || fail "before-state collection failed; agent not started"
   BUDGET="$(cat "$TMP/timeout")" || fail "missing session deadline"
     (cd "$W" && timeout --kill-after=10s "${BUDGET}s" "$AGY_CMD" --settings "$TMP/settings.json" --mode accept-edits "$@")
   RC=$?
+  node "$RUNTIME_HELPER" verify-cli "$TMP" || fail "pinned CLI changed during execution"
   node "$RUNTIME_HELPER" manifest "$SNAP_DIR" || fail "policy changed during the session"
   node "$RUNTIME_HELPER" revoke "$SNAP_DIR" || fail "could not close task write authority"
   state "$W" > "$TMP/after" || fail "after-state collection failed; evidence retained in $TMP"

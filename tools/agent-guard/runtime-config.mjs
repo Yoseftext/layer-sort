@@ -81,6 +81,30 @@ export function validateLaunchArgs(args) {
   }
 }
 
+async function executableHash(file) {
+  const digest = createHash("sha256");
+  for await (const bytes of fs.createReadStream(file)) digest.update(bytes);
+  return digest.digest("hex");
+}
+
+export async function freezeCli(command, temporary) {
+  const candidate = path.isAbsolute(command) ? command : process.env.PATH.split(path.delimiter)
+    .map(p => path.join(p, command)).find(p => { try { fs.accessSync(p, fs.constants.X_OK); return true; } catch { return false; } });
+  if (!candidate) throw Error("CLI executable not found");
+  const source = fs.realpathSync(candidate), stat = fs.statSync(source);
+  if (!stat.isFile() || stat.size > 512 * 1024 * 1024 || !(stat.mode & 0o111)) throw Error("Invalid CLI executable");
+  const target = path.join(temporary, "agy");
+  fs.copyFileSync(source, target, fs.constants.COPYFILE_EXCL);
+  const metadata = { source, target, sha256: await executableHash(target) };
+  fs.writeFileSync(path.join(temporary, "cli.json"), JSON.stringify(metadata), { flag: "wx", mode: 0o600 });
+  return target;
+}
+
+export async function verifyFrozenCli(temporary) {
+  const metadata = JSON.parse(fs.readFileSync(path.join(temporary, "cli.json"), "utf8"));
+  if (metadata.target !== path.join(temporary, "agy") || await executableHash(metadata.target) !== metadata.sha256) throw Error("Pinned CLI changed during the session");
+}
+
 export function godotBin(project) {
   const base = path.join(project, ".git/agent-runtime-tools");
   const file = path.join(base, "godot-runtime.json");
@@ -105,6 +129,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   try {
     const [action, first, second, third] = process.argv.slice(2);
     if (action === "args") validateLaunchArgs(process.argv.slice(3));
+    else if (action === "freeze-cli") console.log(await freezeCli(first, second));
+    else if (action === "verify-cli") await verifyFrozenCli(first);
     else if (action === "godot-bin") console.log(godotBin(first));
     else if (action === "project") console.log(projectRoot(first));
     else if (action === "active") console.log(activeSnapshot(first));
