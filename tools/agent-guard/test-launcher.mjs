@@ -8,6 +8,19 @@ import { test } from "node:test";
 import { createFixture, launcher } from "./fakes/create-fixture.mjs";
 import { WORKSPACE_HOOK_COMMAND, verifySnapshot, godotBin, freezeCli, verifyFrozenCli, approvedCli, releaseFrozenCli } from "./runtime-config.mjs";
 
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const SOURCE_DIR_FILE = path.join(MODULE_DIR, "test-source-dir");
+const sourceDir = fs.existsSync(SOURCE_DIR_FILE)
+  ? fs.readFileSync(SOURCE_DIR_FILE, "utf8").trim()
+  : path.dirname(launcher);
+
+test("launcher disables Antigravity automatic updates for the session", () => {
+  const fixture = createFixture();
+  const result = fixture.run('if (process.env.AGY_CLI_DISABLE_AUTO_UPDATE !== "true") process.exit(42)');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /GUARD_OK/);
+});
+
 test("before-state failure prevents agent execution and closes the grant", () => {
   const f = createFixture();
   fs.writeFileSync(path.join(f.root, "bad\nname"), "existing");
@@ -41,8 +54,14 @@ test("replacing either worktree helper cannot run injected code or hide an outsi
   const guard = path.join(f.root, "guard");
   fs.mkdirSync(guard);
   for (const name of ["safe-agy.sh", "guard-lib.sh", "guard-state.mjs", "runtime-config.mjs"]) {
-    fs.writeFileSync(path.join(guard, name), fs.readFileSync(path.join(path.dirname(launcher), name)));
+    fs.writeFileSync(path.join(guard, name), fs.readFileSync(path.join(sourceDir, name)));
   }
+  fs.copyFileSync(path.join(f.guardDir, "compatibility.mjs"), path.join(guard, "compatibility.mjs"));
+  for (const name of ["test-compatibility.sh", "test-compatibility.mjs", "test-state.mjs", "test-launcher.mjs", "test-runtime-config.mjs", "test-active-compatibility.mjs"]) {
+    fs.copyFileSync(path.join(f.guardDir, name), path.join(guard, name));
+  }
+  fs.mkdirSync(path.join(guard, "fakes"));
+  fs.copyFileSync(path.join(f.guardDir, "fakes/create-fixture.mjs"), path.join(guard, "fakes/create-fixture.mjs"));
   const injected = 'require("fs").writeFileSync("injected-ran","yes")';
   const code = 'const fs=require("fs");for(const n of ["guard-state.mjs","runtime-config.mjs"])fs.writeFileSync("guard/"+n,' +
     JSON.stringify(injected) + ');fs.writeFileSync("outside.txt","new")';
@@ -66,7 +85,7 @@ test("workspace dispatcher denies when snapshot is missing or policy process fai
 
 test("a real prepared policy authorizes the task, closes after delivery and rejects reuse", () => {
   const f = createFixture(["base"]);
-  const prepare = path.join(path.dirname(fileURLToPath(import.meta.url)), "prepare-task.mjs");
+  const prepare = path.join(sourceDir, "prepare-task.mjs");
   fs.writeFileSync(path.join(f.pin, "REVOKED"), "closed fixture");
   const p = spawnSync(process.execPath, [prepare, f.root, "PREPARE-TEST", "base"], { encoding: "utf8", timeout: 30000 });
   assert.equal(p.status, 0, p.stderr);
@@ -78,10 +97,10 @@ test("a real prepared policy authorizes the task, closes after delivery and reje
     env: { ...process.env, LS_PROJECT_ROOT: f.project, LS_POLICY_SNAPSHOT: pin }
   });
   assert.equal(JSON.parse(hook().stdout).decision, "allow");
-  const r = f.run('require("fs").writeFileSync("base","changed")', launcher, { SNAP_DIR: pin });
+  const r = f.run('require("fs").writeFileSync("base","changed")', f.launcher);
   assert.equal(r.status, 0, r.stderr);
   assert.equal(JSON.parse(hook().stdout).decision, "deny");
-  const reuse = f.run('throw Error("must not run")', launcher, { SNAP_DIR: pin });
+  const reuse = f.run('throw Error("must not run")', f.launcher);
   assert.equal(reuse.status, 3, reuse.stderr);
   assert.match(reuse.stderr, /revoked/);
   const invalid = spawnSync(process.execPath, [prepare, f.root, "PREPARE-TEST", "../outside"], { encoding: "utf8", timeout: 30000 });
@@ -105,7 +124,7 @@ test("an expired grant cannot launch a command", () => {
 
 test("alternate CLI names still require version and plugin compatibility", () => {
   for (const env of [{ TEST_CLI_VERSION: "1.6.0" }, { TEST_PLUGIN_STATE: "enabled" }]) {
-    const f = createFixture(), r = f.run('require("fs").writeFileSync("ran","yes")', launcher, env);
+    const f = createFixture(), r = f.run('require("fs").writeFileSync("ran","yes")', f.launcher, env);
     assert.equal(r.status, 3, r.stderr);
     assert.equal(fs.existsSync(path.join(f.root, "ran")), false);
   }
@@ -118,17 +137,19 @@ test("single-dash and compound authority overrides cannot enter a session", () =
   }
 });
 
-test("preparation cannot replace a live grant and launch rejects an inactive snapshot", () => {
+test("preparation cannot replace a live grant and launch rejects a corrupt active snapshot pointer", () => {
   const f = createFixture();
-  const prepare = path.join(path.dirname(launcher), "prepare-task.mjs");
+  const prepare = path.join(sourceDir, "prepare-task.mjs");
   const r = spawnSync(process.execPath, [prepare, f.root, "OTHER-TASK", "base"], { encoding: "utf8", timeout: 30000 });
   assert.equal(r.status, 3, r.stderr);
   assert.match(r.stderr, /Previous task is still open/);
   const pointer = path.join(f.project, ".git/agent-runtime-policy/tasks/task.json");
-  fs.writeFileSync(pointer, JSON.stringify({ worktree: f.root, snapshot: path.join(path.dirname(f.pin), "other") }));
+  const inactiveSnapshot = path.join(path.dirname(f.pin), "a".repeat(64));
+  fs.mkdirSync(inactiveSnapshot, { mode: 0o700 });
+  fs.writeFileSync(pointer, JSON.stringify({ worktree: f.root, snapshot: inactiveSnapshot }));
   const run = f.run('require("fs").writeFileSync("ran","yes")');
   assert.equal(run.status, 3, run.stderr);
-  assert.match(run.stderr, /not the active/);
+  assert.match(run.stderr, /snapshot integrity verification failed/);
   assert.equal(fs.existsSync(path.join(f.root, "ran")), false);
 });
 
@@ -186,4 +207,13 @@ test("approved CLI remains available while disposable session copies are release
   await releaseFrozenCli(f.project, second);
   assert.equal(fs.existsSync(evidence), true);
   await assert.rejects(() => approvedCli(f.project), /integrity mismatch/);
+});
+
+test("a session setup failure revokes the grant before returning", () => {
+  const f = createFixture();
+  const result = f.run('throw Error("must not execute")', f.launcher, { LS_SESSION_TIMEOUT: "0" });
+  assert.equal(result.status, 3, result.stderr);
+  assert.match(result.stderr, /Session timeout must be 1\.\.1800 seconds/);
+  assert.equal(fs.existsSync(path.join(f.pin, "REVOKED")), true);
+  assert.doesNotMatch(result.stdout, /GUARD_OK/);
 });

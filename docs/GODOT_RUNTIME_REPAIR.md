@@ -50,6 +50,13 @@ under .runtime/legacy-godot-runtime with source hashes, leaving one supported pa
 
 ## Stable Antigravity execution
 
+The following paragraphs record the earlier 1.5.13 acceptance. In the integrated
+launcher, the installed CLI is selected by default and checked by the dynamic
+compatibility gate before a per-session copy is created. An operator can select
+an alternative executable with `AGY_BIN`. Automatic CLI updates are disabled by
+the operator and by the launcher. See `tools/agent-guard/README.md` for the
+current workflow.
+
 The installed CLI changed from1.5.10 to1.5.13 between discovery and launch. The
 existing gate rejected it and revoked the grant. The launcher now freezes one
 executable before inspection, verifies it before/after use and applies documented

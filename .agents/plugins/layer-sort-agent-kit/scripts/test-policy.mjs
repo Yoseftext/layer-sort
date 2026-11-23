@@ -378,8 +378,10 @@ assert.equal(JSON.parse(hookWithoutNode.stdout).decision, "deny");
 const worktreesBase = path.join(root, ".worktrees");
 fs.mkdirSync(worktreesBase, { recursive: true });
 const worktreeRoot = path.join(worktreesBase, `policy-test-${process.pid}`);
+const parallelWorktreeRoot = path.join(worktreesBase, `policy-parallel-${process.pid}`);
 const plainWorktreeRoot = path.join(worktreesBase, `not-a-worktree-${process.pid}`);
 assert.equal(fs.existsSync(worktreeRoot), false, "policy test Worktree path must be fresh");
+assert.equal(fs.existsSync(parallelWorktreeRoot), false, "parallel policy test Worktree path must be fresh");
 const addedWorktree = spawnSync(
   "git",
   ["worktree", "add", "--detach", worktreeRoot, "HEAD"],
@@ -389,6 +391,16 @@ assert.equal(
   addedWorktree.status,
   0,
   "could not create temporary nested Git Worktree: " + (addedWorktree.stderr || addedWorktree.stdout)
+);
+const addedParallelWorktree = spawnSync(
+  "git",
+  ["worktree", "add", "--detach", parallelWorktreeRoot, "HEAD"],
+  { cwd: root, encoding: "utf8" }
+);
+assert.equal(
+  addedParallelWorktree.status,
+  0,
+  "could not create parallel nested Git Worktree: " + (addedParallelWorktree.stderr || addedParallelWorktree.stdout)
 );
 
 try {
@@ -421,6 +433,20 @@ try {
     },
     workspacePaths
   });
+
+  const parallelAllowedlists = Object.freeze({
+    [path.basename(worktreeRoot)]: Object.freeze({ taskId: "POLICY-TEST", files: Object.freeze(["README.md"]) }),
+    [path.basename(parallelWorktreeRoot)]: Object.freeze({ taskId: "POLICY-TEST-2", files: Object.freeze(["README.md"]) })
+  });
+  const parallelAllowedPath = path.join(parallelWorktreeRoot, "README.md");
+  assert.equal(evaluate(worktreeWriteEvent(allowedPath), parallelAllowedlists).decision, "allow",
+    "the first Worktree must retain its own independent task grant");
+  assert.equal(evaluate(worktreeWriteEvent(parallelAllowedPath, [parallelWorktreeRoot]), parallelAllowedlists).decision, "allow",
+    "the second concurrent Worktree must receive only its own task grant");
+  assert.equal(evaluate(worktreeWriteEvent(parallelAllowedPath), parallelAllowedlists).decision, "deny",
+    "the first Worktree must not consume the second Worktree's grant");
+  assert.equal(evaluate(worktreeWriteEvent(allowedPath, [worktreeRoot, parallelWorktreeRoot]), parallelAllowedlists).decision, "deny",
+    "two simultaneous Worktree roots must never widen the active write boundary");
 
   const edit = worktreeWriteEvent(allowedPath);
   edit.toolCall.name = "edit_file";
@@ -661,6 +687,21 @@ try {
   );
 } finally {
   fs.rmSync(plainWorktreeRoot, { recursive: true, force: true });
+  const removedParallelWorktree = spawnSync(
+    "git",
+    ["worktree", "remove", "--force", parallelWorktreeRoot],
+    { cwd: root, encoding: "utf8" }
+  );
+  if (removedParallelWorktree.status !== 0) {
+    fs.rmSync(parallelWorktreeRoot, { recursive: true, force: true });
+    spawnSync("git", ["worktree", "prune"], { cwd: root, encoding: "utf8" });
+  }
+  assert.equal(
+    removedParallelWorktree.status,
+    0,
+    "could not clean up parallel nested Git Worktree: " +
+      (removedParallelWorktree.stderr || removedParallelWorktree.stdout)
+  );
   const removedWorktree = spawnSync(
     "git",
     ["worktree", "remove", "--force", worktreeRoot],

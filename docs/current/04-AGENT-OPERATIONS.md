@@ -3,7 +3,7 @@
 **Document:** `docs/current/04-AGENT-OPERATIONS.md`  
 **Identifier:** `LS-AGENT-OPS-1.4`  
 **Status:** Active operating policy originating in G1.5; original gate authorization statements are historical scope, not current execution instructions.
-**Current scope:** G4 documentation consistency review only, under ADR-0006 checkpoint acceptance and [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md) governance; no individual merge is authorized by the current documentation instruction. **Historical G1.5 scope:** orchestration/tool inventory/QA and optional Shizuku; G2 was then awaiting separate authorization, subsequently recorded in ADR-0003.
+**Current scope (2026-11-14):** infrastructure-only implementation, testing, and independent review of the dynamic Antigravity compatibility gate ([ADR-0008](../adr/ADR-0008-dynamic-antigravity-compatibility.md)) and the local Godot PRoot runtime launcher ([ADR-0009](../adr/ADR-0009-godot-prroot-runtime-launcher.md)), each in its dedicated Worktree. This scope does not authorize gameplay changes, G5/G6 expansion, phone mutation, APK installation, production release, commit/push, or PR merge. The accepted G4 checkpoint remains controlled by ADR-0006; protected-main governance remains ADR-0007. **Historical G1.5 scope:** orchestration/tool inventory/QA and optional Shizuku; G2 was then awaiting separate authorization, subsequently recorded in ADR-0003.
 
 ## 1. Scope and source-of-truth
 
@@ -189,3 +189,29 @@ ChatGPT provides architecture guidance, independent change/risk review, evidence
 Before merging, require the owner's PR number, exact full head SHA, target branch and confirmation that the reviewed changes are intended. Re-fetch and compare immediately before execution; any changed approval value requires renewed authorization. Required CI must pass and no unresolved blocking review comments may remain. All integration is through reviewed PRs: no direct main pushes, force pushes, unauthorized branch deletion or protection changes/bypass. General authorization is insufficient; multiple PRs require explicit coverage of each exact merge.
 
 Afterward verify the resulting merge commit, intended target and CI on the integrated result, report outcome/regressions or blockers, then stop before the next PR pending its applicable authorization. No actual merge is authorized in this documentation task.
+
+
+## Current owner-authorized infrastructure scope — 2026-11-14
+
+### Dynamic Antigravity compatibility — ADR-0008
+
+- Do not pin the launcher to one Antigravity version string. Verify the actual installed executable identity and policy/test fingerprint on every launch; run the full compatibility suite on a cache miss.
+- Store compatibility state outside Git under `$XDG_STATE_HOME/safe-agy/` or `$HOME/.local/state/safe-agy/`, with strict owner/mode/path validation. The agent receives no write grant to this store. This remains application-level enforcement because the agent and launcher share a UID; it is not OS isolation.
+- The composite cache key includes the Antigravity executable and runtime dependencies, compatibility evaluator, launcher, Hook/policy sources, tests, host identity, and schema. Retain at most five successful entries. Failed/unknown results never authorize execution.
+- Use locked, atomic cache writes, bounded test timeouts, closed stdin, noninteractive CI environment, JSONL audit rotation, and `--status` / `--check`.
+- Real active negative probes must demonstrate that out-of-scope writes and prohibited tool requests are denied with no side effects. A disposable fixture is not an OS sandbox.
+- Keep Node in the persistent Remote Desktop Commander blocklist. Invoke only fixed, hash-verified Node test entrypoints through a scoped test wrapper; never grant the agent unrestricted Node execution.
+- Current supported platform is the inspected Linux ARM64/glibc PRoot host. Other platforms/formats remain UNKNOWN until explicitly tested.
+- An earlier real-host active probe on Antigravity CLI 1.5.9 passed its five delegated operations: one allowlisted Worktree write, three denied operations (out-of-scope write, external state-store write, and direct Node execution), and one independent read-only Reviewer `ACCEPT`; only `allowed.txt` changed. This does not approve the infrastructure Patch.
+- The subsequent full compatibility check returned `UNKNOWN` / exit 78 because warning collection surfaced startup and PRoot/global-plugin warnings not covered by the original classifier. A context-gated classifier now requires explicit OAuth success and model streaming for transient auth-cache warnings, consumer-account proof for admin-control warnings, exact signatures for PRoot and optional helper/MCP limitations, and verified delegation before accepting agent-discovery fallback. Both Go warning and error severity lines are captured; unknown messages remain `UNKNOWN`.
+- Earlier compatibility unit tests passed 21/21 after the classifier change. On 2026-11-23, the isolated integrated worktree passed a new-fingerprint active compatibility check and a normal read-only Lead-to-repo-auditor session using CLI 1.5.15 and Gemini Flash; a separate read-only reviewer returned `ACCEPT WITH LIMITATIONS` for the launcher, compatibility evaluator and runtime configuration. These local results do not authorize a commit, push or merge, prove compatibility with future updates, or replace current-head CI and device acceptance.
+
+### Godot PRoot runtime launcher — ADR-0009
+
+- Complete only the project-local compatibility launcher in `/root/projects/layer-sort/.worktrees/godot-runtime-repair`; no global Godot or loader changes.
+- The shim is limited to failed `scandir` / `scandir64` calls for exact path `/dev`, preserves the original error, and does not grant access to `/dev`.
+- The launcher is not an OS sandbox. The original Godot binary remains unchanged and is the rollback path.
+- P0 closes only after exact-patch independent Reviewer acceptance and evidence for the C harness, build/runtime checks, empty-project and Layer Sort import, G2/G5 tests, original binary hash, and global loader non-modification.
+- P1 Device QA Identity, APK installation, phone mutation, physical-device QA, commit, push, PR merge, and release remain separate and unauthorized by ADR-0009.
+
+Both ADRs authorize implementation and independent review only. Integration remains governed by ADR-0007 and requires exact owner authorization for a specific PR, full head SHA, and target branch.

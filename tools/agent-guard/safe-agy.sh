@@ -1,29 +1,104 @@
 #!/usr/bin/env bash
-# Usage: safe-agy.sh <registered-task-worktree> -- <agy arguments>
+# Usage:
+#   safe-agy.sh --status [project-worktree]
+#   safe-agy.sh --check [project-worktree]
+#   safe-agy.sh <registered-task-worktree> -- <agy arguments>
 set -u
-main() {
-  DIR="$(cd "$(dirname "$0")" && pwd)"
-  . "$DIR/guard-lib.sh"
-  W="${1:-}"; [ -n "$W" ] || fail "worktree is required"
-  shift
-  [ "${1:-}" = "--" ] || fail "usage: safe-agy.sh <worktree> -- <agy arguments>"
-  shift
 
+main() {
+  export AGY_CLI_DISABLE_AUTO_UPDATE=true
+  unset SAFE_AGY_SESSION_CLI
+  local DIR INFRA_DIR TMP STATE_HELPER RUNTIME_HELPER COMPAT_HELPER TEST_DIR
+  local W PROJECT_ROOT SNAP_DIR PLUGINS BUDGET RC CHANGED BAD
+  DIR="$(cd -- "$(dirname -- "$0")" && pwd -P)" || exit 3
+  INFRA_DIR="$(cd -- "$DIR/../.." && pwd -P)" || exit 3
+  . "$DIR/guard-lib.sh"
+
+  for name in ${!LD_@}; do
+    [ -z "${!name}" ] || fail "unsafe dynamic-loader environment variable set: $name"
+  done
+  for name in NODE_OPTIONS NODE_PATH BASH_ENV; do
+    [ -z "${!name-}" ] || fail "unsafe Node/Bash startup environment variable set: $name"
+  done
+
+  if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    echo "Usage: safe-agy.sh --status [project-worktree]"
+    echo "       safe-agy.sh --check [project-worktree]"
+    echo "       safe-agy.sh <worktree> -- <agy arguments>"
+    return 0
+  fi
+
+  if [ "${1:-}" = "--status" ]; then
+    node "$DIR/compatibility.mjs" --status "${2:-$INFRA_DIR}"
+    return $?
+  fi
+
+  W="${1:-}"
+  if [ -z "$W" ]; then
+    fail "worktree is required"
+  fi
+
+  if [ "$W" != "--check" ]; then
+    shift
+    [ "${1:-}" = "--" ] || fail "usage: safe-agy.sh <worktree> -- <agy arguments>"
+    shift
+  else
+    shift
+  fi
+
+  umask 077
   TMP="$(mktemp -d)" || fail "could not create session directory"
+  TEST_DIR="$TMP/compatibility-tests"
+  mkdir "$TEST_DIR" || fail "could not create compatibility test snapshot"
+
+  # Freeze the guard and compatibility harness before any agent process starts.
   cat "$DIR/guard-state.mjs" > "$TMP/guard-state.mjs" || fail "could not freeze state helper"
   cat "$DIR/runtime-config.mjs" > "$TMP/runtime-config.mjs" || fail "could not freeze runtime helper"
+  cat "$DIR/compatibility.mjs" > "$TMP/compatibility.mjs" || fail "could not freeze compatibility helper"
+  for name in compatibility.mjs guard-state.mjs runtime-config.mjs test-compatibility.sh test-compatibility.mjs test-state.mjs test-launcher.mjs test-runtime-config.mjs test-active-compatibility.mjs; do
+    [ -f "$DIR/$name" ] || fail "required compatibility test is missing: $name"
+    cat "$DIR/$name" > "$TEST_DIR/$name" || fail "could not freeze compatibility test: $name"
+  done
+  mkdir "$TEST_DIR/fakes" || fail "could not create compatibility fixture directory"
+  cat "$DIR/fakes/create-fixture.mjs" > "$TEST_DIR/fakes/create-fixture.mjs" || fail "could not freeze compatibility fixture"
+  printf '%s\n' "$DIR" > "$TEST_DIR/test-source-dir" || fail "could not record compatibility fixture source directory"
   STATE_HELPER="$TMP/guard-state.mjs"
   RUNTIME_HELPER="$TMP/runtime-config.mjs"
+  COMPAT_HELPER="$TMP/compatibility.mjs"
+  verify_compat_snapshot() {
+    for name in compatibility.mjs guard-state.mjs runtime-config.mjs; do
+      cmp -s "$DIR/$name" "$TMP/$name" || fail "frozen launcher helper differs from reviewed source: $name"
+    done
+    for name in compatibility.mjs guard-state.mjs runtime-config.mjs test-compatibility.sh test-compatibility.mjs test-state.mjs test-launcher.mjs test-runtime-config.mjs test-active-compatibility.mjs; do
+      cmp -s "$DIR/$name" "$TEST_DIR/$name" || fail "frozen compatibility test differs from reviewed source: $name"
+    done
+    cmp -s "$DIR/fakes/create-fixture.mjs" "$TEST_DIR/fakes/create-fixture.mjs" || fail "frozen compatibility fixture differs from reviewed source"
+    [ "$(cat "$TEST_DIR/test-source-dir")" = "$DIR" ] || fail "compatibility fixture source directory changed"
+  }
+  verify_compat_snapshot
+  export SAFE_AGY_INFRA_DIR="$INFRA_DIR"
+  export SAFE_AGY_COMPAT_TEST_DIR="$TEST_DIR"
+
+  if [ "$W" = "--check" ]; then
+    PROJECT_ROOT="${1:-$INFRA_DIR}"
+    node "$COMPAT_HELPER" --check "$PROJECT_ROOT"
+    RC=$?
+    verify_compat_snapshot
+    return "$RC"
+  fi
+
   node "$RUNTIME_HELPER" args "$@" || fail "invalid launch arguments"
   PROJECT_ROOT="$(node "$RUNTIME_HELPER" project "$W")" || fail "invalid task worktree"
+
+  # No fixed Antigravity version allowlist: require an approved executable,
+  # dependency, host, launcher, policy and test fingerprint.
+  node "$COMPAT_HELPER" --ensure "$W" >/dev/null || fail "Antigravity compatibility gate did not PASS"
+  verify_compat_snapshot
+
   if [ -z "${SNAP_DIR:-}" ]; then
     SNAP_DIR="$(node "$RUNTIME_HELPER" active "$W")" || fail "prepare a task before launching"
   fi
   export LS_PROJECT_ROOT="$PROJECT_ROOT" LS_POLICY_SNAPSHOT="$SNAP_DIR"
-  GODOT_BIN_DIR="$(node "$RUNTIME_HELPER" godot-bin "$PROJECT_ROOT")" || fail "invalid private Godot runtime"
-  if [ -n "$GODOT_BIN_DIR" ]; then export PATH="$GODOT_BIN_DIR:$PATH"; fi
-  preflight
-  node "$RUNTIME_HELPER" session "$SNAP_DIR" "$W" "$TMP" || fail "task grant unavailable"
   on_exit() {
     local rc=$?
     if ! node "$RUNTIME_HELPER" revoke "$SNAP_DIR"; then
@@ -37,19 +112,21 @@ main() {
     exit "$rc"
   }
   trap on_exit EXIT
-
-  export AGY_CLI_DISABLE_AUTO_UPDATE=true
-  CLI_SOURCE="${AGY_BIN:-}"
-  if [ -z "$CLI_SOURCE" ]; then CLI_SOURCE="$(node "$RUNTIME_HELPER" cli-source "$PROJECT_ROOT")" || fail "invalid approved CLI runtime"; fi
+  GODOT_BIN_DIR="$(node "$RUNTIME_HELPER" godot-bin "$PROJECT_ROOT")" || fail "invalid private Godot runtime"
+  if [ -n "$GODOT_BIN_DIR" ]; then export PATH="$GODOT_BIN_DIR:$PATH"; fi
+  preflight
+  node "$RUNTIME_HELPER" session "$SNAP_DIR" "$W" "$TMP" || fail "task grant unavailable"
+  CLI_SOURCE="${AGY_BIN:-agy}"
   AGY_CMD="$(node "$RUNTIME_HELPER" freeze-cli "$CLI_SOURCE" "$TMP")" || fail "could not pin CLI executable"
-    VERSION="$(timeout 15s "$AGY_CMD" --version)" || fail "could not inspect CLI version"
-    case "$VERSION" in 1.5.8|1.5.13) ;; *) fail "untested CLI version $VERSION; compatibility review required" ;; esac
-    PLUGINS="$(cd "$W" && timeout 20s "$AGY_CMD" --settings "$TMP/settings.json" plugin list)" || fail "could not inspect plugins"
-    printf '%s\n' "$PLUGINS" | grep -q '^- layer-sort-agent-kit (disabled' || fail "disable the overlapping layer-sort-agent-kit plugin once before using workspace agents"
+  export SAFE_AGY_SESSION_CLI="$AGY_CMD"
   node "$RUNTIME_HELPER" verify-cli "$TMP" || fail "CLI changed during preflight"
+
+  PLUGINS="$(cd "$W" && /usr/bin/timeout 20s node "$COMPAT_HELPER" --capture "$W" --settings "$TMP/settings.json" plugin list)" || fail "could not inspect plugins through the verified executable descriptor"
+  printf '%s\n' "$PLUGINS" | grep -q '^- layer-sort-agent-kit (disabled' || fail "disable the overlapping layer-sort-agent-kit plugin once before using workspace agents"
+
   state "$W" > "$TMP/before" || fail "before-state collection failed; agent not started"
   BUDGET="$(cat "$TMP/timeout")" || fail "missing session deadline"
-    (cd "$W" && timeout --kill-after=10s "${BUDGET}s" "$AGY_CMD" --settings "$TMP/settings.json" --mode accept-edits "$@")
+  (cd "$W" && /usr/bin/timeout --kill-after=10s "${BUDGET}s" node "$COMPAT_HELPER" --exec "$W" --settings "$TMP/settings.json" --mode accept-edits "$@")
   RC=$?
   node "$RUNTIME_HELPER" verify-cli "$TMP" || fail "pinned CLI changed during execution"
   node "$RUNTIME_HELPER" manifest "$SNAP_DIR" || fail "policy changed during the session"

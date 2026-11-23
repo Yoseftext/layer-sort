@@ -30,13 +30,24 @@ try {
   };
   const root = path.join(project, ".git/agent-runtime-policy");
   fs.mkdirSync(root, { recursive: true, mode: 0o700 });
-  if (fs.realpathSync(root) !== root) throw Error("Private runtime directory must not be a symlink");
+  const rootStat = fs.lstatSync(root);
+  if (!rootStat.isDirectory() || rootStat.isSymbolicLink() || rootStat.uid !== process.getuid() ||
+      ![0o700, 0o755].includes(rootStat.mode & 0o777) || fs.realpathSync(root) !== root) {
+    throw Error("Runtime directory must be owned by the current user and mode 0700 or 0755");
+  }
   const tasks = path.join(root, "tasks");
   fs.mkdirSync(tasks, { recursive: true, mode: 0o700 });
-  if (fs.realpathSync(tasks) !== tasks) throw Error("Task pointer directory must not be a symlink");
+  const tasksStat = fs.lstatSync(tasks);
+  if (!tasksStat.isDirectory() || tasksStat.isSymbolicLink() || tasksStat.uid !== process.getuid() ||
+      (tasksStat.mode & 0o777) !== 0o700 || fs.realpathSync(tasks) !== tasks) {
+    throw Error("Task pointer directory must be private, owned by the current user and mode 0700");
+  }
   const candidateLock = path.join(tasks, path.basename(worktree) + ".lock");
   fs.mkdirSync(candidateLock, { mode: 0o700 });
   lock = candidateLock;
+  const lockStat = fs.lstatSync(candidateLock);
+  if (!lockStat.isDirectory() || lockStat.isSymbolicLink() || lockStat.uid !== process.getuid() ||
+      (lockStat.mode & 0o777) !== 0o700) throw Error("Task preparation lock is not private");
   const pointer = path.join(tasks, path.basename(worktree) + ".json");
   if (fs.existsSync(pointer)) {
     const previous = activeSnapshot(worktree);

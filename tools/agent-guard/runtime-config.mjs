@@ -10,6 +10,70 @@ export const WORKSPACE_HOOK_COMMAND = "/usr/bin/bash -c '" + dispatch + "'";
 export const SNAPSHOT_FILES = ["scripts/policy.mjs", "scripts/policy.sh", "scripts/task-grants.json"];
 const sha = (data) => createHash("sha256").update(data).digest("hex");
 const git = (root, args) => execFileSync("git", ["-C", root, ...args], { encoding: "utf8", timeout: 10000 }).trim();
+const CURRENT_UID = typeof process.getuid === "function" ? process.getuid() : -1;
+const NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
+
+function assertPrivateDirectory(directory, expectedMode, label) {
+  if (typeof directory !== "string" || !path.isAbsolute(directory) || path.resolve(directory) !== directory) {
+    throw Error(label + " path must be absolute and canonical");
+  }
+  const stat = fs.lstatSync(directory);
+  const allowedModes = Array.isArray(expectedMode) ? expectedMode : [expectedMode];
+  if (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== CURRENT_UID ||
+      !allowedModes.includes(stat.mode & 0o777) || fs.realpathSync(directory) !== directory) {
+    throw Error("Unsafe " + label + "; expected owner " + CURRENT_UID + " and mode " + allowedModes.map((mode) => mode.toString(8)).join(" or "));
+  }
+  return stat;
+}
+
+function readPrivateFile(filePath, maxBytes, label) {
+  const fd = fs.openSync(filePath, fs.constants.O_RDONLY | NOFOLLOW);
+  try {
+    const before = fs.fstatSync(fd, { bigint: true });
+    if (!before.isFile() || before.nlink !== 1n || before.uid !== BigInt(CURRENT_UID) ||
+        (before.mode & 0o777n) !== 0o600n || before.size > BigInt(maxBytes)) {
+      throw Error("Unsafe " + label + "; expected a private regular file owned by the current user");
+    }
+    const data = fs.readFileSync(fd);
+    const after = fs.fstatSync(fd, { bigint: true });
+    if (before.dev !== after.dev || before.ino !== after.ino || before.size !== after.size ||
+        before.mtimeNs !== after.mtimeNs || before.ctimeNs !== after.ctimeNs || BigInt(data.length) !== before.size) {
+      throw Error(label + " changed while being read");
+    }
+    return data;
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+function assertSnapshotPath(pin, expectedBase) {
+  if (typeof pin !== "string" || !path.isAbsolute(pin) || path.resolve(pin) !== pin ||
+      !/^[a-f0-9]{64}$/.test(path.basename(pin))) {
+    throw Error("Snapshot path must be a canonical SHA-256 directory");
+  }
+  const base = path.dirname(pin);
+  if (path.basename(base) !== "agent-runtime-policy" || path.basename(path.dirname(base)) !== ".git" ||
+      (expectedBase && base !== expectedBase)) {
+    throw Error("Snapshot must be a direct child of this project's private agent-runtime-policy directory");
+  }
+  assertPrivateDirectory(base, [0o700, 0o755], "agent-runtime-policy directory");
+  assertPrivateDirectory(pin, 0o700, "policy snapshot directory");
+  return { base, pin };
+}
+
+function writePrivateFileExclusive(filePath, content, label) {
+  const fd = fs.openSync(filePath, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | NOFOLLOW, 0o600);
+  try {
+    fs.writeFileSync(fd, content);
+    fs.fsyncSync(fd);
+    const stat = fs.fstatSync(fd);
+    if (!stat.isFile() || stat.nlink !== 1 || stat.uid !== CURRENT_UID || (stat.mode & 0o777) !== 0o600) {
+      throw Error("Unsafe " + label + " output");
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+}
 
 export function projectRoot(worktree) {
   const root = path.resolve(worktree);
@@ -27,16 +91,21 @@ export function snapshotId(files) {
 }
 
 export function verifySnapshot(pin) {
-  if (!path.isAbsolute(pin) || fs.realpathSync(pin) !== pin) throw Error("Snapshot path must be absolute without symlink aliases");
-  if (fs.existsSync(path.join(pin, "REVOKED"))) throw Error("Task grant is revoked; prepare a new task");
+  assertSnapshotPath(pin);
+  try {
+    fs.lstatSync(path.join(pin, "REVOKED"));
+    throw Error("Task grant is revoked; prepare a new task");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  assertPrivateDirectory(path.join(pin, "scripts"), 0o700, "policy snapshot scripts directory");
   const files = {};
   for (const name of SNAPSHOT_FILES) {
-    const stat = fs.lstatSync(path.join(pin, name));
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 1024 * 1024) throw Error("Invalid snapshot file: " + name);
-    files[name] = fs.readFileSync(path.join(pin, name));
+    files[name] = readPrivateFile(path.join(pin, name), 1024 * 1024, "snapshot file " + name);
   }
+  const manifest = readPrivateFile(path.join(pin, "MANIFEST.sha256"), 4096, "snapshot manifest").toString("utf8");
   const expected = SNAPSHOT_FILES.map((name) => sha(files[name]) + "  " + name).join("\n") + "\n";
-  if (fs.readFileSync(path.join(pin, "MANIFEST.sha256"), "utf8") !== expected || path.basename(pin) !== snapshotId(files)) throw Error("Snapshot integrity mismatch");
+  if (manifest !== expected || path.basename(pin) !== snapshotId(files)) throw Error("Snapshot integrity mismatch");
   return files;
 }
 
@@ -63,12 +132,15 @@ export async function taskGrant(pin, worktree) {
 
 export function activeSnapshot(worktree) {
   const root = projectRoot(worktree);
-  const file = path.join(root, ".git/agent-runtime-policy/tasks", path.basename(worktree) + ".json");
-  const stat = fs.lstatSync(file);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 4096) throw Error("Invalid task pointer");
-  const pointer = JSON.parse(fs.readFileSync(file, "utf8"));
+  const tasks = path.join(root, ".git/agent-runtime-policy/tasks");
+  assertPrivateDirectory(tasks, 0o700, "task pointer directory");
+  const file = path.join(tasks, path.basename(worktree) + ".json");
+  const pointer = JSON.parse(readPrivateFile(file, 4096, "task pointer").toString("utf8"));
   const base = path.join(root, ".git/agent-runtime-policy");
-  if (pointer.worktree !== worktree || path.dirname(pointer.snapshot) !== base) throw Error("Task pointer does not match worktree");
+  if (!pointer || typeof pointer !== "object" || pointer.worktree !== worktree) {
+    throw Error("Task pointer does not match worktree");
+  }
+  assertSnapshotPath(pointer.snapshot, base);
   return pointer.snapshot;
 }
 
@@ -123,11 +195,10 @@ export async function releaseFrozenCli(project, temporary) {
   const file = path.join(temporary, "cli.json");
   if (!fs.existsSync(file)) return;
   const metadata = JSON.parse(fs.readFileSync(file, "utf8"));
-  const prefix = path.join(project, ".git/agent-runtime-tools/agy-");
-  if (!metadata.source.startsWith(prefix) || !fs.existsSync(metadata.source)) return;
+  if (!fs.existsSync(metadata.source)) return;
   if (await executableHash(metadata.source) !== metadata.sha256) return;
   await verifyFrozenCli(temporary);
-  fs.unlinkSync(metadata.target); // only the verified disposable copy; approved bytes remain
+  fs.unlinkSync(metadata.target); // Remove only the verified disposable copy; the source remains.
 }
 
 export function godotBin(project) {
@@ -146,8 +217,18 @@ export function godotBin(project) {
 }
 
 export function revoke(pin) {
-  try { fs.writeFileSync(path.join(pin, "REVOKED"), new Date().toISOString() + "\n", { flag: "wx", mode: 0o600 }); }
-  catch (error) { if (error.code !== "EEXIST") throw error; }
+  assertSnapshotPath(pin);
+  const marker = path.join(pin, "REVOKED");
+  try {
+    writePrivateFileExclusive(marker, new Date().toISOString() + "\n", "task revocation marker");
+  } catch (error) {
+    if (error.code !== "EEXIST") throw error;
+    const stat = fs.lstatSync(marker);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.uid !== CURRENT_UID ||
+        (stat.mode & 0o777) !== 0o600) {
+      throw Error("Existing task revocation marker is unsafe");
+    }
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
@@ -166,6 +247,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     else if (action === "revoke") revoke(first);
     else if (action === "close") revoke(activeSnapshot(first));
     else if (action === "session") {
+      assertPrivateDirectory(third, 0o700, "agent session directory");
       const grant = await taskGrant(first, second);
       const budget = Number(process.env.LS_SESSION_TIMEOUT ?? 1200);
       if (!Number.isInteger(budget) || budget < 1 || budget > 1800) throw Error("Session timeout must be 1..1800 seconds");
@@ -174,9 +256,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
         allow: [...["git", "godot", "which", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)",
           ...grant.files.map((name) => "write_file(" + path.join(second, name) + ")")]
       } };
-      fs.writeFileSync(path.join(third, "allow"), grant.files.join("\n") + (grant.files.length ? "\n" : ""), { mode: 0o600 });
-      fs.writeFileSync(path.join(third, "settings.json"), JSON.stringify(settings), { mode: 0o600 });
-      fs.writeFileSync(path.join(third, "timeout"), String(seconds));
+      writePrivateFileExclusive(path.join(third, "allow"), grant.files.join("\n") + (grant.files.length ? "\n" : ""), "session allowlist");
+      writePrivateFileExclusive(path.join(third, "settings.json"), JSON.stringify(settings), "session settings");
+      writePrivateFileExclusive(path.join(third, "timeout"), String(seconds), "session timeout");
       console.log(JSON.stringify({ taskId: grant.taskId, files: grant.files, expiresAt: grant.expiresAt, timeoutSeconds: seconds }));
     } else throw Error("Unknown runtime action");
   } catch (error) { console.error("RUNTIME_FAIL: " + error.message); process.exitCode = 3; }
