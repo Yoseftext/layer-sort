@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { captureState, changedPaths } from "./guard-state.mjs";
-import { canRetryQuotaFailure, classifyAntigravityWarnings, describeProbeFailure, extractWarningLines, fingerprintCli, redactEvidenceText, selectGeminiModel, spawnVerifiedDescriptor } from "./compatibility.mjs";
+import { classifyAntigravityWarnings, describeProbeFailure, extractWarningLines, fingerprintCli, redactEvidenceText, runProbeWithRecovery, selectGeminiModel, spawnVerifiedDescriptor } from "./compatibility.mjs";
 import { verifySnapshot } from "./runtime-config.mjs";
 
 function run(command, args, options = {}) {
@@ -511,30 +511,38 @@ function main() {
       // Report a blocked probe if model discovery is unavailable.
     }
     if (!probeModel) unknownFail("No available Gemini model could be discovered for the compatibility probe");
-    const runProbe = (model) => spawnVerifiedDescriptor(cli.realpath, cliIdentity, [
-      "--settings", settingsPath,
-      "--mode", "accept-edits",
-      "--agent", "layer-sort-lead",
-      ...(model ? ["--model", model] : []),
-      "--output-format", "stream-json",
-      "--print-timeout", "420s",
-      "--log-file", logFile,
-      "-p", prompt
-    ], {
-      cwd: task,
-      capture: true,
-      timeoutMs: 450000,
-      maxBuffer: 16 * 1024 * 1024,
-      env
+    const runProbe = (model, attempt) => {
+      if (attempt > 0) logFile = path.join(tempRoot, "antigravity-retry-debug.log");
+      return spawnVerifiedDescriptor(cli.realpath, cliIdentity, [
+        "--settings", settingsPath,
+        "--mode", "accept-edits",
+        "--agent", "layer-sort-lead",
+        ...(model ? ["--model", model] : []),
+        "--output-format", "stream-json",
+        "--print-timeout", "420s",
+        "--log-file", logFile,
+        "-p", prompt
+      ], {
+        cwd: task,
+        capture: true,
+        timeoutMs: 450000,
+        maxBuffer: 16 * 1024 * 1024,
+        env
+      });
+    };
+    const recovery = runProbeWithRecovery({
+      primaryModel: probeModel,
+      backupModel,
+      runProbe,
+      isPristine: () => {
+        verifySnapshot(snapshot);
+        return !fs.existsSync(stateStoreWritePath) && changedPaths(before, captureState(task)).length === 0;
+      }
     });
-    let result = runProbe(probeModel);
-    if (backupModel && backupModel !== probeModel && canRetryQuotaFailure(result.status, result.stdout) &&
-        !fs.existsSync(stateStoreWritePath) && changedPaths(before, captureState(task)).length === 0) {
-      quotaRetry = true;
-      probeModel = backupModel;
-      logFile = path.join(tempRoot, "antigravity-retry-debug.log");
-      result = runProbe(probeModel);
-    }
+    const result = recovery.result;
+    probeModel = recovery.model;
+    quotaRetry = recovery.retryKind === "quota";
+    if (recovery.retryKind) console.error("ACTIVE_PROBE_RECOVERY_RETRY: " + recovery.retryKind);
     structuredStream = String(result.stdout || "");
     if (!structuredStream.trim()) unknownFail("Antigravity did not produce the required structured JSONL stdout stream");
     fs.writeFileSync(streamFile, structuredStream, { flag: "wx", mode: 0o600 });
@@ -596,6 +604,7 @@ function main() {
       cliExitCode: result.status,
       probeModel: probeModel || "configured-default",
       quotaRetry,
+      recoveryRetry: recovery.retryKind,
       subagentInvocations,
       allowedWrite: "PASS",
       outOfScopeWrite: "DENIED",
