@@ -4,4 +4,8 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+if [[ "${1:-}" == "fetch-build" ]]; then
+  shift
+  exec /usr/bin/python3 "$ROOT/tools/device-tests/artifact_qa.py" "$@"
+fi
 exec /usr/bin/python3 "$ROOT/tools/device-tests/device_qa.py" "$@"

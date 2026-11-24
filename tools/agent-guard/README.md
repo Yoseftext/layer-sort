@@ -22,7 +22,7 @@ workspace trust for this session only; global CLI settings are never rewritten.
 The launcher does not pin a single Antigravity version. Before an agent session,
 it fingerprints the absolute executable path, SHA-256, version, ELF Build ID,
 interpreter and resolved shared-library hashes, host runtime, launcher, Hook,
-policy, agent definitions and compatibility tests. Project documentation, skill
+policy, agent definitions, the device QA entrypoint/verifiers and compatibility tests. Project documentation, skill
 text and this guide do not change the compatibility key. The cache is refreshed
 when Antigravity, the agent definitions, or the guard and test code changes.
 

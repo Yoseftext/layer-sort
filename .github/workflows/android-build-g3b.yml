@@ -418,6 +418,7 @@ jobs:
           aapt2 dump xmltree --file AndroidManifest.xml build/layer-sort-g3b-debug.apk > logs/android-manifest.txt
           apksigner verify --verbose --print-certs build/layer-sort-g3b-debug.apk > logs/apk-signing.txt
           LAYER_SORT_VERSION_NAME=0.3.2-g3b LAYER_SORT_VERSION_CODE=5 tools/verify-apk.sh build/layer-sort-g3b-debug.apk tools/device-tests/expected-debug-cert.sha256 | tee logs/apk-verification.txt
+          python3 tools/device-tests/write_provenance.py | tee logs/apk-provenance.log
           grep -q 'config/version="0.3.2-g3b"' project.godot
           grep -q 'Version 0.3.2-g3b' scripts/ui/ui_text.gd
           grep -q 'الإصدار 0.3.2-g3b' scripts/ui/ui_text.gd
@@ -454,7 +455,9 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: layer-sort-g3b-debug-apk
-          path: build/layer-sort-g3b-debug.apk
+          path: |
+            build/layer-sort-g3b-debug.apk
+            build/apk-provenance.json
           if-no-files-found: error
           retention-days: 14
 
