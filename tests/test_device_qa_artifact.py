@@ -221,6 +221,54 @@ class ArtifactQaTests(unittest.TestCase):
                 module.download_artifact(RUN_ID, COMMIT)
         self.assertFalse((cache / f"run-{RUN_ID}-attempt-1").exists())
 
+    def test_handoff_rechecks_github_archive_and_approved_apk_hash(self) -> None:
+        zip_bytes = self.archive()
+        artifact = {"id": 77, "name": module.ARTIFACT, "expired": False,
+                    "size_in_bytes": len(zip_bytes), "digest": "sha256:" + hashlib.sha256(zip_bytes).hexdigest()}
+        def fake_gh(endpoint):
+            return {"artifacts": [artifact]} if "artifacts?" in endpoint else run_info()
+        def fake_download(_artifact_id, path):
+            path.write_bytes(zip_bytes)
+        badging = (f"package: name='{module.PACKAGE}' versionCode='5' versionName='0.3.2-g3b'\n"
+                   "application-debuggable\nnative-code: 'arm64-v8a'\n")
+        signing = f"Verifies\nSigner #1 certificate SHA-256 digest: {CERT}\n"
+        cache = self.root / "cache"
+        digest = hashlib.sha256(self.apk.read_bytes()).hexdigest()
+        with (patch.object(module, "ROOT", self.root), patch.object(module, "CACHE_ROOT", cache),
+              patch.object(module, "expected_cert", return_value=CERT), patch.object(module, "gh_json", side_effect=fake_gh),
+              patch.object(module, "download_archive", side_effect=fake_download),
+              patch.object(module, "command_output", side_effect=[badging, signing, badging, signing])):
+            module.download_artifact(RUN_ID, COMMIT)
+            saved = cache / f"run-{RUN_ID}-attempt-1"
+            self.assertEqual((saved / module.ARCHIVE_NAME).read_bytes(), zip_bytes)
+            # Local extracted files are not trusted as installation inputs.
+            (saved / module.APK_NAME).write_bytes(b"locally changed")
+            with module.verified_cached_build(RUN_ID, COMMIT, digest) as (apk, manifest):
+                self.assertEqual(apk.read_bytes(), self.apk.read_bytes())
+                self.assertEqual(manifest["apk_sha256"], digest)
+            with self.assertRaisesRegex(module.ArtifactError, "approved exact build"):
+                with module.verified_cached_build(RUN_ID, COMMIT, "0" * 64):
+                    pass
+            (saved / module.ARCHIVE_NAME).write_bytes(b"tampered archive")
+            with self.assertRaisesRegex(module.ArtifactError, "no longer matches GitHub"):
+                with module.verified_cached_build(RUN_ID, COMMIT, digest):
+                    pass
+
+    def test_handoff_rejects_symlinked_cache_archive(self) -> None:
+        artifact = {"id": 77, "name": module.ARTIFACT, "expired": False,
+                    "size_in_bytes": 4, "digest": "sha256:" + "d" * 64}
+        def fake_gh(endpoint):
+            return {"artifacts": [artifact]} if "artifacts?" in endpoint else run_info()
+        cache = self.root / "cache"
+        target = cache / f"run-{RUN_ID}-attempt-1"
+        target.mkdir(parents=True)
+        (target / module.ARCHIVE_NAME).symlink_to(self.apk)
+        with (patch.object(module, "ROOT", self.root), patch.object(module, "CACHE_ROOT", cache),
+              patch.object(module, "expected_cert", return_value=CERT), patch.object(module, "gh_json", side_effect=fake_gh)):
+            with self.assertRaisesRegex(module.ArtifactError, "safe regular file"):
+                with module.verified_cached_build(RUN_ID, COMMIT, "a" * 64):
+                    pass
+
 
 if __name__ == "__main__":
     unittest.main()

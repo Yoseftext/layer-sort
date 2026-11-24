@@ -37,7 +37,9 @@ Supported commands:
 - `logcat` filtered to the Layer Sort process PID and selected markers
 - `launch`, `stop`, `tap`, `swipe` only with exact owner approval and an approval ID
 
-The wrapper does not expose arbitrary shell, arbitrary ADB arguments, package selection, install, uninstall, clear-data, permission changes, global settings, or service management. Unsupported commands must fail closed.
+The proposed wrapper also contains owner-operated `inspect-installed` and `install-build` actions. The Antigravity Hook denies both: a phone run requires exact-patch review, tests, and explicit authorization for the candidate and current installed state. The install revalidates GitHub's archive digest, the APK, the expected certificate and device identity; it refuses a downgrade or different previous hash. The `--owner-approved` flag is a record, not proof of consent. Never claim an install or device test from a mocked test result.
+
+The wrapper does not expose arbitrary shell, arbitrary ADB arguments, package selection, uninstall, clear-data, permission changes, global settings, or service management. Unsupported commands must fail closed.
 
 The device-qa specialist is read-only and has no command execution tool. The Lead executes wrapper commands. Mutating actions require the owner's explicit approval for that exact run; use `--owner-approved --approval-id <ID>` only after approval is recorded. A flag is audit metadata, not proof of owner identity.
 
