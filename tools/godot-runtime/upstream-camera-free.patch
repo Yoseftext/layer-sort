@@ -1,0 +1,12 @@
+diff --git a/modules/camera/camera_linux.cpp b/modules/camera/camera_linux.cpp
+--- a/modules/camera/camera_linux.cpp
++++ b/modules/camera/camera_linux.cpp
+@@ -75,7 +75,6 @@ void CameraLinux::_update_devices() {
+ 					}
+ 					free(device);
+ 				}
++				free(devices);
+ 			}
+-
+-			free(devices);
+ 		}

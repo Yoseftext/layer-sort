@@ -102,3 +102,7 @@ The authorized tools/device-tests/agentctl status returned UNKNOWN: expected exa
 The final native task completed successfully with eight focused tests, both negative controls, native independent Reviewer ACCEPT, agent exit0 and two scoped changed paths. Grant closure and source hashes were independently checked. See AGENT_RUNTIME_E2E.md for the exact task, commits, session IDs, evidence and limitations. This supersedes the earlier pending-native gate; local Godot and physical-device blockers remain.
 
 Final local integration check after the reviewed patch: state/launcher19/19 PASS, guard9/9 PASS, policy PASS, task ledger validate3records PASS, git diff --check exit0. No code changes followed these checks. Installed plugin files match their original backup, CLI settings SHA256 is unchanged, and the superseded experimental grant was revoked. The global Layer Sort kit intentionally remains disabled for the supported workspace workflow.
+
+## 2026-11-20 follow-up
+
+PR22 is now merged externally. The local import blocker was isolated to upstream CameraLinux invalid cleanup after failed /dev scandir, and resolved for the development workflow by an invocation-scoped, hash-pinned compatibility runner. Real Antigravity1.5.13 implementation and independent review passed with actual Godot runtime and game-rule tests. See GODOT_RUNTIME_REPAIR.md for current evidence and limitations; earlier NOT_READY/import-blocked statements describe the prior baseline. Physical QA and local Android export remain separate unverified gates.
