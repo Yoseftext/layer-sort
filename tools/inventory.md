@@ -1,5 +1,18 @@
 # Layer Sort Development Tool Inventory
 
+## Isolated visual QA trial — 2026-11-24
+
+The following is newer evidence than the historical inventory below. It was
+installed only in `.worktrees/codex-visual-match/.runtime/visual-qa/venv`;
+the original checkout, system Python, and existing Appium venv were not changed.
+
+| Component | Source, version, license and architecture | Purpose, result, risk and rollback |
+|---|---|---|
+| OpenCV headless + NumPy | [OpenCV wheel](https://pypi.org/project/opencv-python-headless/4.12.0.88/), [NumPy](https://pypi.org/project/numpy/2.2.6/); pinned wheel hashes in `tools/visual-qa/requirements-py313-linux.txt`; CPython 3.13 / Linux ARM64; project supports separately pinned x86_64 wheels. OpenCV Apache-2.0, wheel tooling MIT, NumPy BSD-3-Clause; wheels contain third-party notices including LGPL-2.1 FFmpeg. | Local template matching, no device or model request. Hash-checked install and 6/6 synthetic visual tests passed in the isolated ARM64 PRoot venv. Real game screenshots, template accuracy, release packaging and other architectures remain UNVERIFIED. Stop invoking the optional tool for rollback; retain the venv/evidence pending owner decision. |
+
+The older entries below describe the historical baseline and should not be
+read as overriding the newer scoped evidence above.
+
 **Last verified:** 2026-11-09
 **Scope:** Debian 13 ARM64 / Android PRoot / OPPO CPH1937 / Godot 4.7.2 Standard.
 **Policy:** No new external dependency was installed. Existing system services and global packages were not upgraded.

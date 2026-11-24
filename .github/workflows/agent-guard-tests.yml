@@ -51,3 +51,13 @@ jobs:
         env:
           LS_PROJECT_ROOT: ${{ github.workspace }}
         run: bash .agents/plugins/layer-sort-agent-kit/scripts/test-policy.sh
+
+      - name: Install Python 3.13 for optional visual QA
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: '3.13'
+
+      - name: Exercise pinned visual matcher (synthetic images only)
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir --only-binary=:all: --require-hashes -r tools/visual-qa/requirements-py313-linux.txt
+          python -I -m unittest discover -s tests -p test_device_qa_visual.py -v

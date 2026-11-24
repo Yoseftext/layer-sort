@@ -33,6 +33,7 @@ Supported commands:
   access the phone or install the APK. Older build artifacts without a
   provenance manifest are rejected. Use a fresh run for the exact commit.
 - `plan-gesture <rapid|simultaneous|drag|hold> --size <WIDTH>x<HEIGHT> --points <X>,<Y>[:<X>,<Y>...]` builds a bounded W3C input plan without contacting a device. This is planning evidence only; it does not execute or measure touches. Choose viewport and points from the actual build and screen, then require a reviewed adapter and exact device authorization before execution.
+- `visual-match --run <screenshot-run> --template <reviewed-name>` computes an offline template similarity and bounding box using the isolated, version-locked visual environment. It never captures, taps, proves provenance, or decides visual quality. No reviewed game templates or actual-device comparisons exist yet. See `tools/visual-qa/README.md`.
 - `status`, `battery`, `thermal`
 - `screenshot` only when Layer Sort is verified in the foreground
 - `logcat` filtered to the Layer Sort process PID and selected markers
