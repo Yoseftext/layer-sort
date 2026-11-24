@@ -145,3 +145,21 @@ Pinned baseline: Godot **4.7.2 Standard**, typed GDScript, Android-only, Portrai
 **Main-policy decision resolved by [ADR-0007](../adr/ADR-0007-protected-main-owner-authorized-agent-merge.md):** no direct pushes to main; integration uses reviewed PRs with required CI passing, no unresolved blocking review comments and unchanged protections. Codex may execute only a merge explicitly authorized by the owner for the PR number, exact full head SHA and target branch, with confirmation that the reviewed changes are intended. Any changed approval value requires renewed authorization. General project approval is insufficient. After each authorized merge, verify the resulting commit, intended target and integrated CI, report the outcome/regressions, and stop before the next PR pending its applicable approval. The dependency order is not merge authorization. This documentation task authorizes no actual merge or main change.
 
 ChatGPT guides architecture and independently reviews changes, risk and test evidence; the owner retains final decisions and exact merge authorization; Codex implements, tests, creates PRs and executes only the authorized exact merge. No bypass or enabling of GitHub protections is authorized.
+
+
+## Current owner-authorized infrastructure work — 2026-11-14
+
+The repository owner has authorized two isolated infrastructure tasks:
+
+1. **Dynamic Antigravity CLI compatibility gate — [ADR-0008](../adr/ADR-0008-dynamic-antigravity-compatibility.md).** Antigravity is no longer tied to a single version pin. Each launch verifies the actual executable/dependency identity and current policy/test fingerprint. A new fingerprint triggers bounded compatibility tests, including real negative probes. Compatibility state lives outside Git under the user's state directory. Unknown or failed checks block agent execution. The persistent Node blocklist remains unchanged.
+2. **Godot PRoot runtime compatibility launcher — [ADR-0009](../adr/ADR-0009-godot-prroot-runtime-launcher.md).** Complete and independently review the narrowly scoped local workaround for denied `/dev` camera discovery in the Android PRoot environment.
+
+These authorizations cover implementation, bounded tests, documentation, and independent review in separate Worktrees only. They do not authorize gameplay changes, G5/G6 expansion, phone mutation, APK installation, production release, direct pushes, commits to `main`, or PR merges. Exact integration remains subject to ADR-0007. The Godot P0 task remains open until independent Reviewer acceptance; Device QA P1 is a later, separate task.
+
+### ADR-0008 implementation verification — 2026-11-14
+
+An earlier compatibility checkpoint on Antigravity CLI 1.5.9 (Linux ARM64/glibc PRoot) passed before the warning-capture hardening changes. Those later launcher/test changes correctly invalidated that cached fingerprint. The latest full `safe-agy.sh --check` on 2026-11-14 returned `UNKNOWN` / exit 78 because the new fail-closed warning collector surfaced startup and host warnings that had not yet been classified. The earlier PASS must not be reused for the new fingerprint.
+
+The latest active CLI probe (evidence timestamp 2026-11-14T15:10:56Z) independently passed: four separate Implementer delegations plus one read-only Reviewer; the allowlisted Worktree write passed; out-of-scope Worktree write, external state-store write, and direct Node execution were denied; the Reviewer returned `ACCEPT`; CLI exit code was 0; and the only changed Worktree path was `allowed.txt`. The structured evidence and transcripts remain outside Git under the protected safe-agy state directory.
+
+The warning classifier is now context-gated: transient auth-cache warnings require later OAuth success and model streaming; admin-control warnings require verified consumer-account context; PRoot updater and optional helper/MCP limitations require exact signatures; both Go warning and error lines are captured; and unknown messages remain `UNKNOWN`. The new compatibility unit suite passed 21/21 after these changes. The full regression suite, new-fingerprint active `--check`, read-only `--status`, independent infrastructure Patch review, and PR integration remain outstanding. No commit, push, or merge has been performed.

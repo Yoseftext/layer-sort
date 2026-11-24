@@ -16,7 +16,7 @@ Android puzzle game (colored layers in glass tubes). Godot 4 **Standard** + **ty
 - Later gates: read the sections the gate names (UX → `01-UX-ART.md`, engineering/risk/Firebase → `02-ENGINEERING.md`).
 
 ## Current scope
-- **Current owner-authorized scope:** preserve G2 Classic, G3 navigation/saves/campaign1–14/G3-D flow and G4 Optical Clarity; accepted PR15 is frozen at c961972365258baa34cae279dfc10ab46edce2f7 with minor non-blocking polish deferred (ADR-0006); current work is G4 exit CI/documentation/merge-readiness only. G5 Circuit, G6 generation, production release and PR merges remain unauthorized.
+- **Current owner-authorized scope (2026-11-14):** preserve the accepted G4 checkpoint under ADR-0006. Infrastructure-only work is authorized in dedicated Worktrees: dynamic Antigravity compatibility gating under ADR-0008 and the local Godot PRoot runtime launcher under ADR-0009. This does not authorize gameplay changes, G5/G6 expansion, phone mutation, APK installation, production release, or PR merge. G5 Circuit and G6 generation remain outside this task.
 - The G0–G2 bullets below summarize historical gate scope; they do not revoke subsequent explicit owner authorizations.
 - G0: new branch `feat/gdscript-foundation` from a safe base, record the baseline, do not touch `main`.
 - G1: Godot Standard portrait smoke scene, pinned engine + export templates (`ENGINE_VERSION.lock`), APK built by GitHub Actions, installed on the connected OPPO via `agentctl` / `phone-queue` / Appium, with screenshot + logcat. Done criteria are in `03-PRODUCTION.md` section 2.
