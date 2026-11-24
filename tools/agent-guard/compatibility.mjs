@@ -677,25 +677,87 @@ export function selectGeminiModel(modelList, excludedModel = null) {
   return slugs[0] || null;
 }
 
-export function canRetryQuotaFailure(exitCode, stream) {
-  if (exitCode === 0) return false;
+// Classify only known failure families; never include the provider's raw error
+// in diagnostics, because it can contain account details or credentials.
+export function classifyProbeFailure(message) {
+  const value = String(message || "");
+  if (/individual quota reached|resource_exhausted/i.test(value)) return "quota";
+  if (/unauthenticated|invalid.grant|not logged in|authentication required/i.test(value)) return "authentication";
+  if (/deadline_exceeded|request timed out|context deadline exceeded/i.test(value)) return "timeout";
+  if (/\b(?:ECONNRESET|ECONNREFUSED|EAI_AGAIN|ENETUNREACH|UNAVAILABLE)\b|connection reset by peer/i.test(value)) return "network";
+  return "unknown";
+}
+
+// Retry only a complete structured failure before any tool invocation. A
+// malformed/partial stream or timeout without a result is not proof of safety.
+export function retryableProbeFailure(exitCode, stream) {
+  if (!Number.isInteger(exitCode) || exitCode === 0) return null;
   try {
-    const records = String(stream || "").trim().split(/\r?\n/).map((line) => JSON.parse(line));
-    const result = records.findLast((record) => record.event === "result");
-    return /individual quota reached/i.test(String(result?.result?.error || "")) &&
-      !records.some((record) => record.step_update?.tool_name);
+    const lines = String(stream || "").trim().split(/\r?\n/);
+    const records = lines.map((line) => JSON.parse(line));
+    const results = records.filter((record) => record.event === "result");
+    const inits = records.filter((record) => record.event === "init");
+    const initId = inits[0]?.conversation_id;
+    if (inits.length !== 1 || records[0] !== inits[0] ||
+        typeof initId !== "string" || !initId ||
+        results.length !== 1 || records.at(-1) !== results[0] ||
+        results[0].result?.conversation_id !== initId ||
+        results[0].result?.status !== "ERROR" ||
+        records.some((record) => record.step_update?.tool_name ||
+          /^(?:tool|tool_use|subagent)$/i.test(String(record.step_update?.step_type || "")))) return null;
+    const kind = classifyProbeFailure(results[0].result?.error);
+    return ["quota", "network", "timeout"].includes(kind) ? kind : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
+export function canRetryQuotaFailure(exitCode, stream) {
+  return retryableProbeFailure(exitCode, stream) === "quota";
+}
+
+// The caller provides a disposable fixture and verifies its state before the
+// retry. At most one retry is attempted, and normal user sessions are untouched.
+export function runProbeWithRecovery({ primaryModel, backupModel, runProbe, isPristine }) {
+  let model = primaryModel;
+  let result = runProbe(model, 0);
+  const kind = retryableProbeFailure(result.status, result.stdout);
+  const nextModel = kind === "quota" ? backupModel : model;
+  let retryKind = null;
+  if (kind && nextModel && (kind !== "quota" || nextModel !== model) && isPristine()) {
+    retryKind = kind;
+    model = nextModel;
+    result = runProbe(model, 1);
+  }
+  return { result, model, retryKind };
+}
+
 export function describeProbeFailure(exitCode, errorMessage) {
-  const message = String(errorMessage || "");
-  if (/individual quota reached/i.test(message)) {
-    const reset = message.match(/resets in ([0-9hms]+)/i);
+  const kind = classifyProbeFailure(errorMessage);
+  if (kind === "quota") {
+    const reset = String(errorMessage).match(/resets in ([0-9hms]+)/i);
     return "Antigravity usage quota reached" + (reset ? "; resets in " + reset[1] : "");
   }
+  if (kind === "authentication") return "Antigravity authentication required";
+  if (kind === "network") return "Antigravity network or service temporarily unavailable";
+  if (kind === "timeout") return "Antigravity model request timed out";
   return "Antigravity CLI returned nonzero exit code " + exitCode;
+}
+
+export function diagnoseSuiteFailure(suite) {
+  const output = String(suite.stderr || "") + "\n" + String(suite.stdout || "");
+  if (suite.status !== 78) return { category: "test_failure", action: "Inspect the failing compatibility test; automatic policy changes are not applied." };
+  if (/Antigravity usage quota reached/i.test(output))
+    return { category: "quota", action: "Wait for Gemini quota reset or make another Gemini model available." };
+  if (/Antigravity authentication required/i.test(output))
+    return { category: "authentication", action: "Sign in to Antigravity again, then repeat the compatibility check." };
+  if (/No available Gemini model could be discovered/i.test(output))
+    return { category: "model_unavailable", action: "Check Antigravity sign-in, connectivity, and available Gemini models, then repeat the check." };
+  if (/network or service temporarily unavailable/i.test(output))
+    return { category: "network", action: "Check connectivity or service availability, then repeat the compatibility check." };
+  if (/request timed out|suite timed out/i.test(output) || /suite timed out/i.test(String(suite.reason || "")))
+    return { category: "timeout", action: "Check connectivity and host load, then repeat the compatibility check." };
+  return { category: "unknown", action: "Inspect the compatibility evidence; no automatic policy change was made." };
 }
 
 export function classifySuiteStatus(status) {
@@ -808,11 +870,14 @@ function runLocked(action, projectRoot) {
   const suite = runCompatibilitySuite(projectRoot, fingerprint);
   if (suite.status !== 0) {
     const verdict = classifySuiteStatus(suite.status);
-    const reason = suite.reason + "; Diff: " + summary;
+    const diagnosis = diagnoseSuiteFailure(suite);
+    const reason = suite.reason + "; Category: " + diagnosis.category + "; Diff: " + summary;
     auditEvent(stateDir, "CHECK_FAILED", fingerprint, { verdict, reason });
     if (suite.stdout) process.stdout.write(suite.stdout);
     if (suite.stderr) process.stderr.write(suite.stderr);
     console.error("COMPATIBILITY_DIFF_SUMMARY: " + summary);
+    console.error("RECOVERY_DIAGNOSIS: " + diagnosis.category);
+    console.error("RECOVERY_NEXT_STEP: " + diagnosis.action);
     console.error("COMPATIBILITY_" + verdict + ": " + reason);
     return verdict === "UNKNOWN" ? 78 : 1;
   }

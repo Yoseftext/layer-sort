@@ -7,6 +7,10 @@ import { test } from "node:test";
 import {
   appendAudit,
   canRetryQuotaFailure,
+  classifyProbeFailure,
+  diagnoseSuiteFailure,
+  retryableProbeFailure,
+  runProbeWithRecovery,
   classifyAntigravityWarnings,
   classifySuiteStatus,
   describeProbeFailure,
@@ -279,16 +283,100 @@ test("selects available Gemini models without fixing their version", () => {
   assert.equal(selectGeminiModel(""), null);
 });
 
-test("retries quota failures only before a tool has run", () => {
-  const quota = JSON.stringify({ event: "result", result: { error: "Individual quota reached." } });
-  const tool = JSON.stringify({ event: "step_update", step_update: { tool_name: "invoke_subagent" } });
+function failedStream(error, middle = [], id = "probe-1") {
+  return [
+    { event: "init", conversation_id: id },
+    ...middle,
+    { event: "result", result: { conversation_id: id, status: "ERROR", error } }
+  ].map((entry) => JSON.stringify(entry)).join("\n");
+}
+
+test("retries quota failures only with a complete stream before a tool has run", () => {
+  const quota = failedStream("Individual quota reached.");
+  const tool = { event: "step_update", step_update: { tool_name: "invoke_subagent" } };
   assert.equal(selectGeminiModel("gemini-3.8-flash-low Gemini", "gemini-3.8-flash-low"), null);
   assert.equal(selectGeminiModel("gpt-oss-120b-medium GPT\nclaude-sonnet-4-6 Claude"), null);
   assert.equal(canRetryQuotaFailure(3, quota), true);
-  assert.equal(canRetryQuotaFailure(3, tool + "\n" + quota), false);
+  assert.equal(canRetryQuotaFailure(3, failedStream("Individual quota reached.", [tool])), false);
+  assert.equal(canRetryQuotaFailure(3, failedStream("Individual quota reached.", [{ event: "step_update", step_update: { step_type: "subagent" } }])), false);
   assert.equal(canRetryQuotaFailure(0, quota), false);
   assert.equal(canRetryQuotaFailure(3, "not-json"), false);
-  assert.equal(canRetryQuotaFailure(3, JSON.stringify({ event: "result", result: { error: "other error" } })), false);
+  assert.equal(canRetryQuotaFailure(3, failedStream("other error")), false);
+  assert.equal(canRetryQuotaFailure(3, JSON.stringify({ event: "result", result: { error: "Individual quota reached" } })), false);
+  assert.equal(canRetryQuotaFailure(3, quota + "\n" + quota), false);
+  assert.equal(canRetryQuotaFailure(null, quota), false);
+});
+
+test("diagnoses sanitized quota, authentication, network, timeout and unknown failures", () => {
+  assert.equal(classifyProbeFailure("RESOURCE_EXHAUSTED"), "quota");
+  assert.equal(classifyProbeFailure("UNAUTHENTICATED"), "authentication");
+  assert.equal(classifyProbeFailure("ECONNRESET secret@example.invalid"), "network");
+  assert.equal(classifyProbeFailure("DEADLINE_EXCEEDED"), "timeout");
+  assert.equal(classifyProbeFailure("unexpected failure"), "unknown");
+  assert.equal(describeProbeFailure(1, "ECONNRESET secret@example.invalid"), "Antigravity network or service temporarily unavailable");
+  assert.equal(describeProbeFailure(1, "UNAUTHENTICATED"), "Antigravity authentication required");
+  assert.equal(diagnoseSuiteFailure({ status: 78, stderr: "Antigravity authentication required" }).category, "authentication");
+  assert.equal(diagnoseSuiteFailure({ status: 78, stderr: "No available Gemini model could be discovered" }).category, "model_unavailable");
+  assert.equal(diagnoseSuiteFailure({ status: 78, stderr: "Antigravity usage quota reached" }).category, "quota");
+  assert.equal(diagnoseSuiteFailure({ status: 78, stderr: "Antigravity network or service temporarily unavailable" }).category, "network");
+  assert.equal(diagnoseSuiteFailure({ status: 78, reason: "Compatibility suite timed out; verdict UNKNOWN" }).category, "timeout");
+  assert.equal(diagnoseSuiteFailure({ status: 1, stderr: "Antigravity usage quota reached" }).category, "test_failure");
+});
+
+test("one recovery retry keeps the chosen model for transient failures and switches Gemini for quota", () => {
+  for (const [error, expectedModel, kind] of [
+    ["ECONNRESET", "gemini-primary", "network"],
+    ["DEADLINE_EXCEEDED", "gemini-primary", "timeout"],
+    ["individual quota reached", "gemini-backup", "quota"]
+  ]) {
+    const calls = [];
+    const out = runProbeWithRecovery({
+      primaryModel: "gemini-primary", backupModel: "gemini-backup",
+      runProbe: (model, attempt) => {
+        calls.push([model, attempt]);
+        return attempt === 0 ? { status: 1, stdout: failedStream(error) } : { status: 0, stdout: "ok" };
+      },
+      isPristine: () => true
+    });
+    assert.deepEqual(calls, [["gemini-primary", 0], [expectedModel, 1]]);
+    assert.equal(out.model, expectedModel);
+    assert.equal(out.retryKind, kind);
+    assert.equal(out.result.status, 0);
+  }
+});
+
+test("never retries after a tool call, fixture change, missing backup, malformed stream or authentication failure", () => {
+  for (const [stream, pristine, backup] of [
+    [failedStream("ECONNRESET", [{ event: "step_update", step_update: { tool_name: "write_file" } }]), true, "gemini-backup"],
+    [failedStream("ECONNRESET"), false, "gemini-backup"],
+    [failedStream("individual quota reached"), true, null],
+    ["truncated", true, "gemini-backup"],
+    [failedStream("UNAUTHENTICATED"), true, "gemini-backup"]
+  ]) {
+    let calls = 0;
+    const out = runProbeWithRecovery({
+      primaryModel: "gemini-primary", backupModel: backup,
+      runProbe: () => { calls++; return { status: 1, stdout: stream }; },
+      isPristine: () => pristine
+    });
+    assert.equal(calls, 1);
+    assert.equal(out.retryKind, null);
+  }
+  assert.equal(retryableProbeFailure(1, failedStream("ECONNRESET") + "\n{}"), null);
+  assert.equal(retryableProbeFailure(1, failedStream("ECONNRESET").replace("probe-1\",\"status", "other-id\",\"status")), null);
+  let calls = 0;
+  const stillFailing = runProbeWithRecovery({
+    primaryModel: "gemini-primary", backupModel: "gemini-backup",
+    runProbe: () => { calls++; return { status: 1, stdout: failedStream("ECONNRESET") }; },
+    isPristine: () => true
+  });
+  assert.equal(calls, 2);
+  assert.equal(stillFailing.result.status, 1);
+  assert.throws(() => runProbeWithRecovery({
+    primaryModel: "gemini-primary",
+    runProbe: () => ({ status: 1, stdout: failedStream("ECONNRESET") }),
+    isPristine: () => { throw new Error("snapshot integrity failed"); }
+  }), /snapshot integrity failed/);
 });
 
 test("reports quota exhaustion without exposing unrelated errors", () => {

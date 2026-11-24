@@ -38,9 +38,17 @@ Use `bash tools/agent-guard/safe-agy.sh --status` for a read-only status report
 and `bash tools/agent-guard/safe-agy.sh --check` to force the complete test
 suite. A cache miss runs unit tests plus active probes in a disposable
 Git worktree using the real Antigravity CLI. The probe discovers a Gemini model
-from `agy models`, preferring Flash with low effort. If that model reports quota
-exhaustion before using any tool or changing the fixture, the probe retries once
-with another available Gemini model. Model discovery failure blocks the probe.
+from `agy models`, preferring Flash with low effort. For an identified quota
+failure it can retry once with another available Gemini model; for a recognized
+network or request-timeout failure it can retry once with the same model. It
+retries only when a complete structured stream proves failure before tool use,
+the task snapshot is intact, and the disposable worktree/state probe is
+unchanged. Incomplete streams, authentication errors, changed fixtures and hard
+failures are not automatically retried. A failed suite prints a sanitized
+`RECOVERY_DIAGNOSIS` and a suggested next step; it does not edit policy or
+pretend an unknown result is compatible. Model discovery failure blocks the probe.
+This bounded recovery is not an autonomous code-repair agent and cannot repair
+arbitrary future CLI changes.
 This applies only to the compatibility probe. Normal tasks use the model chosen
 by the user, and project subagents inherit that model. Four separate implementer
 delegations test the exact allowlisted write, out-of-scope write, external
