@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import importlib.util
 import importlib.metadata
+import json
 import os
 import random
+import shutil
 import struct
+import subprocess
+import sys
 import tempfile
 import unittest
 import zlib
@@ -97,6 +101,23 @@ class VisualTests(unittest.TestCase):
         (self.templates / "target.png").write_bytes(png([[5] * 5 for _ in range(5)]))
         with self.assertRaisesRegex(visual.VisualError, "too uniform"):
             visual.match(RUN, "target")
+
+    @unittest.skipUnless(HAS_CV, "optional locked OpenCV/NumPy not installed")
+    def test_wrapper_runs_offline_on_synthetic_evidence(self) -> None:
+        device_tools = self.root / "tools/device-tests"
+        device_tools.mkdir(parents=True)
+        shutil.copy2(ROOT / "tools/device-tests/agentctl", device_tools / "agentctl")
+        shutil.copy2(ROOT / "tools/visual-qa/visual_match.py", self.root / "tools/visual-qa/visual_match.py")
+        venv_parent = self.root / ".runtime/visual-qa"
+        venv_parent.mkdir(parents=True)
+        (venv_parent / "venv").symlink_to(Path(sys.prefix), target_is_directory=True)
+        result = subprocess.run([str(device_tools / "agentctl"), "visual-match", "--run", RUN,
+                                 "--template", "target"], capture_output=True, text=True, timeout=30, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+        payload = json.loads(result.stdout)
+        self.assertEqual((payload["best_match"]["x"], payload["best_match"]["y"]), (13, 9))
+        self.assertFalse(payload["device_contacted"])
+        self.assertEqual(payload["visual_verdict"], "UNVERIFIED")
 
 
 if __name__ == "__main__":

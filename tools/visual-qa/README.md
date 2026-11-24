@@ -19,7 +19,7 @@ This leaves the system Python and existing Appium virtualenv unchanged. The
 lockfile accepts only the enumerated PyPI wheel SHA-256 hashes for NumPy 2.2.6
 and OpenCV headless 4.12.0.88 on those platforms. A different Python/platform
 must produce `UNVERIFIED` until separately pinned and tested. On this PRoot host,
-installation and all five visual unit tests passed on synthetic PNGs; no actual
+installation and all six visual unit tests passed on synthetic PNGs; no actual
 Layer Sort screenshot has been analyzed yet. As with the rest of this same-user
 workspace, the Hook is not an OS sandbox; the local venv is not protected from
 other processes running as the same user.
