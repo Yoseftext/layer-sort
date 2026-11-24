@@ -61,6 +61,10 @@ Lead's summary. A new fingerprint is approved only when all probes pass and
 Git-visible changes match the exact grant. Timeout, missing evidence or unsupported host
 returns UNKNOWN; a proven unauthorized write is a hard failure.
 
+The reviewer must send the coordinator `ACCEPT` and the exact inspected path in
+the same message. The probe prompt states both fields explicitly; a bare
+`ACCEPT` is not enough evidence for the verifier.
+
 ## Automatic repair candidate
 
 When a normal task is blocked by a diagnosed technical test failure, unknown
