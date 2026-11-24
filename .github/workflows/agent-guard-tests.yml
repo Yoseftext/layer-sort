@@ -33,7 +33,9 @@ jobs:
         run: node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs
 
       - name: Compatibility recovery tests (hermetic)
-        run: node --test --test-name-pattern='retries quota|diagnoses sanitized|one recovery retry|never retries|reports quota' tools/agent-guard/test-compatibility.mjs
+        run: |
+          node --test --test-name-pattern='model discovery|retries quota|diagnoses sanitized|one recovery retry|never retries|reports quota' tools/agent-guard/test-compatibility.mjs
+          node --test tools/agent-guard/test-repair-coordinator.mjs
 
       - name: Guard tests (preflight, scope, commit and .agents checks, fail-closed)
         run: bash tools/agent-guard/test-guard.sh

@@ -21,6 +21,29 @@ test("launcher disables Antigravity automatic updates for the session", () => {
   assert.match(result.stdout, /GUARD_OK/);
 });
 
+test("launcher starts a scoped repair only for an eligible incompatibility", () => {
+  for (const [diagnosis, child, shouldRun] of [
+    ["unknown", "0", true],
+    ["identity", "0", true],
+    ["network", "0", false],
+    ["unknown", "1", false]
+  ]) {
+    const fixture = createFixture();
+    const log = path.join(fixture.base, "repair-call.json");
+    const result = fixture.runArgs(["--model", "gemini-user-choice", "-p", "private prompt"], {
+      env: { TEST_CLI_VERSION: "unknown", TEST_COMPAT_DIAGNOSIS: diagnosis,
+        TEST_REPAIR_LOG: log, SAFE_AGY_REPAIR_CHILD: child }
+    });
+    assert.equal(result.status, 3, result.stderr);
+    assert.equal(fs.existsSync(log), shouldRun);
+    if (shouldRun) {
+      const args = JSON.parse(fs.readFileSync(log, "utf8"));
+      assert.deepEqual(args.slice(-2), ["--model", "gemini-user-choice"]);
+      assert.ok(!args.includes("private prompt"));
+    }
+  }
+});
+
 test("before-state failure prevents agent execution and closes the grant", () => {
   const f = createFixture();
   fs.writeFileSync(path.join(f.root, "bad\nname"), "existing");
@@ -57,7 +80,7 @@ test("replacing either worktree helper cannot run injected code or hide an outsi
     fs.writeFileSync(path.join(guard, name), fs.readFileSync(path.join(sourceDir, name)));
   }
   fs.copyFileSync(path.join(f.guardDir, "compatibility.mjs"), path.join(guard, "compatibility.mjs"));
-  for (const name of ["test-compatibility.sh", "test-compatibility.mjs", "test-state.mjs", "test-launcher.mjs", "test-runtime-config.mjs", "test-active-compatibility.mjs"]) {
+  for (const name of ["repair-coordinator.mjs", "test-repair-coordinator.mjs", "test-compatibility.sh", "test-compatibility.mjs", "test-state.mjs", "test-launcher.mjs", "test-runtime-config.mjs", "test-active-compatibility.mjs"]) {
     fs.copyFileSync(path.join(f.guardDir, name), path.join(guard, name));
   }
   fs.mkdirSync(path.join(guard, "fakes"));

@@ -677,6 +677,36 @@ export function selectGeminiModel(modelList, excludedModel = null) {
   return slugs[0] || null;
 }
 
+// Model discovery is read-only. Retry temporary errors or an empty Gemini list
+// without touching the user's selected model for normal tasks.
+export function discoverGeminiModels({
+  listModels,
+  wait = (milliseconds) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds),
+  random = Math.random
+}) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let result;
+    try {
+      result = listModels();
+    } catch (error) {
+      if (!/timed out|UNAVAILABLE|ECONNRESET|EAI_AGAIN|ENETUNREACH/i.test(String(error.message || "")))
+        return { model: null, backup: null, attempts: attempt + 1, reason: "unknown" };
+      result = { status: 1, stderr: String(error.message || "") };
+    }
+    if (result.status === 0) {
+      const model = selectGeminiModel(result.stdout);
+      if (model) return { model, backup: selectGeminiModel(result.stdout, model), attempts: attempt + 1, reason: null };
+    }
+    const reason = classifyProbeFailure(result.stderr);
+    if (reason === "authentication") return { model: null, backup: null, attempts: attempt + 1, reason };
+    if (attempt < 2) {
+      const delay = 1000 * 2 ** attempt;
+      wait(delay + Math.floor(random() * delay));
+    }
+  }
+  return { model: null, backup: null, attempts: 3, reason: "model_unavailable" };
+}
+
 // Classify only known failure families; never include the provider's raw error
 // in diagnostics, because it can contain account details or credentials.
 export function classifyProbeFailure(message) {
@@ -716,20 +746,29 @@ export function canRetryQuotaFailure(exitCode, stream) {
   return retryableProbeFailure(exitCode, stream) === "quota";
 }
 
-// The caller provides a disposable fixture and verifies its state before the
-// retry. At most one retry is attempted, and normal user sessions are untouched.
-export function runProbeWithRecovery({ primaryModel, backupModel, runProbe, isPristine }) {
+// The caller provides a disposable fixture and verifies its state before every
+// retry. Normal user sessions are untouched; the suite has its own deadline.
+export function runProbeWithRecovery({
+  primaryModel, backupModel, runProbe, isPristine,
+  wait = (milliseconds) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds),
+  random = Math.random
+}) {
   let model = primaryModel;
   let result = runProbe(model, 0);
-  const kind = retryableProbeFailure(result.status, result.stdout);
-  const nextModel = kind === "quota" ? backupModel : model;
-  let retryKind = null;
-  if (kind && nextModel && (kind !== "quota" || nextModel !== model) && isPristine()) {
-    retryKind = kind;
+  const retryKinds = [];
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const kind = retryableProbeFailure(result.status, result.stdout);
+    const nextModel = kind === "quota" ? backupModel : model;
+    if (!kind || !nextModel || (kind === "quota" && nextModel === model) || !isPristine()) break;
+    // Exponential backoff with jitter: 1–2 seconds, then 2–4 seconds.
+    const delay = 1000 * 2 ** (attempt - 1);
+    wait(delay + Math.floor(random() * delay));
+    if (!isPristine()) break;
+    retryKinds.push(kind);
     model = nextModel;
-    result = runProbe(model, 1);
+    result = runProbe(model, attempt);
   }
-  return { result, model, retryKind };
+  return { result, model, retryKind: retryKinds.at(-1) || null, retryKinds };
 }
 
 export function describeProbeFailure(exitCode, errorMessage) {
@@ -899,6 +938,7 @@ function runLocked(action, projectRoot) {
     warnings = extractSoftWarnings(suite);
   } catch (error) {
     auditEvent(stateDir, "CHECK_FAILED", fingerprint, { verdict: "UNKNOWN", reason: error.message });
+    console.error("RECOVERY_DIAGNOSIS: unknown");
     console.error("COMPATIBILITY_UNKNOWN: " + error.message);
     return 78;
   }

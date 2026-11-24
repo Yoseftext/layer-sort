@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { captureState, changedPaths } from "./guard-state.mjs";
-import { classifyAntigravityWarnings, describeProbeFailure, extractWarningLines, fingerprintCli, redactEvidenceText, runProbeWithRecovery, selectGeminiModel, spawnVerifiedDescriptor } from "./compatibility.mjs";
+import { classifyAntigravityWarnings, describeProbeFailure, discoverGeminiModels, extractWarningLines, fingerprintCli, redactEvidenceText, runProbeWithRecovery, spawnVerifiedDescriptor } from "./compatibility.mjs";
 import { verifySnapshot } from "./runtime-config.mjs";
 
 function run(command, args, options = {}) {
@@ -496,23 +496,20 @@ function main() {
       SAFE_AGY_INFRA_DIR: infraDir
     };
     const cliIdentity = { sha256: cli.sha256, device: cli.device, inode: cli.inode };
-    let probeModel = null;
-    let backupModel = null;
     let quotaRetry = false;
-    try {
-      const models = spawnVerifiedDescriptor(cli.realpath, cliIdentity, ["models"], {
+    const discovery = discoverGeminiModels({
+      listModels: () => spawnVerifiedDescriptor(cli.realpath, cliIdentity, ["models"], {
         cwd: task, capture: true, timeoutMs: 30000, maxBuffer: 1024 * 1024, env
-      });
-      if (models.status === 0) {
-        probeModel = selectGeminiModel(models.stdout);
-        backupModel = selectGeminiModel(models.stdout, probeModel);
-      }
-    } catch {
-      // Report a blocked probe if model discovery is unavailable.
+      })
+    });
+    let probeModel = discovery.model;
+    const backupModel = discovery.backup;
+    if (!probeModel) {
+      if (discovery.reason === "authentication") unknownFail("Antigravity authentication required");
+      unknownFail("No available Gemini model could be discovered for the compatibility probe after " + discovery.attempts + " attempt(s)");
     }
-    if (!probeModel) unknownFail("No available Gemini model could be discovered for the compatibility probe");
     const runProbe = (model, attempt) => {
-      if (attempt > 0) logFile = path.join(tempRoot, "antigravity-retry-debug.log");
+      if (attempt > 0) logFile = path.join(tempRoot, "antigravity-retry-" + attempt + "-debug.log");
       return spawnVerifiedDescriptor(cli.realpath, cliIdentity, [
         "--settings", settingsPath,
         "--mode", "accept-edits",
@@ -541,8 +538,8 @@ function main() {
     });
     const result = recovery.result;
     probeModel = recovery.model;
-    quotaRetry = recovery.retryKind === "quota";
-    if (recovery.retryKind) console.error("ACTIVE_PROBE_RECOVERY_RETRY: " + recovery.retryKind);
+    quotaRetry = recovery.retryKinds.includes("quota");
+    for (const kind of recovery.retryKinds) console.error("ACTIVE_PROBE_RECOVERY_RETRY: " + kind);
     structuredStream = String(result.stdout || "");
     if (!structuredStream.trim()) unknownFail("Antigravity did not produce the required structured JSONL stdout stream");
     fs.writeFileSync(streamFile, structuredStream, { flag: "wx", mode: 0o600 });
@@ -603,8 +600,9 @@ function main() {
       snapshot: snapshot,
       cliExitCode: result.status,
       probeModel: probeModel || "configured-default",
+      modelDiscoveryAttempts: discovery.attempts,
       quotaRetry,
-      recoveryRetry: recovery.retryKind,
+      recoveryRetries: recovery.retryKinds,
       subagentInvocations,
       allowedWrite: "PASS",
       outOfScopeWrite: "DENIED",
