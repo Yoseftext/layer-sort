@@ -998,9 +998,12 @@ function evaluateRunCommand(payload, taskWriteAllowlists) {
       ["rapid", "simultaneous", "drag", "hold"].includes(commandArgs[1]) &&
       commandArgs[2] === "--size" && /^[1-9][0-9]{0,3}x[1-9][0-9]{0,3}$/.test(commandArgs[3]) &&
       commandArgs[4] === "--points" && /^[0-9]{1,4},[0-9]{1,4}(?::[0-9]{1,4},[0-9]{1,4}){0,7}$/.test(commandArgs[5]);
-    return actual === expected && (readOnlyDeviceAction || fetchBuild || gesturePlan)
+    const visualMatch = commandArgs.length === 5 && commandArgs[0] === "visual-match" &&
+      commandArgs[1] === "--run" && /^[0-9]{8}T[0-9]{6}\.[0-9]{6}Z$/.test(commandArgs[2]) &&
+      commandArgs[3] === "--template" && /^[a-z0-9][a-z0-9_-]{0,39}$/.test(commandArgs[4]);
+    return actual === expected && (readOnlyDeviceAction || fetchBuild || gesturePlan || visualMatch)
       ? allow()
-      : deny("Only exact device reads, verified build fetch and offline gesture plans through agentctl are allowed.");
+      : deny("Only exact device reads, verified build fetch, offline gesture plans and scoped visual analysis are allowed.");
   }
 
   if (executable === "device_qa.py") {

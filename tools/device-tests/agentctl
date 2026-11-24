@@ -12,6 +12,12 @@ if [[ "${1:-}" == "plan-gesture" ]]; then
   shift
   exec /usr/bin/python3 "$ROOT/tools/device-tests/gesture_plan.py" "$@"
 fi
+if [[ "${1:-}" == "visual-match" ]]; then
+  shift
+  VISUAL_QA_PYTHON="$ROOT/.runtime/visual-qa/venv/bin/python"
+  if [[ ! -x "$VISUAL_QA_PYTHON" ]]; then VISUAL_QA_PYTHON=/usr/bin/python3; fi
+  exec "$VISUAL_QA_PYTHON" -I "$ROOT/tools/visual-qa/visual_match.py" "$@"
+fi
 if [[ "${1:-}" == "inspect-installed" || "${1:-}" == "install-build" ]]; then
   exec /usr/bin/python3 "$ROOT/tools/device-tests/install_qa.py" "$@"
 fi

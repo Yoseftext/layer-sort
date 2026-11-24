@@ -1,0 +1,10 @@
+# Pinned optional visual matcher dependencies. Linux CPython 3.13 wheels only.
+# Hashes: https://pypi.org/project/numpy/2.2.6/ and
+# https://pypi.org/project/opencv-python-headless/4.12.0.88/.
+# Each package includes one Linux ARM64 and one Linux x86_64 wheel hash.
+numpy==2.2.6 \
+    --hash=sha256:f92729c95468a2f4f15e9bb94c432a9229d0d50de67304399627a943201baa2f \
+    --hash=sha256:1bc23a79bfabc5d056d106f9befb8d50c31ced2fbc70eedb8155aec74a45798f
+opencv-python-headless==4.12.0.88 \
+    --hash=sha256:aeb4b13ecb8b4a0beb2668ea07928160ea7c2cd2d9b5ef571bbee6bafe9cc8d0 \
+    --hash=sha256:236c8df54a90f4d02076e6f9c1cc763d794542e886c576a6fee46ec8ff75a7a9

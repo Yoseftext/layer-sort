@@ -161,6 +161,8 @@ test("policy fingerprint changes when a policy or test input changes", (t) => {
     "tools/device-tests/artifact_qa.py",
     "tools/device-tests/install_qa.py",
     "tools/device-tests/gesture_plan.py",
+    "tools/visual-qa/visual_match.py",
+    "tools/visual-qa/requirements-py313-linux.txt",
     "tools/device-tests/expected-debug-cert.sha256",
     "tools/agent-guard/test-compatibility.mjs"
   ];
@@ -190,7 +192,10 @@ test("policy fingerprint changes when a policy or test input changes", (t) => {
   const fifth = fingerprintPolicy(project, infra).sha256;
   assert.notEqual(fifth, fourth);
   fs.writeFileSync(path.join(project, "tools/device-tests/gesture_plan.py"), "changed-gesture-planner");
-  assert.notEqual(fingerprintPolicy(project, infra).sha256, fifth);
+  const sixth = fingerprintPolicy(project, infra).sha256;
+  assert.notEqual(sixth, fifth);
+  fs.writeFileSync(path.join(project, "tools/visual-qa/requirements-py313-linux.txt"), "changed-visual-lockfile");
+  assert.notEqual(fingerprintPolicy(project, infra).sha256, sixth);
 });
 
 test("state directory requires exact owner and mode 0700", (t) => {
