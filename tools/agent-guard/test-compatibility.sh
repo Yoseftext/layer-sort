@@ -21,6 +21,8 @@ for name in NODE_OPTIONS NODE_PATH BASH_ENV; do
 done
 node --check "$DIR/compatibility.mjs"
 node --check "$DIR/runtime-config.mjs"
+node --check "$DIR/repair-coordinator.mjs"
+node --check "$DIR/test-repair-coordinator.mjs"
 node --check "$DIR/test-active-compatibility.mjs"
 node --check "$DIR/test-launcher.mjs"
 node --check "$DIR/test-runtime-config.mjs"
@@ -29,13 +31,13 @@ case "${1:---unit}" in
     exec node --test "$DIR/test-compatibility.mjs"
     ;;
   --regression)
-    exec node --test "$DIR/test-compatibility.mjs" "$DIR/test-state.mjs" "$DIR/test-runtime-config.mjs" "$DIR/test-launcher.mjs"
+    exec node --test "$DIR/test-compatibility.mjs" "$DIR/test-repair-coordinator.mjs" "$DIR/test-state.mjs" "$DIR/test-runtime-config.mjs" "$DIR/test-launcher.mjs"
     ;;
   --status)
     exec node "$DIR/compatibility.mjs" --status "${2:-$PWD}"
     ;;
   --active)
-    node --test "$DIR/test-compatibility.mjs" "$DIR/test-state.mjs" "$DIR/test-runtime-config.mjs" "$DIR/test-launcher.mjs"
+    node --test "$DIR/test-compatibility.mjs" "$DIR/test-repair-coordinator.mjs" "$DIR/test-state.mjs" "$DIR/test-runtime-config.mjs" "$DIR/test-launcher.mjs"
     exec node "$DIR/test-active-compatibility.mjs" "${@:2}"
     ;;
   *)

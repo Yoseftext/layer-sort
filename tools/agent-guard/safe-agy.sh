@@ -55,7 +55,8 @@ main() {
   cat "$DIR/guard-state.mjs" > "$TMP/guard-state.mjs" || fail "could not freeze state helper"
   cat "$DIR/runtime-config.mjs" > "$TMP/runtime-config.mjs" || fail "could not freeze runtime helper"
   cat "$DIR/compatibility.mjs" > "$TMP/compatibility.mjs" || fail "could not freeze compatibility helper"
-  for name in compatibility.mjs guard-state.mjs runtime-config.mjs test-compatibility.sh test-compatibility.mjs test-state.mjs test-launcher.mjs test-runtime-config.mjs test-active-compatibility.mjs; do
+  cat "$DIR/repair-coordinator.mjs" > "$TMP/repair-coordinator.mjs" || fail "could not freeze repair coordinator"
+  for name in compatibility.mjs guard-state.mjs runtime-config.mjs repair-coordinator.mjs test-compatibility.sh test-compatibility.mjs test-repair-coordinator.mjs test-state.mjs test-launcher.mjs test-runtime-config.mjs test-active-compatibility.mjs; do
     [ -f "$DIR/$name" ] || fail "required compatibility test is missing: $name"
     cat "$DIR/$name" > "$TEST_DIR/$name" || fail "could not freeze compatibility test: $name"
   done
@@ -66,10 +67,10 @@ main() {
   RUNTIME_HELPER="$TMP/runtime-config.mjs"
   COMPAT_HELPER="$TMP/compatibility.mjs"
   verify_compat_snapshot() {
-    for name in compatibility.mjs guard-state.mjs runtime-config.mjs; do
+    for name in compatibility.mjs guard-state.mjs runtime-config.mjs repair-coordinator.mjs; do
       cmp -s "$DIR/$name" "$TMP/$name" || fail "frozen launcher helper differs from reviewed source: $name"
     done
-    for name in compatibility.mjs guard-state.mjs runtime-config.mjs test-compatibility.sh test-compatibility.mjs test-state.mjs test-launcher.mjs test-runtime-config.mjs test-active-compatibility.mjs; do
+    for name in compatibility.mjs guard-state.mjs runtime-config.mjs repair-coordinator.mjs test-compatibility.sh test-compatibility.mjs test-repair-coordinator.mjs test-state.mjs test-launcher.mjs test-runtime-config.mjs test-active-compatibility.mjs; do
       cmp -s "$DIR/$name" "$TEST_DIR/$name" || fail "frozen compatibility test differs from reviewed source: $name"
     done
     cmp -s "$DIR/fakes/create-fixture.mjs" "$TEST_DIR/fakes/create-fixture.mjs" || fail "frozen compatibility fixture differs from reviewed source"
@@ -92,8 +93,35 @@ main() {
 
   # No fixed Antigravity version allowlist: require an approved executable,
   # dependency, host, launcher, policy and test fingerprint.
-  node "$COMPAT_HELPER" --ensure "$W" >/dev/null || fail "Antigravity compatibility gate did not PASS"
+  node "$COMPAT_HELPER" --ensure "$W" >"$TMP/compatibility-output.log" 2>"$TMP/compatibility-error.log"
+  RC=$?
+  if [ "$RC" -ne 0 ] && [ "${SAFE_AGY_REPAIR_VERBOSE_FAILURE:-}" = "1" ]; then
+    cat "$TMP/compatibility-output.log" >&2
+  fi
+  cat "$TMP/compatibility-error.log" >&2
   verify_compat_snapshot
+  if [ "$RC" -ne 0 ]; then
+    # Repair proposals use a separate, verified CLI and never replace this task.
+    if [ "${SAFE_AGY_REPAIR_CHILD:-}" != "1" ] && [ "${SAFE_AGY_AUTO_REPAIR:-1}" != "0" ] &&
+       grep -qE '^(RECOVERY_DIAGNOSIS: (unknown|test_failure)|SAFE_AGY_COMPATIBILITY_UNKNOWN: (Antigravity is not an ELF executable|ELF RPATH/RUNPATH is not supported by the dependency resolver))$' "$TMP/compatibility-error.log"; then
+      if [ -x /usr/bin/flock ]; then
+        local -a REPAIR_MODEL_ARGS=()
+        while [ "$#" -gt 0 ]; do
+          case "$1" in
+            --disable-slash-commands) shift ;;
+            --model) REPAIR_MODEL_ARGS=(--model "$2"); shift 2 ;;
+            *) shift 2 ;;
+          esac
+        done
+        /usr/bin/flock -n "$PROJECT_ROOT/.git/agent-runtime-policy/auto-repair.lock" \
+          node "$TMP/repair-coordinator.mjs" "$INFRA_DIR" "$W" "$TMP/compatibility-error.log" "${REPAIR_MODEL_ARGS[@]}" ||
+          echo "AUTO_REPAIR_BLOCKED: another repair is running or recovery failed" >&2
+      else
+        echo "AUTO_REPAIR_BLOCKED: flock is required for automatic recovery" >&2
+      fi
+    fi
+    fail "Antigravity compatibility gate did not PASS"
+  fi
 
   if [ -z "${SNAP_DIR:-}" ]; then
     SNAP_DIR="$(node "$RUNTIME_HELPER" active "$W")" || fail "prepare a task before launching"

@@ -38,18 +38,20 @@ Use `bash tools/agent-guard/safe-agy.sh --status` for a read-only status report
 and `bash tools/agent-guard/safe-agy.sh --check` to force the complete test
 suite. A cache miss runs unit tests plus active probes in a disposable
 Git worktree using the real Antigravity CLI. The probe discovers a Gemini model
-from `agy models`, preferring Flash with low effort. For an identified quota
-failure it can retry once with another available Gemini model; for a recognized
-network or request-timeout failure it can retry once with the same model. It
-retries only when a complete structured stream proves failure before tool use,
+from `agy models`, preferring Flash with low effort; transient or empty model
+discovery is retried with bounded backoff, while authentication errors stop.
+For an identified quota
+failure it can retry once with another available Gemini model; for recognized
+network or request-timeout failures it can retry at most twice with the same
+model. The retries wait a randomized 1–2 seconds, then 2–4 seconds, and recheck
+the fixture after each delay. The full suite still has a bounded deadline.
+It retries only when a complete structured stream shows failure before tool use,
 the task snapshot is intact, and the disposable worktree/state probe is
 unchanged. Incomplete streams, authentication errors, changed fixtures and hard
 failures are not automatically retried. A failed suite prints a sanitized
 `RECOVERY_DIAGNOSIS` and a suggested next step; it does not edit policy or
 pretend an unknown result is compatible. Model discovery failure blocks the probe.
-This bounded recovery is not an autonomous code-repair agent and cannot repair
-arbitrary future CLI changes.
-This applies only to the compatibility probe. Normal tasks use the model chosen
+This transient retry applies only to the compatibility probe. Normal tasks use the model chosen
 by the user, and project subagents inherit that model. Four separate implementer
 delegations test the exact allowlisted write, out-of-scope write, external
 state-store write, and prohibited Node command. A separate read-only Reviewer
@@ -58,6 +60,33 @@ tool arguments and results from structured subagent transcripts, not only the
 Lead's summary. A new fingerprint is approved only when all probes pass and
 Git-visible changes match the exact grant. Timeout, missing evidence or unsupported host
 returns UNKNOWN; a proven unauthorized write is a hard failure.
+
+## Automatic repair candidate
+
+When a normal task is blocked by a diagnosed technical test failure, unknown
+compatibility contract, or a recognized unsupported CLI format, the launcher can start one compatibility-repair
+subagent in a new isolated worktree. It preserves the failed task's tracked
+changes, uses the operator's verified private fallback CLI as the repair
+runtime, and passes through the user's selected model. The fallback CLI must
+itself pass the existing compatibility gate. A per-project flock prevents
+concurrent automatic repair attempts and child sessions cannot recurse.
+
+The subagent receives an exact list of repair files, never .agents or policy
+files. Quota, authentication, network, timeout and missing-model diagnoses
+do not start a source-code repair agent. Tracked and eligible untracked user
+files are copied into the candidate; the originals are not changed. Credential
+files, symlinks, unusual paths, or oversized snapshots stop the attempt instead
+of being copied. A missing or identical fallback CLI, missing repair agent, or
+incomplete worker evidence also blocks the attempt.
+
+If the worker changes files and the launcher verifies its scope, the coordinator
+runs the candidate's full compatibility check using the originally selected CLI.
+A passing candidate check is not independent review: the candidate may itself
+change tests. The candidate and branch are retained for review, and the original
+task remains blocked. No change is applied to the original worktree or main,
+and nothing is committed or pushed automatically. Set `SAFE_AGY_AUTO_REPAIR=0`
+to suppress automatic candidate creation. This mechanism cannot fix every
+future incompatibility or guarantee fallback availability.
 
 Recognized deprecation and host warnings are reported as soft warnings only
 when all required probes pass and their exact contextual evidence is present.

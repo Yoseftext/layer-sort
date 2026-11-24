@@ -9,6 +9,7 @@ import {
   canRetryQuotaFailure,
   classifyProbeFailure,
   diagnoseSuiteFailure,
+  discoverGeminiModels,
   retryableProbeFailure,
   runProbeWithRecovery,
   classifyAntigravityWarnings,
@@ -291,6 +292,32 @@ function failedStream(error, middle = [], id = "probe-1") {
   ].map((entry) => JSON.stringify(entry)).join("\n");
 }
 
+test("model discovery retries transient failures with backoff but stops on authentication", () => {
+  const delays = [];
+  let calls = 0;
+  const found = discoverGeminiModels({
+    listModels: () => ++calls === 1 ? { status: 1, stderr: "UNAVAILABLE" } :
+      { status: 0, stdout: "gemini-3.8-flash-low Gemini\ngemini-3.8-flash-medium Gemini" },
+    wait: (ms) => delays.push(ms), random: () => 0.5
+  });
+  assert.equal(found.model, "gemini-3.8-flash-low");
+  assert.equal(found.backup, "gemini-3.8-flash-medium");
+  assert.equal(found.attempts, 2);
+  assert.deepEqual(delays, [1500]);
+  let authCalls = 0;
+  const auth = discoverGeminiModels({ listModels: () => { authCalls++; return { status: 1, stderr: "UNAUTHENTICATED" }; },
+    wait: () => { throw Error("must not retry authentication"); } });
+  assert.equal(authCalls, 1);
+  assert.equal(auth.reason, "authentication");
+  let emptyCalls = 0;
+  const empty = discoverGeminiModels({ listModels: () => { emptyCalls++; return { status: 0, stdout: "" }; }, wait: () => {} });
+  assert.equal(emptyCalls, 3);
+  assert.equal(empty.reason, "model_unavailable");
+  const unsafe = discoverGeminiModels({ listModels: () => { throw Error("unsafe executable"); }, wait: () => { throw Error("must not retry"); } });
+  assert.equal(unsafe.attempts, 1);
+  assert.equal(unsafe.reason, "unknown");
+});
+
 test("retries quota failures only with a complete stream before a tool has run", () => {
   const quota = failedStream("Individual quota reached.");
   const tool = { event: "step_update", step_update: { tool_name: "invoke_subagent" } };
@@ -330,14 +357,18 @@ test("one recovery retry keeps the chosen model for transient failures and switc
     ["individual quota reached", "gemini-backup", "quota"]
   ]) {
     const calls = [];
+    const delays = [];
     const out = runProbeWithRecovery({
       primaryModel: "gemini-primary", backupModel: "gemini-backup",
       runProbe: (model, attempt) => {
         calls.push([model, attempt]);
         return attempt === 0 ? { status: 1, stdout: failedStream(error) } : { status: 0, stdout: "ok" };
       },
-      isPristine: () => true
+      isPristine: () => true,
+      wait: (ms) => delays.push(ms),
+      random: () => 0.5
     });
+    assert.deepEqual(delays, [1500]);
     assert.deepEqual(calls, [["gemini-primary", 0], [expectedModel, 1]]);
     assert.equal(out.model, expectedModel);
     assert.equal(out.retryKind, kind);
@@ -365,13 +396,35 @@ test("never retries after a tool call, fixture change, missing backup, malformed
   assert.equal(retryableProbeFailure(1, failedStream("ECONNRESET") + "\n{}"), null);
   assert.equal(retryableProbeFailure(1, failedStream("ECONNRESET").replace("probe-1\",\"status", "other-id\",\"status")), null);
   let calls = 0;
+  const delays = [];
   const stillFailing = runProbeWithRecovery({
     primaryModel: "gemini-primary", backupModel: "gemini-backup",
     runProbe: () => { calls++; return { status: 1, stdout: failedStream("ECONNRESET") }; },
-    isPristine: () => true
+    isPristine: () => true,
+    wait: (ms) => delays.push(ms),
+    random: () => 0.5
   });
-  assert.equal(calls, 2);
+  assert.equal(calls, 3);
+  assert.deepEqual(delays, [1500, 3000]);
+  assert.deepEqual(stillFailing.retryKinds, ["network", "network"]);
   assert.equal(stillFailing.result.status, 1);
+  let quotaCalls = 0;
+  runProbeWithRecovery({
+    primaryModel: "gemini-primary", backupModel: "gemini-backup",
+    runProbe: () => { quotaCalls++; return { status: 1, stdout: failedStream("individual quota reached") }; },
+    isPristine: () => true, wait: () => {}
+  });
+  assert.equal(quotaCalls, 2);
+  let checks = 0;
+  let retried = 0;
+  const changedDuringWait = runProbeWithRecovery({
+    primaryModel: "gemini-primary",
+    runProbe: () => { retried++; return { status: 1, stdout: failedStream("ECONNRESET") }; },
+    isPristine: () => ++checks === 1,
+    wait: () => {}
+  });
+  assert.equal(retried, 1);
+  assert.equal(changedDuringWait.retryKind, null);
   assert.throws(() => runProbeWithRecovery({
     primaryModel: "gemini-primary",
     runProbe: () => ({ status: 1, stdout: failedStream("ECONNRESET") }),

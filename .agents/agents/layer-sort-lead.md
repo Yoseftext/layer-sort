@@ -33,6 +33,7 @@ agents:
   - engineering-auditor.md
   - reviewer.md
   - implementer.md
+  - compatibility-repair.md
 ---
 
 # System Role

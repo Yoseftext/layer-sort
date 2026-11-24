@@ -23,6 +23,8 @@ if (action === "--ensure") {
   const plugin = process.env.TEST_PLUGIN_STATE || "disabled";
   if (version !== "1.5.8" || plugin !== "disabled") {
     console.error("TEST_COMPATIBILITY_REJECTED: version or plugin state mismatch");
+    if (process.env.TEST_COMPAT_DIAGNOSIS === "identity") console.error("SAFE_AGY_COMPATIBILITY_UNKNOWN: Antigravity is not an ELF executable");
+    else if (process.env.TEST_COMPAT_DIAGNOSIS) console.error("RECOVERY_DIAGNOSIS: " + process.env.TEST_COMPAT_DIAGNOSIS);
     process.exitCode = 78;
   }
 } else if (action === "--capture" || action === "--exec") {
@@ -46,6 +48,8 @@ if (action === "--ensure") {
 `;
 
 const TEST_FILES = [
+  "repair-coordinator.mjs",
+  "test-repair-coordinator.mjs",
   "test-compatibility.sh",
   "test-compatibility.mjs",
   "test-state.mjs",
@@ -64,6 +68,8 @@ function createLauncherFixture(base) {
   fs.mkdirSync(fixtureDir, { mode: 0o700 });
   fs.copyFileSync(path.join(SOURCE_DIR, "fakes/create-fixture.mjs"), path.join(fixtureDir, "create-fixture.mjs"));
   fs.writeFileSync(path.join(guardDir, "compatibility.mjs"), TEST_COMPATIBILITY_HELPER, { mode: 0o600 });
+  const fakeRepair = 'import fs from "node:fs"; if (process.env.TEST_REPAIR_LOG) fs.writeFileSync(process.env.TEST_REPAIR_LOG, JSON.stringify(process.argv.slice(2)));\n';
+  fs.writeFileSync(path.join(guardDir, "repair-coordinator.mjs"), fakeRepair, { mode: 0o600 });
   return { guardDir, launcher: path.join(guardDir, "safe-agy.sh") };
 }
 
