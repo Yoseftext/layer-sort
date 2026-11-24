@@ -159,6 +159,7 @@ test("policy fingerprint changes when a policy or test input changes", (t) => {
     "tools/device-tests/agentctl",
     "tools/device-tests/device_qa.py",
     "tools/device-tests/artifact_qa.py",
+    "tools/device-tests/install_qa.py",
     "tools/device-tests/expected-debug-cert.sha256",
     "tools/agent-guard/test-compatibility.mjs"
   ];
@@ -182,7 +183,10 @@ test("policy fingerprint changes when a policy or test input changes", (t) => {
   const third = fingerprintPolicy(project, infra).sha256;
   assert.notEqual(second, third);
   fs.writeFileSync(path.join(project, "tools/device-tests/artifact_qa.py"), "changed-verifier");
-  assert.notEqual(fingerprintPolicy(project, infra).sha256, third);
+  const fourth = fingerprintPolicy(project, infra).sha256;
+  assert.notEqual(fourth, third);
+  fs.writeFileSync(path.join(project, "tools/device-tests/install_qa.py"), "changed-installer");
+  assert.notEqual(fingerprintPolicy(project, infra).sha256, fourth);
 });
 
 test("state directory requires exact owner and mode 0700", (t) => {

@@ -116,7 +116,7 @@ def parse_connected_serials(output: str) -> list[str]:
     ]
 
 
-def connected_serial() -> str:
+def connected_serial(*, require_installed: bool = True) -> str:
     output = adb_call(None, ["devices", "-l"])
     if not isinstance(output, str):
         raise DeviceQaUnknown("Invalid ADB device listing.")
@@ -130,7 +130,8 @@ def connected_serial() -> str:
             continue
         try:
             validate_device(serial)
-            ensure_game_installed(serial)
+            if require_installed:
+                ensure_game_installed(serial)
         except DeviceQaFailure:
             continue
         approved.append(serial)

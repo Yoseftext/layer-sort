@@ -20,8 +20,9 @@ import subprocess
 import tempfile
 import time
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = "Yoseftext/layer-sort"
@@ -30,6 +31,7 @@ PACKAGE = "com.yoseftext.layersort.dev"
 ARTIFACT = "layer-sort-g3b-debug-apk"
 APK_NAME = "layer-sort-g3b-debug.apk"
 MANIFEST_NAME = "apk-provenance.json"
+ARCHIVE_NAME = "artifact.zip"
 EXPECTED_CERT_FILE = ROOT / "tools/device-tests/expected-debug-cert.sha256"
 CACHE_ROOT = ROOT / ".runtime/device-qa/artifacts"
 HEX40 = re.compile(r"[0-9a-f]{40}")
@@ -309,12 +311,74 @@ def download_artifact(run_id: str, commit: str) -> dict[str, Any]:
             raise ArtifactError("Artifact evidence already exists; refusing to overwrite it.") from error
         for name in (APK_NAME, MANIFEST_NAME):
             os.rename(extracted / name, destination / name)
+        # Retain the authenticated archive so a later, separately authorized
+        # device hand-off can verify the GitHub digest again immediately before
+        # use rather than trusting mutable, locally extracted evidence.
+        os.rename(archive_path, destination / ARCHIVE_NAME)
     return {"status": "PASS", "action": "fetch-build", "run_id": int(run_id),
             "run_attempt": run["run_attempt"], "source_commit": commit,
             "apk_path": str(destination / APK_NAME), "apk_sha256": manifest["apk_sha256"],
             "package_id": PACKAGE, "version_code": manifest["version_code"],
             "version_name": manifest["version_name"], "signing_cert_sha256": cert,
             "installed": False, "device_tested": False}
+
+
+@contextmanager
+def verified_cached_build(run_id: str, commit: str, apk_sha256: str) -> Iterator[tuple[Path, dict[str, Any]]]:
+    """Revalidate one cached archive against GitHub and yield a private APK copy.
+
+    The caller must not use the cached extracted APK: the archive digest is the
+    remote authenticated evidence. The temporary copy is verified independently
+    and exists only for the duration of the hand-off.
+    """
+    if (not re.fullmatch(r"[1-9][0-9]{0,19}", run_id) or not HEX40.fullmatch(commit) or
+            not HEX64.fullmatch(apk_sha256)):
+        raise ArtifactError("Invalid run ID, commit, or expected APK SHA-256.")
+    run = gh_json(f"repos/{REPOSITORY}/actions/runs/{run_id}")
+    inspect_run(run, run_id, commit)
+    artifact = select_artifact(gh_json(f"repos/{REPOSITORY}/actions/runs/{run_id}/artifacts?per_page=100"))
+    cert = expected_cert()
+    prepare_cache_root()
+    directory = CACHE_ROOT / f"run-{run_id}-attempt-{run['run_attempt']}"
+    if directory.is_symlink() or not directory.is_dir() or directory.resolve(strict=True) != directory:
+        raise ArtifactError("Verified artifact cache is absent or unsafe; fetch this exact run first.")
+    archive_path = directory / ARCHIVE_NAME
+    try:
+        info = archive_path.lstat()
+    except FileNotFoundError as error:
+        raise ArtifactError("Verified archive is absent; fetch a new build with archive retention.") from error
+    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or not 0 < info.st_size <= MAX_ARCHIVE:
+        raise ArtifactError("Verified artifact archive is not a safe regular file.")
+    with tempfile.TemporaryDirectory(prefix="handoff-", dir=CACHE_ROOT) as temporary:
+        stage = Path(temporary)
+        private_archive = stage / ARCHIVE_NAME
+        # Bound the copy even if a same-user process changes the source file.
+        fd = os.open(archive_path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0))
+        with os.fdopen(fd, "rb") as source, private_archive.open("xb") as target:
+            source_info = os.fstat(source.fileno())
+            if not stat.S_ISREG(source_info.st_mode) or source_info.st_nlink != 1:
+                raise ArtifactError("Cached artifact archive changed during verification.")
+            size = 0
+            while chunk := source.read(1024 * 1024):
+                size += len(chunk)
+                if size > MAX_ARCHIVE:
+                    raise ArtifactError("Cached artifact archive exceeds the size limit.")
+                target.write(chunk)
+        if "sha256:" + sha256_file(private_archive) != artifact["digest"]:
+            raise ArtifactError("Cached artifact archive no longer matches GitHub.")
+        extracted = stage / "verified"
+        extracted.mkdir(mode=0o700)
+        extract_artifact(private_archive, extracted)
+        try:
+            manifest = json.loads((extracted / MANIFEST_NAME).read_text(encoding="utf-8"))
+        except (UnicodeError, json.JSONDecodeError) as error:
+            raise ArtifactError("Provenance manifest is invalid JSON.") from error
+        apk = extracted / APK_NAME
+        inspect_manifest(manifest, run=run, run_id=run_id, commit=commit, apk=apk, cert=cert)
+        if manifest["apk_sha256"] != apk_sha256:
+            raise ArtifactError("APK SHA-256 does not match the approved exact build.")
+        verify_apk(apk, manifest, cert)
+        yield apk, manifest
 
 
 def main() -> int:
