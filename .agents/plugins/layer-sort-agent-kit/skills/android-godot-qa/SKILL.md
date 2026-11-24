@@ -27,6 +27,11 @@ The verified target is OPPO CPH1937 / product OP4B80L1 / Android 11 / API 30. Th
 Use only `tools/device-tests/agentctl`. It uses the existing ADB server at `127.0.0.1:5037` and the shared lock `/root/device-tests/test.lock`. It does not start/restart ADB, connect/disconnect devices, start Appium, or create a replacement lock.
 
 Supported commands:
+- `fetch-build --run-id <ID> --commit <40-hex-SHA>` downloads and verifies the
+  exact successful push/manual-dispatch GitHub Actions debug build. It stores
+  the APK and provenance under `.runtime/device-qa/artifacts/`; it does not
+  access the phone or install the APK. Older build artifacts without a
+  provenance manifest are rejected. Use a fresh run for the exact commit.
 - `status`, `battery`, `thermal`
 - `screenshot` only when Layer Sort is verified in the foreground
 - `logcat` filtered to the Layer Sort process PID and selected markers

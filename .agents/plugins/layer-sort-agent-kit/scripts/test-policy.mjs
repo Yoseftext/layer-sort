@@ -50,6 +50,13 @@ assert.equal(decision("run_command", "tools/device-tests/agentctl thermal"), "al
 assert.equal(decision("run_command", "tools/device-tests/agentctl performance-check"), "allow");
 assert.equal(decision("run_command", "tools/device-tests/agentctl performance-check --force"), "deny");
 assert.equal(decision("run_command", "tools/device-tests/agentctl screenshot"), "allow");
+assert.equal(decision("run_command", "tools/device-tests/agentctl fetch-build --run-id 123 --commit " + "a".repeat(40)), "allow");
+for (const command of [
+  "tools/device-tests/agentctl fetch-build --run-id 0 --commit " + "a".repeat(40),
+  "tools/device-tests/agentctl fetch-build --run-id 123 --commit main",
+  "tools/device-tests/agentctl fetch-build --run-id 123 --commit " + "a".repeat(40) + " --output /tmp/x",
+  "tools/device-tests/agentctl fetch-build --commit " + "a".repeat(40) + " --run-id 123",
+]) assert.equal(decision("run_command", command), "deny", command);
 assert.equal(decision("run_command", "tools/device-tests/agentctl tap 10 20 --owner-approved"), "deny");
 assert.equal(decision("run_command", "tools/device-tests/device_qa.py status"), "deny");
 assert.equal(decision("run_command", "adb devices -l"), "deny");

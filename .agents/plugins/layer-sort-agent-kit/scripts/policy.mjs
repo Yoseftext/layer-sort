@@ -990,9 +990,13 @@ function evaluateRunCommand(payload, taskWriteAllowlists) {
     const expected = path.resolve(roots[0], "tools/device-tests/agentctl");
     const actual = path.resolve(cwd, tokens[0]);
     const actions = new Set(["status", "battery", "thermal", "performance-check", "screenshot", "logcat"]);
-    return actual === expected && commandArgs.length === 1 && actions.has(commandArgs[0])
+    const readOnlyDeviceAction = commandArgs.length === 1 && actions.has(commandArgs[0]);
+    const fetchBuild = commandArgs.length === 5 && commandArgs[0] === "fetch-build" &&
+      commandArgs[1] === "--run-id" && /^[1-9][0-9]{0,19}$/.test(commandArgs[2]) &&
+      commandArgs[3] === "--commit" && /^[0-9a-f]{40}$/.test(commandArgs[4]);
+    return actual === expected && (readOnlyDeviceAction || fetchBuild)
       ? allow()
-      : deny("Only exact read-only actions through tools/device-tests/agentctl are allowed.");
+      : deny("Only exact device reads and verified build fetch through agentctl are allowed.");
   }
 
   if (executable === "device_qa.py") {

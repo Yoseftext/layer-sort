@@ -308,7 +308,11 @@ export function fingerprintPolicy(projectRoot, infraDir = INFRA_DIR) {
     ".agents/hooks.json",
     ".agents/agents",
     ".agents/plugins/layer-sort-agent-kit/scripts",
-    "tools/agent-guard"
+    "tools/agent-guard",
+    "tools/device-tests/agentctl",
+    "tools/device-tests/device_qa.py",
+    "tools/device-tests/artifact_qa.py",
+    "tools/device-tests/expected-debug-cert.sha256"
   ];
   for (const relative of required) walkFiles(projectRoot, relative, files);
   files.sort((a, b) => a.path.localeCompare(b.path));
