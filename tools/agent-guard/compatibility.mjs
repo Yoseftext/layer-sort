@@ -313,6 +313,7 @@ export function fingerprintPolicy(projectRoot, infraDir = INFRA_DIR) {
     "tools/device-tests/device_qa.py",
     "tools/device-tests/artifact_qa.py",
     "tools/device-tests/install_qa.py",
+    "tools/device-tests/gesture_plan.py",
     "tools/device-tests/expected-debug-cert.sha256"
   ];
   for (const relative of required) walkFiles(projectRoot, relative, files);

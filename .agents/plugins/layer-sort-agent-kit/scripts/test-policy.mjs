@@ -51,6 +51,12 @@ assert.equal(decision("run_command", "tools/device-tests/agentctl performance-ch
 assert.equal(decision("run_command", "tools/device-tests/agentctl performance-check --force"), "deny");
 assert.equal(decision("run_command", "tools/device-tests/agentctl screenshot"), "allow");
 assert.equal(decision("run_command", "tools/device-tests/agentctl fetch-build --run-id 123 --commit " + "a".repeat(40)), "allow");
+assert.equal(decision("run_command", "tools/device-tests/agentctl plan-gesture rapid --size 720x1600 --points 100,200:300,200"), "allow");
+for (const command of [
+  "tools/device-tests/agentctl plan-gesture execute --size 720x1600 --points 100,200:300,200",
+  "tools/device-tests/agentctl plan-gesture rapid --size 720x1600 --points 100,200:300,200 --execute",
+  "tools/device-tests/agentctl plan-gesture rapid --size 720x1600 --points 100,200;id",
+]) assert.equal(decision("run_command", command), "deny", command);
 for (const command of [
   "tools/device-tests/agentctl fetch-build --run-id 0 --commit " + "a".repeat(40),
   "tools/device-tests/agentctl fetch-build --run-id 123 --commit main",

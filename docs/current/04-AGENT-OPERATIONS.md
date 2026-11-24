@@ -160,6 +160,8 @@ Device performance evidence should combine Godot runtime monitors with supported
 
 ### GitHub Build → physical-device QA acceptance gate — owner requirement 2026-11-09
 
+For evaluated tools and the offline W3C gesture planner, see [07-ANDROID-QA-TOOLBOX.md](07-ANDROID-QA-TOOLBOX.md). The planner does not execute input or change the phone.
+
 This is a mandatory stage in the Antigravity agent workflow. A successful GitHub build is **not** a successful device release. Every candidate APK must pass the physical-device gate below before it can be called device-verified or release-ready.
 
 1. **Authoritative build:** GitHub Actions builds the candidate from one exact source commit SHA using the pinned Godot/Android toolchain. Local PRoot APK builds are not authoritative. Existing Android workflows already run automated checks, verify APK packaging/signing, and upload debug APK artifacts; the G3-B workflow explicitly leaves device QA separate. The missing part is the connected-phone download/install/test gate.

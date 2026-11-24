@@ -32,6 +32,7 @@ Supported commands:
   the APK and provenance under `.runtime/device-qa/artifacts/`; it does not
   access the phone or install the APK. Older build artifacts without a
   provenance manifest are rejected. Use a fresh run for the exact commit.
+- `plan-gesture <rapid|simultaneous|drag|hold> --size <WIDTH>x<HEIGHT> --points <X>,<Y>[:<X>,<Y>...]` builds a bounded W3C input plan without contacting a device. This is planning evidence only; it does not execute or measure touches. Choose viewport and points from the actual build and screen, then require a reviewed adapter and exact device authorization before execution.
 - `status`, `battery`, `thermal`
 - `screenshot` only when Layer Sort is verified in the foreground
 - `logcat` filtered to the Layer Sort process PID and selected markers
@@ -54,6 +55,8 @@ The device-qa specialist is read-only and has no command execution tool. The Lea
 ## Appium decision
 
 Appium 3.8.0, UiAutomator2 8.7.0, Appium Python Client 6.0.8, and Selenium 4.51.0 are present in the environment, but Appium is **Evaluated / Not Approved**. The Appium service was not running during the latest inventory. Do not start it, install drivers, or use it for this project without a new owner decision.
+
+See `docs/current/07-ANDROID-QA-TOOLBOX.md` for tool selection, evidence limits, versions and the ordered device-testing plan. Prefer `model: inherit` and do not force an AI model.
 
 ## Evidence
 
