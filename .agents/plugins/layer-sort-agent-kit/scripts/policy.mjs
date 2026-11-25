@@ -989,7 +989,7 @@ function evaluateRunCommand(payload, taskWriteAllowlists) {
   if (executable === "agentctl") {
     const expected = path.resolve(roots[0], "tools/device-tests/agentctl");
     const actual = path.resolve(cwd, tokens[0]);
-    const actions = new Set(["status", "battery", "thermal", "performance-check", "screenshot", "logcat"]);
+    const actions = new Set(["status", "battery", "thermal", "performance-check", "screenshot", "logcat", "inspect-installed"]);
     const readOnlyDeviceAction = commandArgs.length === 1 && actions.has(commandArgs[0]);
     const fetchBuild = commandArgs.length === 5 && commandArgs[0] === "fetch-build" &&
       commandArgs[1] === "--run-id" && /^[1-9][0-9]{0,19}$/.test(commandArgs[2]) &&

@@ -58,7 +58,10 @@ for (const command of [
   "tools/device-tests/agentctl fetch-build --commit " + "a".repeat(40) + " --run-id 123",
 ]) assert.equal(decision("run_command", command), "deny", command);
 assert.equal(decision("run_command", "tools/device-tests/agentctl tap 10 20 --owner-approved"), "deny");
-assert.equal(decision("run_command", "tools/device-tests/agentctl inspect-installed"), "deny");
+assert.equal(decision("run_command", "tools/device-tests/agentctl inspect-installed"), "allow");
+assert.equal(decision("run_command", "tools/device-tests/agentctl inspect-installed --help"), "deny");
+assert.equal(decision("run_command", "tools/device-tests/agentctl inspect-installed --output /tmp/x"), "deny");
+assert.equal(decision("run_command", "tools/device-tests/agentctl inspect-installed; adb devices"), "deny");
 assert.equal(decision("run_command", "tools/device-tests/agentctl install-build --run-id 123 --commit " + "a".repeat(40) + " --apk-sha256 " + "b".repeat(64) + " --expect-absent --owner-approved --approval-id OWNER-123"), "deny");
 assert.equal(decision("run_command", "tools/device-tests/device_qa.py status"), "deny");
 assert.equal(decision("run_command", "adb devices -l"), "deny");
