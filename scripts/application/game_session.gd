@@ -63,6 +63,7 @@ func history_size() -> int:
 func restore_committed(saved: Dictionary) -> void:
 	var restored: GameState = _initial.copy()
 	restored.move_count = saved.move_count
+	restored.circuit_open = bool(saved.get("circuit_open", false))
 	for index: int in range(restored.tubes.size()):
 		var layers: Array[int] = []
 		for colour: Variant in saved.tubes[index]:

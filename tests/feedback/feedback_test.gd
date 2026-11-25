@@ -93,8 +93,8 @@ func run() -> void:
 	nav.go_home()
 	nav.set("_active", {})
 	progress = nav.get("_progression")
-	for number: int in range(1, 15):
-		progress.record_win("level_%03d" % number, 20)
+	for id: String in LevelCatalog.load_catalog().catalog.available_level_ids:
+		progress.record_win(id, 20)
 	nav.call("_on_play")
 	expect(nav.current_screen() is LevelMapScreen, "complete campaign opens explicit replay map")
 	print("FEEDBACK_TESTS %s checks=%d" % ["PASS" if failures == 0 else "FAIL", checks])

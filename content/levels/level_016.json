@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "level_id": "level_016",
+  "content_version": 1,
+  "capacity": 4,
+  "palette": [
+    "coral",
+    "teal",
+    "gold",
+    "violet",
+    "blue"
+  ],
+  "tubes_bottom_to_top": [
+    [
+      0,
+      1,
+      2,
+      3
+    ],
+    [
+      1,
+      2,
+      3,
+      4
+    ],
+    [
+      2,
+      3,
+      4,
+      0
+    ],
+    [
+      3,
+      4,
+      0,
+      1
+    ],
+    [
+      4,
+      0,
+      1,
+      2
+    ],
+    []
+  ],
+  "mechanics": []
+}

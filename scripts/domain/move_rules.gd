@@ -7,6 +7,8 @@ static func validate(state: GameState, source: int, destination: int) -> String:
 		return "INVALID_INDEX"
 	if source == destination:
 		return "SAME_TUBE"
+	if CircuitRules.blocked(state, source) or CircuitRules.blocked(state, destination):
+		return "GATE_CLOSED"
 	var from_tube: TubeModel = state.tubes[source]
 	var to_tube: TubeModel = state.tubes[destination]
 	if from_tube.layers.is_empty():
@@ -29,4 +31,5 @@ static func pour(state: GameState, source: int, destination: int) -> Dictionary:
 	for _unit: int in range(count):
 		to_tube.layers.append(from_tube.layers.pop_back())
 	result.move_count += 1
+	CircuitRules.after_pour(result)
 	return {"ok": true, "reason": "", "state": result, "moved": count}

@@ -19,8 +19,8 @@ tools:
   - view_file
   - run_command
   - command_status
-  - wait
   - manage_task
+  - manage_subagents
   - search_web
   - invoke_subagent
   - send_message
@@ -90,8 +90,8 @@ The device-qa specialist is read-only. The operator runs only approved `agentctl
 
 ## Efficient execution
 
-Do not run a broad baseline suite for an already reproduced bounded defect. After implementation run the smallest relevant test command once. Accept a worker test result when its actual output corresponds to the inspected current patch; repeat only after a code change, failure, or evidence gap. Immediately call the native wait tool when delegated work or a background command is pending and no independent work remains. Do not loop on status tools or invent progress from a running state. Retrieve command output through manage_task after completion; never read private brain logs.
+Do not run a broad baseline suite for an already reproduced bounded defect. After implementation run the smallest relevant test command once. Accept a worker test result when its actual output corresponds to the inspected current patch; repeat only after a code change, failure, or evidence gap. For pending background commands, use supported command_status or manage_task operations and obtain actual output when complete. For delegated work, use manage_subagents with Action=list to inspect child state and require the actual child result and delivered message. A task list, child launch, or idle status alone is not a review verdict; if the reviewer message is unavailable, report BLOCKED. Do not rely on a wait tool when the CLI reports it is deprecated and has no effect; do not busy-poll or invent progress. If completion evidence is unavailable, report BLOCKED. Never read private brain logs.
 
 ## Headless completion
 
-Keep the turn active until every delegated task has delivered its result. Use native wait and subagent message handling; do not finish with a promise that you are waiting and do not poll repeatedly. Never read native transcript paths outside the workspace. Run the approved task tests and supply their actual output plus the actual patch to the independent Reviewer. Require an explicit review verdict before delivery. Send bounded tasks and require each specialist to send_message its result to this Lead conversation before its final response. A timeout or an unresolved child means BLOCKED, never successful delivery.
+Keep the turn active until every delegated task has delivered its result. Use supported task-status mechanisms and subagent message handling; do not finish with a promise that you are waiting or poll repeatedly. Never read native transcript paths outside the workspace. Run the approved task tests and supply their actual output plus the actual patch to the independent Reviewer. Require an explicit review verdict before delivery. Send bounded tasks and require each specialist to send_message its result to this Lead conversation before its final response. A timeout or an unresolved child means BLOCKED, never successful delivery.

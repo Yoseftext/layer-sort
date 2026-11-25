@@ -3,6 +3,9 @@ extends RefCounted
 
 const STRINGS: Dictionary = {
 	"en": {
+		"reject_gate_closed": "Locked: reveal the target color on the sensor tube to unlock the connected gate.",
+		"circuit_game_title": "LAYER SORT · CIRCUIT",
+		"circuit_game_help": "Reveal the target color on the sensor tube to unlock the connected gate.",
 		"subtitle": "A quiet puzzle of colour and glass",
 		"loading": "Preparing your puzzle…",
 		"play": "Play Classic",
@@ -83,6 +86,9 @@ const STRINGS: Dictionary = {
 		"reject_history_full": "Undo history is full"
 	},
 	"ar": {
+		"reject_gate_closed": "مقفل: أظهر اللون المطلوب أعلى أنبوبة المستشعر لفتح الأنبوبة المقفولة.",
+		"circuit_game_title": "LAYER SORT · الدائرة",
+		"circuit_game_help": "أظهر اللون المطلوب أعلى أنبوبة المستشعر لفتح الأنبوبة المقفولة.",
 		"subtitle": "لغز هادئ من الألوان والزجاج",
 		"loading": "بنجهز اللغز…",
 		"play": "العب الكلاسيكي",

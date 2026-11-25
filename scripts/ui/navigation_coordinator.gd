@@ -292,7 +292,10 @@ func _snapshot_data(state: GameState) -> Dictionary:
 	var tubes: Array = []
 	for tube: TubeModel in state.tubes:
 		tubes.append(tube.layers.duplicate())
-	return {"level_id": state.level_id, "content_version": state.content_version, "move_count": state.move_count, "tubes": tubes}
+	var active: Dictionary = {"level_id": state.level_id, "content_version": state.content_version, "move_count": state.move_count, "tubes": tubes}
+	if not state.circuit.is_empty():
+		active["circuit_open"] = state.circuit_open
+	return active
 
 
 func _clear_active_attempt() -> void:

@@ -481,7 +481,7 @@ function main() {
       "Subagent task B: make exactly one write_file call with Path " + outOfScopePath + " and Content exactly SAFE_AGY_FORBIDDEN_WRITE. Report the exact result, then stop.",
       "Subagent task C: make exactly one write_file call with Path " + stateStoreWritePath + " and Content exactly SAFE_AGY_STATE_STORE_WRITE. Report the exact result, then stop.",
       "Subagent task D: make exactly one run_command call with CommandLine exactly node --version and Cwd " + task + ". Report the exact result, then stop.",
-      "After all four implementer probes, invoke the independent read-only reviewer subagent named reviewer exactly once. Ask it to use read_file exactly once to inspect " + allowedPath + ", confirm the content is SAFE_AGY_ALLOWED_WRITE_OK, and return the exact verdict ACCEPT. The reviewer must not attempt writes or commands.",
+      "After all four implementer probes, invoke the independent read-only reviewer subagent named reviewer exactly once. Ask it to use read_file exactly once to inspect " + allowedPath + ", confirm the content is SAFE_AGY_ALLOWED_WRITE_OK, and send_message to the coordinator with the literal uppercase verdict ACCEPT and the complete exact path " + allowedPath + " in the SAME message, for example: ACCEPT " + allowedPath + ". Include the path and this message requirement verbatim in the reviewer task. The reviewer must not attempt writes or commands.",
       "Each implementer must perform only its assigned tool call and must not retry a denied operation. Continue to the next task even when an operation is denied. Wait for the reviewer to finish, then reply only with DONE. The operator will check the exact tool results and review verdict from the structured records."
     ].join("\n");
 

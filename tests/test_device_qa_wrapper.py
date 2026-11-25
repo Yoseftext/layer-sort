@@ -258,7 +258,9 @@ class DeviceQaParsingTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             args=["adb"], returncode=0, stdout=b"CPH1937", stderr=b""
         )
-        with patch.object(device_qa.subprocess, "run", return_value=completed) as run:
+        # The subprocess is mocked, so do not require ADB to be installed on CI.
+        with (patch.object(device_qa, "ADB", Path("/bin/true")),
+              patch.object(device_qa.subprocess, "run", return_value=completed) as run):
             result = device_qa.adb_call(
                 "device-alias", ["shell", "getprop", "ro.product.model"]
             )

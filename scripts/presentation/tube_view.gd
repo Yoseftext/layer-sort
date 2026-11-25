@@ -16,10 +16,8 @@ var transfer_colour: int = 0
 var _painter: TubePainter = TubePainter.new()
 var _lift: float = 0.0
 var _invalid_flash: float = 0.0
-var _completion_flash: float = 0.0
 var _selection_tween: Tween
 var _flash_tween: Tween
-var _completion_tween: Tween
 var _has_snapshot: bool = false
 
 func _ready() -> void:
@@ -40,11 +38,6 @@ func show_tube(tube: TubeModel, max_layers: int, is_selected: bool, celebrate: b
 		_selection_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		_selection_tween.tween_method(_set_lift, _lift, 9.0 if selected else 0.0, 0.08 if reduce_motion else 0.14)
 	if celebrate and _has_snapshot and not was_complete and is_complete():
-		_completion_flash = 1.0
-		if _completion_tween != null:
-			_completion_tween.kill()
-		_completion_tween = create_tween()
-		_completion_tween.tween_method(_set_completion_flash, 1.0, 0.0, 0.1 if reduce_motion else 0.35)
 		completed.emit()
 	_has_snapshot = true
 	queue_redraw()
@@ -75,10 +68,6 @@ func _set_invalid_flash(value: float) -> void:
 	_invalid_flash = value
 	queue_redraw()
 
-func _set_completion_flash(value: float) -> void:
-	_completion_flash = value
-	queue_redraw()
-
 func _draw() -> void:
 	var body: Rect2 = Rect2(Vector2(15, 20 - _lift), Vector2(size.x - 30, size.y - 54))
 	_painter.paint(self, body, logical_layers, capacity, selected or has_focus(), visual_delta, transfer_colour, rich_effects)
@@ -89,7 +78,3 @@ func _draw() -> void:
 		draw_arc(Vector2(body.get_center().x, surface), radius, PI, TAU, 12, Color(1, 1, 1, 0.3), 1.2, true)
 	if _invalid_flash > 0.0:
 		draw_line(body.position + Vector2(8, 10), body.position + Vector2(body.size.x - 8, 10), Color("ef8292", _invalid_flash), 4.0, true)
-	if is_complete():
-		var badge: Vector2 = Vector2(size.x * 0.5, size.y - 16)
-		draw_circle(badge, 9.0 + _completion_flash * 3.0, Color("7ccda6", 0.25 + _completion_flash * 0.3))
-		draw_polyline(PackedVector2Array([badge + Vector2(-4, 0), badge + Vector2(-1, 3), badge + Vector2(5, -4)]), Color("a4edc1"), 2.0, true)

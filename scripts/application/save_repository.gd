@@ -131,7 +131,7 @@ func _valid_active(value: Variant, catalog: LevelCatalog) -> bool:
 	for index: int in range(level.palette.size()):
 		if counts.get(index, 0) != level.state.capacity:
 			return false
-	return true
+	return CircuitRules.valid_saved(level.state, active)
 
 
 static func _nonnegative_integer(value: Variant) -> bool:

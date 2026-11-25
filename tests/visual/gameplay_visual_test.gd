@@ -43,8 +43,8 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	check(arabic.layout_direction == Control.LAYOUT_DIRECTION_RTL, "Arabic screen is RTL")
-	var title: Label = arabic.find_child("GameTitle", true, false) as Label
-	check(title.size.x >= 600.0 and title.get_line_count() > 0, "Arabic title has a dedicated full-width row")
+	var level: Label = arabic.find_child("LevelBadge", true, false) as Label
+	check(level.text == UiText.get_text("level_number", "ar") % "1" and level.size.y >= level.get_minimum_size().y, "Arabic unpadded level is legible without mode label")
 	check(arabic._views[0].global_position.x < arabic._views[1].global_position.x, "tube order is not mirrored")
 	await _capture("gameplay-ar.png")
 	arabic._on_tube_pressed(0)

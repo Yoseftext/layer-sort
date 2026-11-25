@@ -37,3 +37,12 @@ class AudioAssetTests(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(generated).digest(), hashlib.sha256(expected).digest())
             finally:
                 os.chdir(previous)
+
+    def test_gameplay_envelopes_and_headroom(self):
+        for name in ("select", "pour", "invalid", "complete", "win"):
+            with self.subTest(cue=name), wave.open(str(ROOT / 'content/audio' / (name + '.wav'))) as audio:
+                samples = struct.unpack('<' + 'h' * audio.getnframes(), audio.readframes(audio.getnframes()))
+                self.assertEqual(samples[0], 0)
+                self.assertLessEqual(abs(samples[-1]), 32)
+                self.assertFalse(any(abs(v) >= round(0.22 * 32767) for v in samples), 'no hard limiter hits')
+                self.assertLessEqual(sum((v / 32767) ** 2 for v in samples) / len(samples), 0.01)

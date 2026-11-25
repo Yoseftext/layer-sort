@@ -10,6 +10,7 @@ const CUES: Dictionary = {
 	"win": preload("res://content/audio/win.wav"),
 	"ui": preload("res://content/audio/ui.wav")
 }
+const GAIN_DB: Dictionary = {"select": -5.0, "pour": -3.0, "invalid": -7.0, "complete": -8.0, "win": -6.0, "ui": -5.0}
 var enabled: bool = true:
 	set(value):
 		enabled = value
@@ -33,6 +34,7 @@ func play(cue: String) -> void:
 	var voice: AudioStreamPlayer = _voices[_next_voice]
 	_next_voice = (_next_voice + 1) % _voices.size()
 	voice.stop()
+	voice.volume_db = float(GAIN_DB[cue])
 	voice.stream = CUES[cue] as AudioStream
 	voice.play()
 

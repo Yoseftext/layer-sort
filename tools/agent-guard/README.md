@@ -6,6 +6,10 @@ do not enable the global layer-sort-agent-kit plugin alongside workspace agents.
 The policy source remains in .agents/plugins/layer-sort-agent-kit/scripts.
 No new framework, service, or dependency is required.
 
+## Avoid unintended CLI updates
+
+`safe-agy.sh` exports `AGY_CLI_DISABLE_AUTO_UPDATE=true` for its own session. The user's interactive Bash configuration may also set it, but Remote Desktop Commander non-interactive `/bin/sh` commands do not necessarily load `.bashrc`. For every direct read-only CLI invocation, explicitly prefix `AGY_CLI_DISABLE_AUTO_UPDATE=true`, for example `AGY_CLI_DISABLE_AUTO_UPDATE=true agy --version`. This applies only to that invocation; it does not prove global auto-update is disabled. Use `safe-agy.sh` for actual agent tasks and recheck the fingerprint after any observed executable change. Do not silently replace or downgrade the CLI.
+
 ## Run a task
 
 Use a reviewed infrastructure checkout (INFRA) and a dedicated registered
@@ -22,7 +26,7 @@ workspace trust for this session only; global CLI settings are never rewritten.
 The launcher does not pin a single Antigravity version. Before an agent session,
 it fingerprints the absolute executable path, SHA-256, version, ELF Build ID,
 interpreter and resolved shared-library hashes, host runtime, launcher, Hook,
-policy, agent definitions and compatibility tests. Project documentation, skill
+policy, agent definitions, the device QA entrypoint/verifiers and compatibility tests. Project documentation, skill
 text and this guide do not change the compatibility key. The cache is refreshed
 when Antigravity, the agent definitions, or the guard and test code changes.
 

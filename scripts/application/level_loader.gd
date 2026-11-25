@@ -40,7 +40,7 @@ static func from_data(value: Variant) -> Dictionary:
 		if not name is String or String(name).is_empty() or String(name).length() > 32 or names.has(name):
 			return {"ok": false, "error": "INVALID_PALETTE"}
 		names[name] = true
-	if not data.mechanics is Array or not data.mechanics.is_empty():
+	if not data.mechanics is Array:
 		return {"ok": false, "error": "UNSUPPORTED_MECHANIC"}
 	if not data.tubes_bottom_to_top is Array or data.tubes_bottom_to_top.size() < 3 or data.tubes_bottom_to_top.size() > 6:
 		return {"ok": false, "error": "INVALID_TUBES"}
@@ -71,6 +71,12 @@ static func from_data(value: Variant) -> Dictionary:
 	for amount: int in colour_counts:
 		if amount != state.capacity:
 			return {"ok": false, "error": "INVALID_COLOUR_QUANTITY"}
+	var mechanic: Dictionary = CircuitRules.parse(data.mechanics, state.tubes.size(), data.palette.size())
+	if not mechanic.ok:
+		return {"ok": false, "error": "UNSUPPORTED_MECHANIC"}
+	state.circuit = mechanic.definition
+	if not state.circuit.is_empty() and state.tubes[int(state.circuit.sensor_tube)].top() == int(state.circuit.target_colour):
+		return {"ok": false, "error": "INITIAL_SENSOR_ACTIVE"}
 	if WinRules.is_won(state):
 		return {"ok": false, "error": "ALREADY_SOLVED"}
 	return {"ok": true, "state": state, "palette": data.palette.duplicate()}

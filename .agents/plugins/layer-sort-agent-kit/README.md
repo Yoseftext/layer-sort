@@ -1,5 +1,7 @@
 # Layer Sort Agent Kit
 
+> **Integration note — 2026-11-24:** This packaged kit and its examples are historical; they describe earlier agent counts, paths and authority. Current Antigravity workspace agents live in `.agents/agents/`, current skills in `.agents/skills/`, and the supported session workflow is `tools/agent-guard/README.md`. The G5 integration is under review; no device execution or end-to-end acceptance is implied by these records. Do not enable a duplicate global kit.
+
 Workspace-scoped Antigravity customizations for the Layer Sort repository.
 
 ## Current components

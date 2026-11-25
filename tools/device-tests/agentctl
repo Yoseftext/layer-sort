@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 # Single allowlisted entrypoint for Layer Sort device QA.
-# No generic phone command, arbitrary ADB, install, uninstall, or data wipe.
+# No generic phone command, arbitrary ADB, uninstall, or data wipe.
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+if [[ "${1:-}" == "fetch-build" ]]; then
+  shift
+  exec /usr/bin/python3 "$ROOT/tools/device-tests/artifact_qa.py" "$@"
+fi
+if [[ "${1:-}" == "inspect-installed" || "${1:-}" == "install-build" ]]; then
+  exec /usr/bin/python3 "$ROOT/tools/device-tests/install_qa.py" "$@"
+fi
 exec /usr/bin/python3 "$ROOT/tools/device-tests/device_qa.py" "$@"
