@@ -73,9 +73,17 @@ Local commit `c4e862b4cec4be6dcef4329b1f07be13478e0806` adds only
 `command(tools/device-tests/agentctl inspect-installed)` to session
 permissions. Runtime-config tests 7/7 and policy tests passed, including
 negative checks for unrestricted device commands and install. The full live
-compatibility check is in progress; repeat the actual agent read afterward.
-Do not interpret the previous denied command or mocked tests as a successful
-agent-operated phone check.
+CLI compatibility check passed with fingerprint
+`7500523f4c78a7ec30a9b318af7ec48123eda8d8ee80a37325d37bf49c41dd0b`.
+
+A real Gemini Flash Lead session then executed the exact read against the OPPO,
+reported PASS and `installed: false`, and the guard reported no changed paths
+and revoked the grant. Evidence is
+`.runtime/agent-evidence/device-read-retry-20261125.jsonl` in that worktree.
+The earlier attempt was auto-denied and remains preserved separately. This
+proves only one read-only agent command, not install, touch, screenshot,
+gameplay or other commands. Other Hook-approved reads may also require explicit
+headless CLI permission and have not been tested.
 
 ## Next tasks
 
