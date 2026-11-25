@@ -46,20 +46,16 @@ do not silently upgrade Antigravity or install global packages.
   certificate `de1faa3e10dbcc058f3f1b13c34fb1eb929140bbbe0a7499b348f75d8a1c095e`.
   At the last physical-device read the package was absent on the approved
   OPPO CPH1937 / Android 11. This is not a successful install or gameplay run.
-- A separate local candidate `codex/agent-inspect-20261125` at
-  `1bfcecb7323a25c0ac4ccce7278a0b805347f143` permits the exact read-only
-  `agentctl inspect-installed` command in the Hook and aligns instructions.
-  At parent `0ec05f59a07539a0f8bfed0796a2742573a93509`, live CLI
-  compatibility passed; the same compatibility fingerprint is cached on
-  `1bfcecb`, whose skills are not in that fingerprint. Policy and 45 wrapper
-  tests passed. The actual agent read is BLOCKED: CLI headless command
-  permission was auto-denied, despite a nominal SUCCESS result with an empty
-  response. The runtime settings lack the exact command allow-rule. Evidence:
+- The local candidate `codex/agent-inspect-20261125` initially added the
+  read-only `agentctl inspect-installed` Hook rule and aligned instructions.
+  Its first live run at `1bfcecb7323a25c0ac4ccce7278a0b805347f143`
+  was BLOCKED by a missing headless command permission despite a nominal
+  SUCCESS result with an empty response. Evidence:
   `.runtime/agent-evidence/device-read-20261125.jsonl` in that worktree.
-  The Hook does not permit installation or touch. Review snapshot:
-  `codex/agent-inspect-review-20261125` on GitHub at
-  `120bd4a3d8ff5054c30da92c9015754162f2a3d2`, with the same source tree
-  as the local candidate, not the same commit or history.
+  The later fix and successful retry are recorded below. The Hook does not
+  permit installation or touch. A review snapshot is on GitHub at
+  `codex/agent-inspect-review-20261125`; check its head live. Public review
+  snapshots have matching file trees but do not reproduce local commit history.
 - Tool comparison and measurement plan:
   [ANDROID_AGENT_TOOL_RESEARCH.md](../qa/ANDROID_AGENT_TOOL_RESEARCH.md).
   The PR #29 touch planner and #30 visual matcher have not been validated as a
