@@ -19,6 +19,8 @@
 >
 > **تفويض G2 منفصل (25 أكتوبر 2026، `docs/adr/ADR-0003`):** أذن المالك بتنفيذ نموذج Classic قابل للعب على Android مع اختبارات قواعد headless واختبار جهاز مستقل، على فرع `feat/g2-core-gameplay` فقط. التفاصيل غير الأساسية المحددة للنموذج قابلة للتغيير ولا تعني اعتماد عقد `04-RULES-CONTRACT.md` بالكامل. لا Circuit أو حفظ إنتاجي أو Generator في G2؛ لا إذن بدمج PRs أو بدء G3. `G15-QA-001` لا تزال مفتوحة.
 
+> **Continuity:** For the latest observed agent-work status, local preservation rules, test evidence and next tasks, consult [07-PROJECT-MEMORY.md](07-PROJECT-MEMORY.md), then verify live state. This record is not an authorization or an override of the decisions below.
+
 ## Current project state — 2026-11-04
 
 | Stage | Current state |
