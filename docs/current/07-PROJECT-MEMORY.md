@@ -106,8 +106,15 @@ the full agent fetch has not yet been proven.
 
 Subsequent local commit `63ac2f895ca28ec9b21abe2f99f2b5d38d941bfe`
 adds an agent-session permission for the Hook-validated fetch-build command.
-Unit and policy checks passed; the live compatibility check and actual agent
-fetch are pending. The branch is not integrated into main.
+Unit/policy checks and live compatibility passed. A real Lead agent session
+downloaded and verified GitHub run 45617659282, then exported its APK to
+`Download/LayerSort/APKs/apk-11d4450610d5-d99147d4a6ff.apk`. Actual tool
+output and independent hashes confirm PASS and the expected SHA-256
+`11d4450610d56d63eaf3522923a2140d469bc4fc67f1af4ece27d42541774d5c`.
+The no-write task grant was revoked. Evidence is
+`.runtime/agent-evidence/agent-apk-fetch-20261125.jsonl` in the candidate
+worktree. The agent did not install or play the game. The review branch
+`codex/visible-evidence-20261125` is not integrated into main.
 
 ## Next tasks
 
