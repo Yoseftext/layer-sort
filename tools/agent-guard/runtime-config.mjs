@@ -253,7 +253,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       if (!Number.isInteger(budget) || budget < 1 || budget > 1800) throw Error("Session timeout must be 1..1800 seconds");
       const seconds = Math.min(budget, Math.floor((Date.parse(grant.expiresAt) - Date.now()) / 1000) - 1);
       const settings = { trustedWorkspaces: [second], toolPermission: "request-review", permissions: {
-        allow: [...["git", "godot", "which", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)",
+        allow: [...["git", "godot", "which", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)", "command(tools/device-tests/agentctl inspect-installed)",
           ...grant.files.map((name) => "write_file(" + path.join(second, name) + ")")]
       } };
       writePrivateFileExclusive(path.join(third, "allow"), grant.files.join("\n") + (grant.files.length ? "\n" : ""), "session allowlist");

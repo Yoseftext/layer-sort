@@ -95,6 +95,10 @@ test("valid session material is private, complete and derived from the active gr
   }
   const settings = JSON.parse(fs.readFileSync(path.join(session, "settings.json"), "utf8"));
   assert.deepEqual(settings.trustedWorkspaces, [f.root]);
+  assert.ok(settings.permissions.allow.includes("command(tools/device-tests/agentctl inspect-installed)"));
+  assert.ok(!settings.permissions.allow.includes("command(tools/device-tests/agentctl)"));
+  assert.ok(!settings.permissions.allow.some(rule => rule.includes("install-build")));
+  assert.ok(!settings.permissions.allow.some(rule => rule.includes(" tap ")));
 });
 
 test("task grant rejects a valid but inactive snapshot", async () => {
