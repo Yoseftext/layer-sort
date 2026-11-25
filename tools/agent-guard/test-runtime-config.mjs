@@ -98,6 +98,7 @@ test("valid session material is private, complete and derived from the active gr
   assert.ok(settings.permissions.allow.includes("command(tools/device-tests/agentctl inspect-installed)"));
   assert.ok(settings.permissions.allow.includes("command(tools/device-tests/agentctl screenshot)"));
   assert.ok(settings.permissions.allow.includes("command(tools/device-tests/agentctl logcat)"));
+  assert.ok(settings.permissions.allow.includes("command(tools/device-tests/agentctl fetch-build)"));
   assert.ok(!settings.permissions.allow.includes("command(tools/device-tests/agentctl)"));
   assert.ok(!settings.permissions.allow.some(rule => rule.includes("install-build")));
   assert.ok(!settings.permissions.allow.some(rule => rule.includes(" tap ")));
