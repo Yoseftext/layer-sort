@@ -6,6 +6,7 @@ import io
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -13,6 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools/device-tests"))
 SPEC = importlib.util.spec_from_file_location("artifact_qa", ROOT / "tools/device-tests/artifact_qa.py")
 assert SPEC and SPEC.loader
 module = importlib.util.module_from_spec(SPEC)
@@ -41,6 +43,9 @@ class ArtifactQaTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        visible = patch.object(module.visible_evidence, "VISIBLE_ROOT", self.root / "shared/LayerSort")
+        visible.start()
+        self.addCleanup(visible.stop)
         self.apk = self.root / module.APK_NAME
         self.apk.write_bytes(b"test apk bytes")
 
@@ -197,6 +202,8 @@ class ArtifactQaTests(unittest.TestCase):
             self.assertEqual(result["status"], "PASS")
             self.assertFalse(result["installed"])
             self.assertFalse(result["device_tested"])
+            self.assertEqual(result["visible_export"]["status"], "PASS")
+            self.assertEqual(Path(result["visible_export"]["path"]).read_bytes(), self.apk.read_bytes())
             self.assertEqual(Path(result["apk_path"]).read_bytes(), self.apk.read_bytes())
             with self.assertRaises(module.ArtifactError):
                 module.download_artifact(RUN_ID, COMMIT)

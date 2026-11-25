@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator, Sequence
 
+import visible_evidence
+
 PACKAGE_ID = "com.yoseftext.layersort.dev"
 EXPECTED_DEVICE = {
     "manufacturer": "OPPO",
@@ -419,6 +421,7 @@ def execute(args: argparse.Namespace) -> int:
                 "PASS", action, device=device, foreground_package=PACKAGE_ID,
                 path=str(path), sha256=hashlib.sha256(image).hexdigest(),
                 width=width, height=height, touch_accuracy_measured=False,
+                visible_export=visible_evidence.publish(path, "screenshot", hashlib.sha256(image).hexdigest()),
             )
         if action == "logcat":
             pid = re.search(r"\b(\d+)\b", shell_text(serial, "pidof", PACKAGE_ID))
@@ -442,6 +445,7 @@ def execute(args: argparse.Namespace) -> int:
             return emit(
                 "PASS", action, device=device, game_pid=pid.group(1),
                 filtered_lines=len(selected), path=str(path), raw_logcat_saved=False,
+                visible_export=visible_evidence.publish(path, "log", hashlib.sha256(path.read_bytes()).hexdigest()),
             )
         if action == "launch":
             adb_call(

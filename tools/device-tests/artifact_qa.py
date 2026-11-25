@@ -24,6 +24,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+import visible_evidence
+
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = "Yoseftext/layer-sort"
 WORKFLOW = ".github/workflows/android-build-g3b.yml"
@@ -320,7 +322,8 @@ def download_artifact(run_id: str, commit: str) -> dict[str, Any]:
             "apk_path": str(destination / APK_NAME), "apk_sha256": manifest["apk_sha256"],
             "package_id": PACKAGE, "version_code": manifest["version_code"],
             "version_name": manifest["version_name"], "signing_cert_sha256": cert,
-            "installed": False, "device_tested": False}
+            "installed": False, "device_tested": False,
+            "visible_export": visible_evidence.publish(destination / APK_NAME, "apk", manifest["apk_sha256"])}
 
 
 @contextmanager
