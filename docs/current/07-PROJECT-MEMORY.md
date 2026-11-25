@@ -81,6 +81,28 @@ proves only one read-only agent command, not install, touch, screenshot,
 gameplay or other commands. Other Hook-approved reads may also require explicit
 headless CLI permission and have not been tested.
 
+### Phone test and visible artifacts — 2026-11-25
+
+The owner approved the exact run/APK and a bounded phone session. Operator
+`agentctl install-build` passed; the installed APK SHA-256 matched the
+approved build. The operator launched it, completed level 001 in 10 moves by
+synthetic ADB taps, observed the win screen, and verified navigation to level
+002. This was not agent-driven gameplay, a fast-touch benchmark, or a
+multi-touch test. The owner-visible folder is `Download/LayerSort`, containing
+`APKs`, `Screenshots`, `Reports`, a verified APK copy, seven phone
+screenshots and a summary. Filtered logs had zero matching lines and cannot
+prove the absence of all faults. Shizuku Next is reported active by the owner;
+it was not used or independently verified in this session.
+
+Local branch `codex/visible-evidence-20261125` at
+`a505a4ca51b369a975f922a6d3ea96c0fc0136c1` adds automatic visible copies
+for successful screenshot, filtered log and verified APK fetch operations,
+with separate export status and verified SHA-256. An operator screenshot and
+log export passed on the phone; the APK export was only fixture-tested. 49
+device tests and 38 compatibility/runtime tests passed. Full live Antigravity
+compatibility is in progress; agent-driven screenshot/export remains unverified.
+The branch is not integrated into main.
+
 ## Next tasks
 
 1. Check current branch/worktree, GitHub runs/PRs, phone identity and package
