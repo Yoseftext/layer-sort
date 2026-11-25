@@ -94,14 +94,20 @@ screenshots and a summary. Filtered logs had zero matching lines and cannot
 prove the absence of all faults. Shizuku Next is reported active by the owner;
 it was not used or independently verified in this session.
 
-Local branch `codex/visible-evidence-20261125` at
-`a505a4ca51b369a975f922a6d3ea96c0fc0136c1` adds automatic visible copies
-for successful screenshot, filtered log and verified APK fetch operations,
-with separate export status and verified SHA-256. An operator screenshot and
-log export passed on the phone; the APK export was only fixture-tested. 49
-device tests and 38 compatibility/runtime tests passed. Full live Antigravity
-compatibility is in progress; agent-driven screenshot/export remains unverified.
-The branch is not integrated into main.
+Local branch `codex/visible-evidence-20261125` adds automatic visible
+copies for successful screenshot, filtered log and verified APK fetch operations,
+with separate export status and verified SHA-256. At
+`a505a4ca51b369a975f922a6d3ea96c0fc0136c1`, 49 device tests and 38
+compatibility/runtime tests passed; full live Antigravity compatibility passed.
+Real Lead agent sessions captured and exported a screenshot and filtered log
+to the visible folder, both PASS; the filtered log had zero lines. Session
+grants were revoked. A real verified APK was also exported by the operator;
+the full agent fetch has not yet been proven.
+
+Subsequent local commit `63ac2f895ca28ec9b21abe2f99f2b5d38d941bfe`
+adds an agent-session permission for the Hook-validated fetch-build command.
+Unit and policy checks passed; the live compatibility check and actual agent
+fetch are pending. The branch is not integrated into main.
 
 ## Next tasks
 
