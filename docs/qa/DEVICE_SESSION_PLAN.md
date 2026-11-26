@@ -32,3 +32,13 @@ Required later evidence: successful/negative offline tests, real Antigravity
 policy and session permission tests, explicit reviewed task scope, actual phone
 result and capture, timeout/rollback review, and a report distinguishing CLI,
 agent and physical-device evidence.
+
+## Offline sequence prototype
+
+`session_sequence.py` is an offline SQLite-backed progress prototype. It
+claims one reviewed step before execution, rejects out-of-order or duplicate
+claims, and leaves interrupted or failed steps blocked. Its tests include two
+simultaneous claims. It does not issue owner authorization, collect evidence,
+call ADB, protect its database from a same-user process, or connect to the Hook.
+Do not use it as an active security or execution boundary until a trusted
+operator-controlled integration and real end-to-end review exist.
