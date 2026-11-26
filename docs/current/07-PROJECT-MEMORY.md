@@ -136,6 +136,18 @@ plan was validated solely for review; its expiry and current facts must be
 rechecked before any later use. Next, implement and test trusted session grant
 issuance and enforcement, then separately exercise an authorized real session.
 
+### Session plan preconditions checked — 2026-11-26
+
+A first operator-run, read-only precondition check failed at the GitHub artifact
+API verification step (verification tool did not succeed); it did not reach
+the device comparison. After GitHub and ADB responded again, a second
+read-only check passed using the verified cached build, a pulled installed APK,
+the approved device identity and 720x1600 screen. The reviewed plan hash was
+`409e5c81fcd8bc7478f4555c96ca45858b334e3f520f9639cc3037d1ef10c008`;
+installed APK hash matched the known build. This check did not mutate the phone,
+issue any grant or prove an agent can run the actions. The review plan expires;
+revalidate before any later use. Preserve both failed and successful results.
+
 ## Next tasks
 
 1. Check current branch/worktree, GitHub runs/PRs, phone identity and package
