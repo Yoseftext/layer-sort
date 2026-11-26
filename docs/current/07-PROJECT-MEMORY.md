@@ -164,6 +164,22 @@ step does not track execution order or prevent replay. Grant issuance, trusted
 evidence collection, ordered execution, revocation and replay handling are
 still unimplemented and must be tested before enabling agent phone mutations.
 
+### Ordered session state prototype — 2026-11-26
+
+Local `codex/device-session-plan-20261126` advanced to
+`87bbc73975dabc2f55e11dec0365b213e97a0ace`. The offline SQLite progress
+prototype claims exact planned steps in order, rejects duplicate and parallel
+claims, and blocks failed/unknown or interrupted steps. Eleven offline unit
+tests passed. It is not integrated with actual device execution or the Hook,
+does not authenticate owner approval, and is not an OS security boundary.
+
+Draft PR #31 advanced to review snapshot
+`ba8add31df0948a1068c40e0d69d541af0fa406e` with the same tree as the local
+head and a different Git history. The previous reviewer attempt concerned an
+older head and its independent message was unavailable. The new head requires
+a fresh independently observable review, runtime integration, real phone
+locking and explicit device evidence before agent mutations are enabled.
+
 ## Next tasks
 
 1. Check current branch/worktree, GitHub runs/PRs, phone identity and package
