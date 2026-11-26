@@ -148,6 +148,22 @@ installed APK hash matched the known build. This check did not mutate the phone,
 issue any grant or prove an agent can run the actions. The review plan expires;
 revalidate before any later use. Preserve both failed and successful results.
 
+### Session plan draft review — 2026-11-26
+
+Draft PR #31 targets `codex/visible-evidence-20261125`:
+https://github.com/Yoseftext/layer-sort/pull/31 . The remote review snapshot
+has the same tree as local `1384db0ffcf44b8dd92a55028dffa99579aabccf` but a
+different history. No merge has occurred.
+
+A real Lead session invoked a reviewer and ended with GUARD_OK and no changed
+paths. The Lead claimed an ACCEPT verdict and received message, but the
+operator-visible structured stream contains a system_message event with no
+message body. Independent reviewer message content is therefore UNVERIFIED.
+The Lead's summary overstated ordering test coverage: checking one indexed
+step does not track execution order or prevent replay. Grant issuance, trusted
+evidence collection, ordered execution, revocation and replay handling are
+still unimplemented and must be tested before enabling agent phone mutations.
+
 ## Next tasks
 
 1. Check current branch/worktree, GitHub runs/PRs, phone identity and package
