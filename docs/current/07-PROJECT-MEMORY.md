@@ -116,6 +116,26 @@ The no-write task grant was revoked. Evidence is
 worktree. The agent did not install or play the game. The review branch
 `codex/visible-evidence-20261125` is not integrated into main.
 
+### Device session planning — 2026-11-26
+
+The owner requested continuing the agent work. A fresh read-only device
+inspection found the approved OPPO CPH1937 with debug APK SHA-256
+`11d4450610d56d63eaf3522923a2140d469bc4fc67f1af4ece27d42541774d5c`.
+The original G5 worktree remains ahead eight commits with its modified and
+untracked files preserved. PRs #19 and #28–#30 remain drafts and #27 is open.
+
+Local branch `codex/device-session-plan-20261126`, commit
+`1384db0ffcf44b8dd92a55028dffa99579aabccf`, adds an offline, review-only
+session-plan validator and negative tests. It can hash a proposed exact
+build/device/action plan and compare it with supplied observed facts; six unit
+tests pass, including mismatches and strict JSON types. The caller must obtain
+and authenticate the facts; passing a fabricated observation is not proof. It does not create a grant,
+prove approval, prevent replay, connect the plan to the Hook, operate the phone,
+or authorize the agent to install or play. A temporary two-step launch/screenshot
+plan was validated solely for review; its expiry and current facts must be
+rechecked before any later use. Next, implement and test trusted session grant
+issuance and enforcement, then separately exercise an authorized real session.
+
 ## Next tasks
 
 1. Check current branch/worktree, GitHub runs/PRs, phone identity and package
