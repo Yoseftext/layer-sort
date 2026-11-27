@@ -1001,7 +1001,16 @@ function evaluateRunCommand(payload, taskWriteAllowlists) {
       /^[1-9][0-9]{0,19}$/.test(grant.deviceCapture.runId) &&
       /^[0-9a-f]{40}$/.test(grant.deviceCapture.commit) &&
       /^[0-9a-f]{64}$/.test(grant.deviceCapture.apkSha256);
-    return actual === expected && (readOnlyDeviceAction || fetchBuild || capture)
+    const playGrant = grant && grant.devicePlay &&
+      /^[1-9][0-9]{0,19}$/.test(grant.devicePlay.runId) &&
+      /^[0-9a-f]{40}$/.test(grant.devicePlay.commit) &&
+      /^[0-9a-f]{64}$/.test(grant.devicePlay.apkSha256);
+    const play = active === cwd && playGrant && (
+      (commandArgs.length === 1 && ["game-open", "game-capture", "game-finish"].includes(commandArgs[0])) ||
+      (commandArgs.length === 3 && commandArgs[0] === "game-tap" &&
+       /^(0|[1-9][0-9]{0,2})$/.test(commandArgs[1]) && Number(commandArgs[1]) < 720 &&
+       /^(0|[1-9][0-9]{0,3})$/.test(commandArgs[2]) && Number(commandArgs[2]) < 1600));
+    return actual === expected && (readOnlyDeviceAction || fetchBuild || capture || play)
       ? allow()
       : deny("Only scoped device operations through agentctl are allowed.");
   }

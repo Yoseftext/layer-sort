@@ -127,8 +127,18 @@ main() {
     SNAP_DIR="$(node "$RUNTIME_HELPER" active "$W")" || fail "prepare a task before launching"
   fi
   export LS_PROJECT_ROOT="$PROJECT_ROOT" LS_POLICY_SNAPSHOT="$SNAP_DIR"
+  finish_phone_session() {
+    if [ -f "$SNAP_DIR/GAME_SESSION.json" ] && [ ! -e "$SNAP_DIR/REVOKED" ]; then
+      if ! /usr/bin/python3 "$W/tools/device-tests/session_play.py" game-cleanup; then
+        echo "GAME_CLEANUP_UNKNOWN: inspect the phone; prior activity may not be restored" >&2
+        return 1
+      fi
+    fi
+    return 0
+  }
   on_exit() {
     local rc=$?
+    finish_phone_session || rc=3
     if ! node "$RUNTIME_HELPER" revoke "$SNAP_DIR"; then
       echo "GUARD_FAIL: could not revoke task grant; inspect $SNAP_DIR" >&2
       rc=3
@@ -158,6 +168,7 @@ main() {
   RC=$?
   node "$RUNTIME_HELPER" verify-cli "$TMP" || fail "pinned CLI changed during execution"
   node "$RUNTIME_HELPER" manifest "$SNAP_DIR" || fail "policy changed during the session"
+  finish_phone_session || fail "game session return could not be verified"
   node "$RUNTIME_HELPER" revoke "$SNAP_DIR" || fail "could not close task write authority"
   state "$W" > "$TMP/after" || fail "after-state collection failed; evidence retained in $TMP"
   CHANGED="$(changed_paths "$TMP/before" "$TMP/after")" || fail "state comparison failed; evidence retained in $TMP"

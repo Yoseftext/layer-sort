@@ -119,3 +119,23 @@ kill, Android behavior, or an unexported activity can prevent restoration; the
 result is UNKNOWN and must not be retried automatically. This is a cooperative
 policy, not same-user OS isolation. Test results and any real-device outcome
 must be reported separately.
+
+## Interactive gameplay session
+
+A separately prepared `--play-session RUN COMMIT APK_SHA256` grants the
+Lead four fixed operations: game-open, game-capture, game-tap X Y and
+game-finish. It verifies the build and installed APK before opening; the agent
+reads actual screenshots and chooses coordinates. Each input is recorded
+before dispatch, timeouts block further input, and a session is capped at 60
+taps. A tap PASS means Android accepted synthetic input, not that game state
+changed or physical touch accuracy was measured. Screenshots and game outcomes
+must substantiate gameplay.
+
+On finish, or normal launcher cleanup, the prior Android activity is restored
+best-effort if Layer Sort is still foreground. If the user switched elsewhere,
+the cleanup does not take over that screen. Foreground activity identity is not
+proof of identical internal screen contents. Process kills, lost connectivity or
+Android restrictions can prevent cleanup. This is a cooperative guard, not
+same-user OS isolation. Unit tests use mocked device calls; real-device results
+must be recorded independently. The earlier 27 November capture contained the
+Godot startup splash, not a playable game screen.
