@@ -85,3 +85,19 @@ boundary. It does not independently establish owner authorization, session
 binding, revocation, foreground at input dispatch, or actual gameplay. Integrate
 and review those requirements before exposing actions to agents. Holding a
 cooperative lock does not stop non-cooperating programs or Android itself.
+
+## Internal device dispatcher
+
+`session_dispatch.py` adapts a validated launch, screenshot or tap to the
+existing `device_qa` implementation while its caller holds the phone lock.
+The latter now has a private locked function, and its ordinary CLI still
+acquires the lock and checks its previous approval flags. The dispatcher does
+not establish owner authorization, acquire the lock, bind an Antigravity
+session or expose a CLI. Its audit label is not proof of consent.
+
+Unit tests simulate device responses, including foreground changes and invalid
+coordinates; no actual device action is claimed. ADB input success means only
+that input was dispatched, not that gameplay responded. Before agent access,
+an operator-controlled session grant, integrity/revocation model and trusted
+integration need review and testing, including lock ownership, recovery and real
+phone execution. Do not expose the private function to agents directly.

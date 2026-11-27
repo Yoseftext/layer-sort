@@ -370,132 +370,138 @@ def execute(args: argparse.Namespace) -> int:
             return emit("SKIP", action, reason="Dry run; no device command executed.", **fields)
 
     with phone_lock():
-        serial = connected_serial()
-        device = validate_device(serial)
-        ensure_game_installed(serial)
+        return _execute_locked(args, approval)
 
-        if action == "status":
+
+def _execute_locked(args: argparse.Namespace, approval: str | None = None) -> int:
+    """Run with the phone lock held; caller independently establishes authorization."""
+    action = args.action
+    serial = connected_serial()
+    device = validate_device(serial)
+    ensure_game_installed(serial)
+
+    if action == "status":
+        return emit(
+            "PASS", action, device=device, approved_device_count=1,
+            package_installed=True, adb_server="existing_local_server_only",
+            appium="NOT_USED",
+        )
+    if action == "battery":
+        return emit(
+            "PASS", action, device=device,
+            **parse_battery(shell_text(serial, "dumpsys", "battery")),
+        )
+    if action in {"thermal", "performance-check"}:
+        data = parse_thermal(
+            shell_text(serial, "dumpsys", "thermalservice", timeout=15.0)
+        )
+        performance_gate = str(data["performance_gate"])
+        if action == "performance-check" and performance_gate == "BLOCK":
             return emit(
-                "PASS", action, device=device, approved_device_count=1,
-                package_installed=True, adb_server="existing_local_server_only",
-                appium="NOT_USED",
-            )
-        if action == "battery":
-            return emit(
-                "PASS", action, device=device,
-                **parse_battery(shell_text(serial, "dumpsys", "battery")),
-            )
-        if action in {"thermal", "performance-check"}:
-            data = parse_thermal(
-                shell_text(serial, "dumpsys", "thermalservice", timeout=15.0)
-            )
-            performance_gate = str(data["performance_gate"])
-            if action == "performance-check" and performance_gate == "BLOCK":
-                return emit(
-                    "FAIL", action, device=device,
-                    reason=(
-                        "Performance test blocked: Android framework thermal status "
-                        "and a current non-SoC HAL sensor both report SEVERE."
-                    ),
-                    **data,
-                )
-            return emit(
-                "PASS", action, device=device,
+                "FAIL", action, device=device,
+                reason=(
+                    "Performance test blocked: Android framework thermal status "
+                    "and a current non-SoC HAL sensor both report SEVERE."
+                ),
                 **data,
             )
-        if action == "screenshot":
-            if focused_package(serial) != PACKAGE_ID:
-                return emit("SKIP", action, reason="Layer Sort is not verified in foreground.")
-            image = adb_call(
-                serial, ["exec-out", "screencap", "-p"],
-                timeout=15.0, binary=True,
-            )
-            if not isinstance(image, bytes) or not image.startswith(b"\x89PNG\r\n\x1a\n"):
-                raise DeviceQaUnknown("Screenshot is not a valid PNG.")
-            if len(image) > 16 * 1024 * 1024 or len(image) < 24:
-                raise DeviceQaFailure("Screenshot size is outside accepted bounds.")
-            width, height = struct.unpack(">II", image[16:24])
-            path = evidence_directory() / "screen.png"
-            path.write_bytes(image)
-            return emit(
-                "PASS", action, device=device, foreground_package=PACKAGE_ID,
-                path=str(path), sha256=hashlib.sha256(image).hexdigest(),
-                width=width, height=height, touch_accuracy_measured=False,
-                visible_export=visible_evidence.publish(path, "screenshot", hashlib.sha256(image).hexdigest()),
-            )
-        if action == "logcat":
-            pid = re.search(r"\b(\d+)\b", shell_text(serial, "pidof", PACKAGE_ID))
-            if pid is None:
-                return emit("SKIP", action, reason="Layer Sort process is not running.")
-            output = adb_call(
-                serial,
-                ["logcat", "-d", "-v", "threadtime", f"--pid={pid.group(1)}", "-t", "500"],
-                timeout=15.0,
-            )
-            if not isinstance(output, str):
-                raise DeviceQaUnknown("Game logcat returned an invalid result.")
-            markers = (
-                "LAYER_SORT_G1_READY", "LAYER_SORT_G1_TICK", "LAYER_SORT_G1_TAP",
-                "FATAL EXCEPTION", "Fatal signal", "SCRIPT ERROR", "Parse Error",
-                "Failed to load scene",
-            )
-            selected = [line for line in output.splitlines() if any(x in line for x in markers)]
-            path = evidence_directory() / "game-markers.log"
-            path.write_text("\n".join(selected[-500:]) + "\n", encoding="utf-8")
-            return emit(
-                "PASS", action, device=device, game_pid=pid.group(1),
-                filtered_lines=len(selected), path=str(path), raw_logcat_saved=False,
-                visible_export=visible_evidence.publish(path, "log", hashlib.sha256(path.read_bytes()).hexdigest()),
-            )
-        if action == "launch":
-            adb_call(
-                serial,
-                ["shell", "monkey", "-p", PACKAGE_ID, "-c",
-                 "android.intent.category.LAUNCHER", "1"],
-                timeout=15.0,
-            )
-            if not wait_for_foreground(serial):
-                return emit(
-                    "UNKNOWN", action, device=device, approval_id=approval,
-                    reason="Launch returned but foreground state was not verified.",
-                )
-            return emit("PASS", action, device=device, approval_id=approval, target_package=PACKAGE_ID)
-        if action == "stop":
-            adb_call(serial, ["shell", "am", "force-stop", PACKAGE_ID], timeout=10.0)
-            deadline = time.monotonic() + 2.0
-            while time.monotonic() < deadline:
-                if not shell_text(serial, "pidof", PACKAGE_ID):
-                    return emit("PASS", action, device=device, approval_id=approval, target_package=PACKAGE_ID)
-                time.sleep(0.2)
+        return emit(
+            "PASS", action, device=device,
+            **data,
+        )
+    if action == "screenshot":
+        if focused_package(serial) != PACKAGE_ID:
+            return emit("SKIP", action, reason="Layer Sort is not verified in foreground.")
+        image = adb_call(
+            serial, ["exec-out", "screencap", "-p"],
+            timeout=15.0, binary=True,
+        )
+        if not isinstance(image, bytes) or not image.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise DeviceQaUnknown("Screenshot is not a valid PNG.")
+        if len(image) > 16 * 1024 * 1024 or len(image) < 24:
+            raise DeviceQaFailure("Screenshot size is outside accepted bounds.")
+        width, height = struct.unpack(">II", image[16:24])
+        path = evidence_directory() / "screen.png"
+        path.write_bytes(image)
+        return emit(
+            "PASS", action, device=device, foreground_package=PACKAGE_ID,
+            path=str(path), sha256=hashlib.sha256(image).hexdigest(),
+            width=width, height=height, touch_accuracy_measured=False,
+            visible_export=visible_evidence.publish(path, "screenshot", hashlib.sha256(image).hexdigest()),
+        )
+    if action == "logcat":
+        pid = re.search(r"\b(\d+)\b", shell_text(serial, "pidof", PACKAGE_ID))
+        if pid is None:
+            return emit("SKIP", action, reason="Layer Sort process is not running.")
+        output = adb_call(
+            serial,
+            ["logcat", "-d", "-v", "threadtime", f"--pid={pid.group(1)}", "-t", "500"],
+            timeout=15.0,
+        )
+        if not isinstance(output, str):
+            raise DeviceQaUnknown("Game logcat returned an invalid result.")
+        markers = (
+            "LAYER_SORT_G1_READY", "LAYER_SORT_G1_TICK", "LAYER_SORT_G1_TAP",
+            "FATAL EXCEPTION", "Fatal signal", "SCRIPT ERROR", "Parse Error",
+            "Failed to load scene",
+        )
+        selected = [line for line in output.splitlines() if any(x in line for x in markers)]
+        path = evidence_directory() / "game-markers.log"
+        path.write_text("\n".join(selected[-500:]) + "\n", encoding="utf-8")
+        return emit(
+            "PASS", action, device=device, game_pid=pid.group(1),
+            filtered_lines=len(selected), path=str(path), raw_logcat_saved=False,
+            visible_export=visible_evidence.publish(path, "log", hashlib.sha256(path.read_bytes()).hexdigest()),
+        )
+    if action == "launch":
+        adb_call(
+            serial,
+            ["shell", "monkey", "-p", PACKAGE_ID, "-c",
+             "android.intent.category.LAUNCHER", "1"],
+            timeout=15.0,
+        )
+        if not wait_for_foreground(serial):
             return emit(
                 "UNKNOWN", action, device=device, approval_id=approval,
-                reason="Force-stop returned but process termination was not verified.",
+                reason="Launch returned but foreground state was not verified.",
             )
-        if action in {"tap", "swipe"}:
-            if focused_package(serial) != PACKAGE_ID:
-                return emit("SKIP", action, reason="Layer Sort is not verified in foreground.")
-            width, height = screen_size(serial)
-            if action == "tap":
-                coordinates = (args.x, args.y)
-                adb_args = ["shell", "input", "tap", str(args.x), str(args.y)]
-            else:
-                coordinates = (args.x1, args.y1, args.x2, args.y2)
-                adb_args = [
-                    "shell", "input", "swipe", str(args.x1), str(args.y1),
-                    str(args.x2), str(args.y2), str(args.duration_ms),
-                ]
-            validate_coordinates(
-                action, coordinates, width, height,
-                getattr(args, "duration_ms", None),
-            )
-            if focused_package(serial) != PACKAGE_ID:
-                return emit("SKIP", action, reason="Foreground changed before input dispatch.")
-            adb_call(serial, adb_args, timeout=8.0)
-            return emit(
-                "PASS", action, device=device, approval_id=approval,
-                target_package=PACKAGE_ID, input_semantics="ADB_SYNTHETIC_INPUT",
-                measured_property="in_game_hit_testing", touch_accuracy_measured=False,
-            )
+        return emit("PASS", action, device=device, approval_id=approval, target_package=PACKAGE_ID)
+    if action == "stop":
+        adb_call(serial, ["shell", "am", "force-stop", PACKAGE_ID], timeout=10.0)
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline:
+            if not shell_text(serial, "pidof", PACKAGE_ID):
+                return emit("PASS", action, device=device, approval_id=approval, target_package=PACKAGE_ID)
+            time.sleep(0.2)
+        return emit(
+            "UNKNOWN", action, device=device, approval_id=approval,
+            reason="Force-stop returned but process termination was not verified.",
+        )
+    if action in {"tap", "swipe"}:
+        if focused_package(serial) != PACKAGE_ID:
+            return emit("SKIP", action, reason="Layer Sort is not verified in foreground.")
+        width, height = screen_size(serial)
+        if action == "tap":
+            coordinates = (args.x, args.y)
+            adb_args = ["shell", "input", "tap", str(args.x), str(args.y)]
+        else:
+            coordinates = (args.x1, args.y1, args.x2, args.y2)
+            adb_args = [
+                "shell", "input", "swipe", str(args.x1), str(args.y1),
+                str(args.x2), str(args.y2), str(args.duration_ms),
+            ]
+        validate_coordinates(
+            action, coordinates, width, height,
+            getattr(args, "duration_ms", None),
+        )
+        if focused_package(serial) != PACKAGE_ID:
+            return emit("SKIP", action, reason="Foreground changed before input dispatch.")
+        adb_call(serial, adb_args, timeout=8.0)
+        return emit(
+            "PASS", action, device=device, approval_id=approval,
+            target_package=PACKAGE_ID, input_semantics="ADB_SYNTHETIC_INPUT",
+            measured_property="in_game_hit_testing", touch_accuracy_measured=False,
+        )
     raise DeviceQaFailure("Unsupported device action.")
 
 
