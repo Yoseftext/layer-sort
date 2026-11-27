@@ -7,6 +7,7 @@ OS security boundary. An interrupted claimed action remains blocked.
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +26,7 @@ def create_state(database: Path, plan: dict[str, Any], reviewed_hash: str, now=N
     # 'x' prevents silently reinitializing or erasing an earlier session.
     with database.open("xb"):
         pass
-    with sqlite3.connect(database) as db:
+    with closing(sqlite3.connect(database)) as db, db:
         db.execute("CREATE TABLE progress (id INTEGER PRIMARY KEY CHECK(id=1), digest TEXT NOT NULL, next_step INTEGER NOT NULL, inflight INTEGER, blocked INTEGER NOT NULL)")
         db.execute("INSERT INTO progress VALUES (1, ?, 0, NULL, 0)", (reviewed_hash,))
 
@@ -35,7 +36,7 @@ def begin_step(database: Path, plan: dict[str, Any], index: int,
     """Claim one exact step before any external effect; never authorizes it."""
     if not database.is_file():
         raise SequenceError("Missing session state")
-    with sqlite3.connect(database, timeout=5, isolation_level=None) as db:
+    with closing(sqlite3.connect(database, timeout=5, isolation_level=None)) as db, db:
         db.execute("BEGIN IMMEDIATE")
         try:
             row = db.execute("SELECT digest, next_step, inflight, blocked FROM progress WHERE id=1").fetchone()
@@ -55,7 +56,7 @@ def finish_step(database: Path, index: int, outcome: str) -> None:
         raise SequenceError("Invalid outcome or index")
     if not database.is_file():
         raise SequenceError("Missing session state")
-    with sqlite3.connect(database, timeout=5, isolation_level=None) as db:
+    with closing(sqlite3.connect(database, timeout=5, isolation_level=None)) as db, db:
         db.execute("BEGIN IMMEDIATE")
         try:
             row = db.execute("SELECT next_step, inflight, blocked FROM progress WHERE id=1").fetchone()

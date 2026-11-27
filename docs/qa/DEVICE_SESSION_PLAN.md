@@ -57,3 +57,15 @@ Same-user database modifications remain possible. The checks alone do not make
 observation and dispatch atomic. A PASS for synthetic input does not prove a
 game interaction succeeded. Live integration needs all of those issues resolved
 and tested before allowing an agent to act.
+
+## Read-only observation helper
+
+`session_observe.py` connects the plan precondition check to the existing
+verified cached build, installed APK inspection, device identity and display
+size. The phone lock is held throughout device observation. Its unit tests mock
+the external services and phone; they do not establish a live-device PASS.
+
+This is only a snapshot, not an authorization or a dispatch-time guarantee.
+Any live executor must hold the same lock over fresh preconditions and the
+actual operation, provide independently controlled results, and check foreground,
+expiry and session authority. The helper is not wired to agentctl or the hook.
