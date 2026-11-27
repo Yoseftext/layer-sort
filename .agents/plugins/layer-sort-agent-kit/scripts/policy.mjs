@@ -994,9 +994,16 @@ function evaluateRunCommand(payload, taskWriteAllowlists) {
     const fetchBuild = commandArgs.length === 5 && commandArgs[0] === "fetch-build" &&
       commandArgs[1] === "--run-id" && /^[1-9][0-9]{0,19}$/.test(commandArgs[2]) &&
       commandArgs[3] === "--commit" && /^[0-9a-f]{40}$/.test(commandArgs[4]);
-    return actual === expected && (readOnlyDeviceAction || fetchBuild)
+    const active = getActiveWorktreeRoot(payload);
+    const grant = active && getTaskWritePolicy(active, taskWriteAllowlists);
+    const capture = commandArgs.length === 1 && commandArgs[0] === "capture-restore" &&
+      active === cwd && grant && grant.deviceCapture &&
+      /^[1-9][0-9]{0,19}$/.test(grant.deviceCapture.runId) &&
+      /^[0-9a-f]{40}$/.test(grant.deviceCapture.commit) &&
+      /^[0-9a-f]{64}$/.test(grant.deviceCapture.apkSha256);
+    return actual === expected && (readOnlyDeviceAction || fetchBuild || capture)
       ? allow()
-      : deny("Only exact device reads and verified build fetch through agentctl are allowed.");
+      : deny("Only scoped device operations through agentctl are allowed.");
   }
 
   if (executable === "device_qa.py") {

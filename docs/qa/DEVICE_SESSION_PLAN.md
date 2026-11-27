@@ -101,3 +101,21 @@ that input was dispatched, not that gameplay responded. Before agent access,
 an operator-controlled session grant, integrity/revocation model and trusted
 integration need review and testing, including lock ownership, recovery and real
 phone execution. Do not expose the private function to agents directly.
+
+## Scoped capture and return
+
+The owner may authorize one `capture-restore` action for a specific verified
+run, commit, and installed APK. The operator prepares this capability using
+`prepare-task.mjs WORKTREE TASK-ID --capture-restore RUN COMMIT APK_SHA256`.
+The Hook and launcher expose only that fixed `agentctl capture-restore`
+operation to that task. The executor revalidates the active grant and cached
+build, locks the phone, matches the installed APK, consumes a one-use marker
+before launch, captures the game and attempts to restore the previously
+focused Android activity. It does not clear data, install, or tap.
+
+A confirmed return means that the same activity is focused, not that its
+internal page, keyboard, scroll position or contents are identical. A process
+kill, Android behavior, or an unexported activity can prevent restoration; the
+result is UNKNOWN and must not be retried automatically. This is a cooperative
+policy, not same-user OS isolation. Test results and any real-device outcome
+must be reported separately.

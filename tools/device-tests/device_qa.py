@@ -373,10 +373,12 @@ def execute(args: argparse.Namespace) -> int:
         return _execute_locked(args, approval)
 
 
-def _execute_locked(args: argparse.Namespace, approval: str | None = None) -> int:
+def _execute_locked(args: argparse.Namespace, approval: str | None = None, *, expected_serial: str | None = None) -> int:
     """Run with the phone lock held; caller independently establishes authorization."""
     action = args.action
     serial = connected_serial()
+    if expected_serial is not None and serial != expected_serial:
+        raise DeviceQaUnknown("Approved device connection changed during the session.")
     device = validate_device(serial)
     ensure_game_installed(serial)
 

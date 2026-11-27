@@ -18,7 +18,7 @@ class DispatchError(ValueError):
     pass
 
 
-def dispatch_locked(step: dict[str, Any]) -> dict[str, Any]:
+def dispatch_locked(step: dict[str, Any], *, expected_serial: str | None = None) -> dict[str, Any]:
     """Use the existing device implementation; the caller must hold its lock."""
     if not isinstance(step, dict):
         raise DispatchError("Invalid session operation")
@@ -34,7 +34,7 @@ def dispatch_locked(step: dict[str, Any]) -> dict[str, Any]:
     output = io.StringIO()
     with contextlib.redirect_stdout(output):
         # This is an internal audit label, not evidence of owner authorization.
-        exit_code = device._execute_locked(args, approval="session-reviewed")
+        exit_code = device._execute_locked(args, approval="session-reviewed", expected_serial=expected_serial)
     try:
         result = json.loads(output.getvalue())
     except (TypeError, json.JSONDecodeError) as error:
