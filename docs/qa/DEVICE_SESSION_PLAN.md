@@ -69,3 +69,19 @@ This is only a snapshot, not an authorization or a dispatch-time guarantee.
 Any live executor must hold the same lock over fresh preconditions and the
 actual operation, provide independently controlled results, and check foreground,
 expiry and session authority. The helper is not wired to agentctl or the hook.
+
+## Locked orchestration prototype
+
+`session_locked.py` holds a verified cached build and the existing phone lock
+while the broker checks device evidence and calls a supplied dispatcher. Four
+unit tests exercise lock lifetime, expiry, device loss and timeout with mocked
+callbacks; the combined 26 session tests passed. The extracted
+`session_observe.observe_locked` requires its caller to hold that lock and
+verify the build first; its name is not runtime proof of either condition.
+
+This internal Python prototype has no CLI or real dispatcher and is not wired
+to agentctl or Antigravity. The callback and state are not a same-user security
+boundary. It does not independently establish owner authorization, session
+binding, revocation, foreground at input dispatch, or actual gameplay. Integrate
+and review those requirements before exposing actions to agents. Holding a
+cooperative lock does not stop non-cooperating programs or Android itself.
