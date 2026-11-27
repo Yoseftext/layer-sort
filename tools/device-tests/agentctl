@@ -4,7 +4,7 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-if [[ "${1:-}" == game-open || "${1:-}" == game-capture || "${1:-}" == game-tap || "${1:-}" == game-finish ]]; then
+if [[ "${1:-}" == game-open || "${1:-}" == game-capture || "${1:-}" == game-tap || "${1:-}" == game-move || "${1:-}" == game-finish ]]; then
   exec /usr/bin/python3 "$ROOT/tools/device-tests/session_play.py" "$@"
 fi
 if [[ "${1:-}" == "capture-restore" && "$#" -eq 1 ]]; then

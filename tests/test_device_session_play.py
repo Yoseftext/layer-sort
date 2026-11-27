@@ -92,6 +92,27 @@ class PlayTests(unittest.TestCase):
             self.assertEqual(play.finish(self.pin,self.cap)["status"],"UNKNOWN")
             self.assertEqual(self.focus,"com.example.other/.Main")
 
+    def test_move_dispatches_two_taps_under_one_lock(self):
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            for p in self.patches(): stack.enter_context(p)
+            play.open_game(self.pin,self.cap)
+            result = play.move(self.pin,self.cap,115,800,485,800)
+            self.assertEqual(result["status"],"PASS")
+            self.assertFalse(result["game_response_verified"])
+            self.assertEqual([c["action"] for c in self.calls],["launch","tap","tap"])
+            self.assertEqual(play.read_state(self.pin,self.cap)["tap_count"],2)
+
+    def test_move_second_tap_timeout_blocks_replay_and_restores(self):
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            for p in self.patches(): stack.enter_context(p)
+            play.open_game(self.pin,self.cap)
+            with patch.object(play.session_dispatch,"dispatch_locked",side_effect=[{"status":"PASS"},TimeoutError]):
+                with self.assertRaises(TimeoutError): play.move(self.pin,self.cap,115,800,485,800)
+            with self.assertRaises(play.PlayError): play.move(self.pin,self.cap,115,800,485,800)
+            self.assertTrue(play.finish(self.pin,self.cap)["input_outcome_unknown"])
+
     def test_incorrect_apk_never_launches(self):
         from contextlib import ExitStack
         with ExitStack() as stack:

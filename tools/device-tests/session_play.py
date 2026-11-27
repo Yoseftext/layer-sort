@@ -166,6 +166,42 @@ def tap(pin: Path, cap: dict[str, str], x: int, y: int) -> dict[str, Any]:
             raise
 
 
+def move(pin: Path, cap: dict[str, str], x1: int, y1: int, x2: int, y2: int) -> dict[str, Any]:
+    """Dispatch one source/destination pair under one lock; verify game state separately."""
+    coords = (x1, y1, x2, y2)
+    if any(type(n) is not int for n in coords) or not (0 <= x1 < 720 and 0 <= x2 < 720 and 0 <= y1 < 1600 and 0 <= y2 < 1600):
+        raise PlayError("Invalid move coordinates")
+    with device.phone_lock():
+        state = read_state(pin, cap)
+        if state["phase"] != "OPEN" or state["inflight"] or state["tap_count"] + 2 > MAX_TAPS:
+            raise PlayError("Session is blocked or its input limit was reached")
+        serial = current_device(state)
+        if grant(pin) != cap or device.screen_size(serial) != (720, 1600) or device.focused_package(serial) != device.PACKAGE_ID:
+            raise PlayError("Play session or foreground changed")
+        state["inflight"] = True
+        state["tap_count"] += 2
+        write_state(pin, state)
+        try:
+            first = session_dispatch.dispatch_locked({"action":"tap","x":x1,"y":y1}, expected_serial=serial)
+            if first["status"] != "PASS":
+                state["phase"] = "BLOCKED"
+                write_state(pin, state)
+                return {"action":"game-move","status":"UNKNOWN","reason":"Source tap not confirmed; do not retry"}
+            second = session_dispatch.dispatch_locked({"action":"tap","x":x2,"y":y2}, expected_serial=serial)
+            if second["status"] != "PASS":
+                state["phase"] = "BLOCKED"
+                write_state(pin, state)
+                return {"action":"game-move","status":"UNKNOWN","reason":"Destination tap not confirmed; do not retry"}
+            state["inflight"] = False
+            write_state(pin, state)
+            return {"action":"game-move","status":"PASS","tap_count":state["tap_count"],
+                    "input_dispatched":True,"game_response_verified":False}
+        except Exception:
+            state["phase"] = "BLOCKED"
+            write_state(pin, state)
+            raise
+
+
 def finish(pin: Path, cap: dict[str, str]) -> dict[str, Any]:
     with device.phone_lock():
         state = read_state(pin, cap)
@@ -220,6 +256,8 @@ def main(argv: list[str] | None = None) -> int:
             result = capture(pin, cap)
         elif action == "game-tap" and len(args) == 3 and re.fullmatch(r"0|[1-9][0-9]{0,2}", args[1]) and re.fullmatch(r"0|[1-9][0-9]{0,3}", args[2]):
             result = tap(pin, cap, int(args[1]), int(args[2]))
+        elif action == "game-move" and len(args) == 5 and all(re.fullmatch(r"0|[1-9][0-9]{0,3}", v) for v in args[1:]):
+            result = move(pin, cap, *(int(v) for v in args[1:]))
         elif action in {"game-finish", "game-cleanup"} and len(args) == 1:
             if action == "game-cleanup" and not (pin / "GAME_SESSION.json").exists():
                 result = {"action": action, "status": "PASS", "reason": "No session started"}

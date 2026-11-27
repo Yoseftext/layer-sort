@@ -139,3 +139,7 @@ Android restrictions can prevent cleanup. This is a cooperative guard, not
 same-user OS isolation. Unit tests use mocked device calls; real-device results
 must be recorded independently. The earlier 27 November capture contained the
 Godot startup splash, not a playable game screen.
+
+## Paired move
+
+`game-move X1 Y1 X2 Y2` sends a source/destination pair in one device session and lock, reducing per-command overhead. The pair is journaled before input. A partial or uncertain result blocks further input; the agent must not retry automatically. A successful dispatch does not prove a valid pour: capture and inspect the next board. No physical-device speedup is claimed until measured.

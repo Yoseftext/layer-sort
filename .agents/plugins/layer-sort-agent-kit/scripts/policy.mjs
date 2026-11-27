@@ -1007,6 +1007,9 @@ function evaluateRunCommand(payload, taskWriteAllowlists) {
       /^[0-9a-f]{64}$/.test(grant.devicePlay.apkSha256);
     const play = active === cwd && playGrant && (
       (commandArgs.length === 1 && ["game-open", "game-capture", "game-finish"].includes(commandArgs[0])) ||
+      (commandArgs.length === 5 && commandArgs[0] === "game-move" &&
+       [commandArgs[1], commandArgs[3]].every(x => /^(0|[1-9][0-9]{0,2})$/.test(x) && Number(x) < 720) &&
+       [commandArgs[2], commandArgs[4]].every(y => /^(0|[1-9][0-9]{0,3})$/.test(y) && Number(y) < 1600)) ||
       (commandArgs.length === 3 && commandArgs[0] === "game-tap" &&
        /^(0|[1-9][0-9]{0,2})$/.test(commandArgs[1]) && Number(commandArgs[1]) < 720 &&
        /^(0|[1-9][0-9]{0,3})$/.test(commandArgs[2]) && Number(commandArgs[2]) < 1600));

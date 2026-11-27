@@ -267,7 +267,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       const settings = { trustedWorkspaces: [second], toolPermission: "request-review", permissions: {
         allow: [...["git", "godot", "which", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)", "command(tools/device-tests/agentctl inspect-installed)", "command(tools/device-tests/agentctl screenshot)", "command(tools/device-tests/agentctl logcat)", "command(tools/device-tests/agentctl fetch-build)",
           ...(grant.deviceCapture ? ["command(tools/device-tests/agentctl capture-restore)"] : []),
-          ...(grant.devicePlay ? ["command(tools/device-tests/agentctl game-open)", "command(tools/device-tests/agentctl game-capture)", "command(tools/device-tests/agentctl game-tap)", "command(tools/device-tests/agentctl game-finish)"] : []),
+          ...(grant.devicePlay ? ["command(tools/device-tests/agentctl game-open)", "command(tools/device-tests/agentctl game-capture)", "command(tools/device-tests/agentctl game-tap)", "command(tools/device-tests/agentctl game-move)", "command(tools/device-tests/agentctl game-finish)"] : []),
           ...grant.files.map((name) => "write_file(" + path.join(second, name) + ")")]
       } };
       writePrivateFileExclusive(path.join(third, "allow"), grant.files.join("\n") + (grant.files.length ? "\n" : ""), "session allowlist");
