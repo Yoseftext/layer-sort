@@ -7,7 +7,20 @@ import { projectRoot, snapshotId, SNAPSHOT_FILES, validateHook, verifySnapshot, 
 
 let lock;
 try {
-  const [target, taskId, ...files] = process.argv.slice(2);
+  const [target, taskId, ...input] = process.argv.slice(2);
+  let deviceCapture;
+  let devicePlay;
+  let files = input;
+  if (input[0] === "--capture-restore") {
+    if (input.length !== 4 || !/^[1-9][0-9]{0,19}$/.test(input[1]) || !/^[0-9a-f]{40}$/.test(input[2]) || !/^[0-9a-f]{64}$/.test(input[3])) throw Error("Expected --capture-restore RUN COMMIT APK-SHA256");
+    deviceCapture = { runId: input[1], commit: input[2], apkSha256: input[3] };
+    files = [];
+  }
+  if (input[0] === "--play-session") {
+    if (input.length !== 4 || !/^[1-9][0-9]{0,19}$/.test(input[1]) || !/^[0-9a-f]{40}$/.test(input[2]) || !/^[0-9a-f]{64}$/.test(input[3])) throw Error("Expected --play-session RUN COMMIT APK-SHA256");
+    devicePlay = { runId: input[1], commit: input[2], apkSha256: input[3] };
+    files = [];
+  }
   if (!target || !taskId || files.length > 64) throw Error("Usage: node prepare-task.mjs <worktree> <TASK-ID> [exact relative files...]");
   const worktree = path.resolve(target), project = projectRoot(worktree);
   process.env.LS_PROJECT_ROOT = project;
@@ -16,6 +29,8 @@ try {
   const policy = await import(pathToFileURL(path.join(source, "policy.mjs")).href);
   const baseHead = execFileSync("git", ["-C", worktree, "rev-parse", "HEAD"], { encoding: "utf8", timeout: 10000 }).trim();
   const grant = { taskId, files, baseHead, sessionId: randomUUID(), expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString() };
+  if (deviceCapture) grant.deviceCapture = deviceCapture;
+  if (devicePlay) grant.devicePlay = devicePlay;
   const registry = Object.fromEntries([[path.basename(worktree), grant]]);
   if (!policy.getTaskWritePolicy(worktree, registry)) throw Error("Invalid task ID, worktree or path grant");
   for (const name of files) {

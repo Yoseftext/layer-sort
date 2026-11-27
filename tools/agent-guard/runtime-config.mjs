@@ -246,14 +246,28 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     else if (action === "hook") validateHook(JSON.parse(fs.readFileSync(first, "utf8")));
     else if (action === "revoke") revoke(first);
     else if (action === "close") revoke(activeSnapshot(first));
-    else if (action === "session") {
+    else if (action === "device-grant") {
+      const grant = await taskGrant(first, second);
+      const cap = grant.deviceCapture;
+      if (!cap || !/^[1-9][0-9]{0,19}$/.test(cap.runId) || !/^[0-9a-f]{40}$/.test(cap.commit) ||
+          !/^[0-9a-f]{64}$/.test(cap.apkSha256)) throw Error("Device capture is not granted");
+      console.log(JSON.stringify(cap));
+    } else if (action === "play-grant") {
+      const grant = await taskGrant(first, second);
+      const cap = grant.devicePlay;
+      if (!cap || !/^[1-9][0-9]{0,19}$/.test(cap.runId) || !/^[0-9a-f]{40}$/.test(cap.commit) ||
+          !/^[0-9a-f]{64}$/.test(cap.apkSha256)) throw Error("Device play is not granted");
+      console.log(JSON.stringify(cap));
+    } else if (action === "session") {
       assertPrivateDirectory(third, 0o700, "agent session directory");
       const grant = await taskGrant(first, second);
       const budget = Number(process.env.LS_SESSION_TIMEOUT ?? 1200);
       if (!Number.isInteger(budget) || budget < 1 || budget > 1800) throw Error("Session timeout must be 1..1800 seconds");
       const seconds = Math.min(budget, Math.floor((Date.parse(grant.expiresAt) - Date.now()) / 1000) - 1);
       const settings = { trustedWorkspaces: [second], toolPermission: "request-review", permissions: {
-        allow: [...["git", "godot", "which", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)", "command(tools/device-tests/agentctl inspect-installed)", "command(tools/device-tests/agentctl screenshot)", "command(tools/device-tests/agentctl logcat)", "command(tools/device-tests/agentctl fetch-build)",
+        allow: [...["git", "godot", "which", "rg", "grep", "sed", "find", "jq", "pwd", "ls", "stat", "file", "sha256sum", "cat", "head", "tail", "agy"].map((command) => "command(" + command + ")"), "command(node --test tools/agent-guard/test-state.mjs)", "command(node --test tools/agent-guard/test-state.mjs tools/agent-guard/test-launcher.mjs)", "command(tools/device-tests/agentctl status)", "command(tools/device-tests/agentctl battery)", "command(tools/device-tests/agentctl thermal)", "command(tools/device-tests/agentctl performance-check)", "command(tools/device-tests/agentctl inspect-installed)", "command(tools/device-tests/agentctl screenshot)", "command(tools/device-tests/agentctl logcat)", "command(tools/device-tests/agentctl fetch-build)",
+          ...(grant.deviceCapture ? ["command(tools/device-tests/agentctl capture-restore)"] : []),
+          ...(grant.devicePlay ? ["command(tools/device-tests/agentctl game-open)", "command(tools/device-tests/agentctl game-capture)", "command(tools/device-tests/agentctl game-tap)", "command(tools/device-tests/agentctl game-move)", "command(tools/device-tests/agentctl game-finish)"] : []),
           ...grant.files.map((name) => "write_file(" + path.join(second, name) + ")")]
       } };
       writePrivateFileExclusive(path.join(third, "allow"), grant.files.join("\n") + (grant.files.length ? "\n" : ""), "session allowlist");
