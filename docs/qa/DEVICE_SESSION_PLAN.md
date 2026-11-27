@@ -42,3 +42,18 @@ simultaneous claims. It does not issue owner authorization, collect evidence,
 call ADB, protect its database from a same-user process, or connect to the Hook.
 Do not use it as an active security or execution boundary until a trusted
 operator-controlled integration and real end-to-end review exist.
+
+## Offline broker prototype
+
+`session_broker.py` joins the existing plan and sequence prototypes through
+injected observation and dispatch callbacks. It checks preconditions before and
+after claiming a step, advances only for a matching PASS result, and blocks on
+unknown results or exceptions. The six added tests use fake callbacks only.
+
+This is **not** a live device broker or an authorization mechanism: callbacks
+must come from a trusted runtime, and the module is not connected to agentctl,
+Antigravity permissions, a phone lock, or independent build/device evidence.
+Same-user database modifications remain possible. The checks alone do not make
+observation and dispatch atomic. A PASS for synthetic input does not prove a
+game interaction succeeded. Live integration needs all of those issues resolved
+and tested before allowing an agent to act.
